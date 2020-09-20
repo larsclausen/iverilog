@@ -1030,7 +1030,7 @@ static void emit_expr_unary(ivl_scope_t scope, ivl_expr_t expr, unsigned wid,
 	case '|': oper = "|"; break;
 	case '^': oper = "^"; break;
 	case 'A': oper = "~&"; break;
-	case 'N': oper = "~|"; break;
+	case 'O': oper = "~|"; break;
 	case 'X': oper = "~^"; break;
 	case '!': oper = "!"; break;
       }
@@ -1045,7 +1045,7 @@ static void emit_expr_unary(ivl_scope_t scope, ivl_expr_t expr, unsigned wid,
 	case '|':
 	case '^':
 	case 'A':
-	case 'N':
+	case 'O':
 	case 'X':
 	case '!':
 	    fprintf(vlog_out, "(%s", oper);

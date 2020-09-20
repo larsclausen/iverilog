@@ -965,7 +965,7 @@ NetNet* NetEUReduce::synthesize(Design*des, NetScope*scope, NetExpr*root)
       NetUReduce::TYPE rtype = NetUReduce::NONE;
 
       switch (op()) {
-	  case 'N':
+	  case 'O':
 	  case '!':
 	    rtype = NetUReduce::NOR;
 	    break;

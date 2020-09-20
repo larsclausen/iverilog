@@ -1947,7 +1947,7 @@ void NetEUnary::dump(ostream&o) const
 	  case 'm':
 	    o << "abs";
 	    break;
-	  case 'N':
+	  case 'O':
 	    o << "~|";
 	    break;
 	  case 'X':

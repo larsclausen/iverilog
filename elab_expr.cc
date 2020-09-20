@@ -7100,7 +7100,7 @@ unsigned PEUnary::test_width(Design*des, NetScope*scope, width_mode_t&mode)
 	  case '|': // Reduction OR
 	  case '^': // Reduction XOR
 	  case 'A': // Reduction NAND (~&)
-	  case 'N': // Reduction NOR (~|)
+	  case 'O': // Reduction NOR (~|)
 	  case 'X': // Reduction NXOR (~^)
 	  case '!':
 	    {
@@ -7146,7 +7146,7 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	  case '|': // Reduction OR
 	  case '^': // Reduction XOR
 	  case 'A': // Reduction NAND (~&)
-	  case 'N': // Reduction NOR (~|)
+	  case 'O': // Reduction NOR (~|)
 	  case 'X': // Reduction NXOR (~^)
 	    sub_width = expr_->expr_width();
 	    break;
@@ -7328,7 +7328,7 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	  case '|': // Reduction OR
 	  case '^': // Reduction XOR
 	  case 'A': // Reduction NAND (~&)
-	  case 'N': // Reduction NOR (~|)
+	  case 'O': // Reduction NOR (~|)
 	  case 'X': // Reduction NXOR (~^)
 	    if (!expr_is_integral(ip)) {
 		  cerr << get_fileline() << ": error: "
