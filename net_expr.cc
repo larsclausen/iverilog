@@ -392,6 +392,11 @@ NetENull::~NetENull()
 {
 }
 
+ivl_variable_type_t NetENull::expr_type() const
+{
+      return IVL_VT_LOGIC;
+}
+
 NetEProperty::NetEProperty(NetNet*net, perm_string pnam, NetExpr*idx)
 : net_(net), index_(idx)
 {

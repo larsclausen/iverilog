@@ -54,6 +54,15 @@ bool type_is_vectorable(ivl_variable_type_t type)
       }
 }
 
+static bool expr_is_integral(const NetExpr*e) {
+	return type_is_vectorable(e->expr_type());
+}
+
+static bool expr_is_integral_or_real(const NetExpr*e) {
+	return type_is_vectorable(e->expr_type()) || e->expr_type() == IVL_VT_REAL;
+}
+
+
 static ivl_nature_t find_access_function(const pform_name_t&path)
 {
       if (path.size() != 1)
@@ -476,6 +485,14 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 
 	  case '+':
 	  case '-':
+	    if (!expr_is_integral_or_real(lp) || !expr_is_integral_or_real(rp)) {
+		  cerr << get_fileline() << ": error: "
+	           << human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		}
+
 	    tmp = new NetEBAdd(op_, lp, rp, expr_wid, signed_flag_);
 	    tmp->set_line(*this);
 	    break;
@@ -509,10 +526,10 @@ NetExpr* PEBinary::elaborate_expr_base_bits_(Design*des,
 					     NetExpr*lp, NetExpr*rp,
 					     unsigned expr_wid) const
 {
-      if (lp->expr_type() == IVL_VT_REAL || rp->expr_type() == IVL_VT_REAL) {
+      if (!expr_is_integral(lp) || !expr_is_integral(rp)) {
 	    cerr << get_fileline() << ": error: "
 	         << human_readable_op(op_)
-	         << " operator may not have REAL operands." << endl;
+	         << " operator may only have INTEGRAL operands." << endl;
 	    des->errors += 1;
 	    return 0;
       }
@@ -530,14 +547,23 @@ NetExpr* PEBinary::elaborate_expr_base_div_(Design*des,
 	/* The % operator does not support real arguments in
 	   baseline Verilog. But we allow it in our extended
 	   form of Verilog. */
-      if (op_ == '%' && ! gn_icarus_misc_flag) {
-	    if (lp->expr_type() == IVL_VT_REAL ||
-		rp->expr_type() == IVL_VT_REAL) {
-		  cerr << get_fileline() << ": error: Modulus operator "
-			"may not have REAL operands." << endl;
-		  des->errors += 1;
-	    }
-      }
+   	  if (op_ == '%' && !gn_icarus_misc_flag) {
+		  if (!expr_is_integral(lp) || !expr_is_integral(rp)) {
+			cerr << get_fileline() << ": error: "
+				 << human_readable_op(op_)
+				 << " operator may only have INTEGRAL operands." << endl;
+			des->errors += 1;
+			return 0;
+		  }
+	  } else {
+		  if (!expr_is_integral_or_real(lp) || !expr_is_integral_or_real(rp)) {
+			cerr << get_fileline() << ": error: "
+				 << human_readable_op(op_)
+				 << " operator may only have INTEGRAL or REAL operands." << endl;
+			des->errors += 1;
+			return 0;
+		  }
+	  }
 
       NetEBDiv*tmp = new NetEBDiv(op_, lp, rp, expr_wid, signed_flag_);
       tmp->set_line(*this);
@@ -545,10 +571,19 @@ NetExpr* PEBinary::elaborate_expr_base_div_(Design*des,
       return tmp;
 }
 
-NetExpr* PEBinary::elaborate_expr_base_mult_(Design*,
+NetExpr* PEBinary::elaborate_expr_base_mult_(Design*des,
 					     NetExpr*lp, NetExpr*rp,
 					     unsigned expr_wid) const
 {
+
+	    if (!expr_is_integral_or_real(lp) || !expr_is_integral_or_real(rp)) {
+		  cerr << get_fileline() << ": error: "
+				<< human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		}
+
 	// Keep constants on the right side.
       if (dynamic_cast<NetEConst*>(lp)) {
 	    NetExpr*tmp = lp;
@@ -696,6 +731,7 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
       if (type_is_vectorable(right_->expr_type()) && !right_->has_sign())
 	    left_->cast_signed(false);
 
+	  printf("b\n");
       NetExpr*lp =  left_->elaborate_expr(des, scope, l_width_, flags);
       if (lp && debug_elaborate) {
 	    cerr << get_fileline() << ": PEBComp::elaborate_expr: "
@@ -712,7 +748,6 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 	    delete rp;
 	    return 0;
       }
-
       eval_expr(lp, l_width_);
       eval_expr(rp, r_width_);
 
@@ -734,8 +769,7 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 	    break;
 	  case 'w': /* ==? */
 	  case 'W': /* !=? */
-	    if ((lp->expr_type() != IVL_VT_BOOL && lp->expr_type() != IVL_VT_LOGIC) ||
-		(rp->expr_type() != IVL_VT_BOOL && rp->expr_type() != IVL_VT_LOGIC)) {
+	    if (!(expr_is_integral(lp) && expr_is_integral(rp))) {
 		  cerr << get_fileline() << ": error: "
 		       << human_readable_op(op_)
 		       << " operator may only have INTEGRAL operands."
@@ -744,7 +778,36 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 		  return 0;
 	    }
 	    break;
+	  case 'L': /* <= */
+	  case 'G': /* >= */
+	  case '<':
+	  case '>':
+	    /* Both operands must either be numerical or both operands must be string
+		 * objects. */
+	    if (!(expr_is_integral_or_real(lp) && expr_is_integral_or_real(rp)) &&
+		    !(lp->expr_type() == IVL_VT_STRING && rp->expr_type() == IVL_VT_STRING)) {
+		  cerr << get_fileline() << ": error: "
+				<< human_readable_op(op_)
+		       << " operator may only have INTEGRAL, REAL or STRING operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+		}
+	    break;
 	  default:
+	   printf("foo: %d %d\n",lp->expr_type(), rp->expr_type());
+	    /* Both operands must either be numerical or both operands must be an
+		 * object of the same type. */
+	    if (!(expr_is_integral_or_real(lp) && expr_is_integral_or_real(rp)) &&
+		    !(lp->expr_type() == rp->expr_type())) {
+		  cerr << get_fileline() << ": error: "
+				<< human_readable_op(op_)
+		       << " operator operands must be assignment compatible."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+		}
+	    break;
 	    break;
       }
 
@@ -782,6 +845,15 @@ NetExpr*PEBLogic::elaborate_expr(Design*des, NetScope*scope,
 	    delete rp;
 	    return 0;
       }
+
+	    if (!expr_is_integral_or_real(lp) || !expr_is_integral_or_real(rp)) {
+		  cerr << get_fileline() << ": error: "
+				<< human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		}
+
 
       lp = condition_reduce(lp);
       rp = condition_reduce(rp);
@@ -1023,7 +1095,7 @@ NetExpr*PEBShift::elaborate_expr_leaf(Design*des, NetExpr*lp, NetExpr*rp,
             return 0;
       }
 
-      if (lp->expr_type() == IVL_VT_REAL || rp->expr_type() == IVL_VT_REAL) {
+      if (!expr_is_integral(lp) || !expr_is_integral(rp)) {
 	    cerr << get_fileline() << ": error: "
 	         << human_readable_op(op_)
 	         << " operator may not have REAL operands." << endl;
@@ -6642,6 +6714,7 @@ NetExpr* PENewCopy::elaborate_expr(Design*des, NetScope*scope, ivl_type_t obj_ty
  */
 unsigned PENull::test_width(Design*, NetScope*, width_mode_t&)
 {
+	printf("Here\n");
       expr_type_   = IVL_VT_CLASS;
       expr_width_  = 1;
       min_width_   = 1;
@@ -7148,6 +7221,14 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	    break;
 
 	  case '-':
+	    if (!expr_is_integral_or_real(ip)) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+	    }
 	    if (NetEConst*ipc = dynamic_cast<NetEConst*>(ip)) {
 
 		  verinum val = - ipc->value();
@@ -7172,10 +7253,26 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	    break;
 
 	  case '+':
+	    if (!expr_is_integral_or_real(ip)) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+	    }
 	    tmp = ip;
 	    break;
 
 	  case '!': // Logical NOT
+	    if (!expr_is_integral_or_real(ip)) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+	    }
 	      /* If the operand to unary ! is a constant, then I can
 		 evaluate this expression here and return a logical
 		 constant in its place. */
@@ -7233,10 +7330,11 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	  case 'A': // Reduction NAND (~&)
 	  case 'N': // Reduction NOR (~|)
 	  case 'X': // Reduction NXOR (~^)
-	    if (ip->expr_type() == IVL_VT_REAL) {
+	    if (!expr_is_integral(ip)) {
 		  cerr << get_fileline() << ": error: "
 		       << human_readable_op(op_, true)
-		       << " operator may not have a REAL operand." << endl;
+		       << " operator may only have INTEGRAL operands."
+		       << endl;
 		  des->errors += 1;
 		  return 0;
 	    }
@@ -7246,6 +7344,15 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	    break;
 
 	  case '~':
+	    if (!expr_is_integral(ip)) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_, true)
+		       << " operator may only have INTEGRAL operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+	    }
+
 	    tmp = elaborate_expr_bits_(ip, expr_wid);
 	    break;
       }

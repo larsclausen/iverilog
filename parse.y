@@ -3319,7 +3319,10 @@ expression
   | inside_expression
       { $$ = $1; }
   | '+' attribute_list_opt expr_primary %prec UNARY_PREC
-      { $$ = $3; }
+      { PEUnary*tmp = new PEUnary('+', $3);
+	FILE_NAME(tmp, @3);
+	$$ = tmp;
+      }
   | '-' attribute_list_opt expr_primary %prec UNARY_PREC
       { PEUnary*tmp = new PEUnary('-', $3);
 	FILE_NAME(tmp, @3);
@@ -3371,7 +3374,7 @@ expression
 	$$ = tmp;
       }
   | K_NOR attribute_list_opt expr_primary %prec UNARY_PREC
-      { PEUnary*tmp = new PEUnary('N', $3);
+      { PEUnary*tmp = new PEUnary('O', $3);
 	FILE_NAME(tmp, @3);
 	$$ = tmp;
       }

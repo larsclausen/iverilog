@@ -4566,6 +4566,8 @@ class NetENull : public NetExpr {
       NetENull();
       ~NetENull();
 
+	  virtual ivl_variable_type_t expr_type() const;
+
       virtual void expr_scan(struct expr_scan_t*) const;
       virtual NetENull* dup_expr() const;
       virtual NexusSet* nex_input(bool rem_out = true, bool always_sens = false,

@@ -77,26 +77,12 @@ static void draw_binary_real(ivl_expr_t expr)
       switch (ivl_expr_opcode(expr)) {
 
 	  case '+':
-	    fprintf(vvp_out, "    %%add/wr;\n");
-	    break;
-
 	  case '-':
-	    fprintf(vvp_out, "    %%sub/wr;\n");
-	    break;
-
 	  case '*':
-	    fprintf(vvp_out, "    %%mul/wr;\n");
-	    break;
-
 	  case '/':
-	    fprintf(vvp_out, "    %%div/wr;\n");
-	    break;
-
 	  case '%':
-	    fprintf(vvp_out, "    %%mod/wr;\n");
-	    break;
 	  case 'p':
-	    fprintf(vvp_out, "    %%pow/wr;\n");
+	    draw_arith_opcode(ivl_expr_opcode(expr), "/wr");
 	    break;
 
 	  case 'm':
@@ -431,6 +417,7 @@ static void draw_unary_real(ivl_expr_t expr)
 	 * a real expression, so use vector evaluation and then convert
 	 * that result to a real value. */
       if ((ivl_expr_opcode(expr) == '~') || (ivl_expr_opcode(expr) == '!')) {
+		printf("HERE\n");
 	    draw_real_logic_expr(expr);
 	    return;
       }
@@ -438,11 +425,9 @@ static void draw_unary_real(ivl_expr_t expr)
       sube = ivl_expr_oper1(expr);
 
       if (ivl_expr_opcode(expr) == 'r') { /* Cast an integer value to a real. */
-	    const char *suffix = "";
+		printf("HERE\n");
 	    assert(ivl_expr_value(sube) != IVL_VT_REAL);
-	    draw_eval_vec4(sube);
-	    if (ivl_expr_signed(sube)) suffix = "/s";
-	    fprintf(vvp_out, "    %%cvt/rv%s;\n", suffix);
+		draw_real_logic_expr(sube);
 	    return;
       }
 
@@ -553,10 +538,7 @@ void draw_eval_real(ivl_expr_t expr)
 
 	  default:
 	    if (ivl_expr_value(expr) == IVL_VT_VECTOR) {
-		  draw_eval_vec4(expr);
-		  const char*sign_flag = ivl_expr_signed(expr)? "/s" : "";
-		  fprintf(vvp_out, "    %%cvt/rv%s;\n", sign_flag);
-
+		  draw_real_logic_expr(expr);
 	    } else {
 		  fprintf(stderr, "vvp.tgt error: XXXX Evaluate real expression (%d)\n",
 			  ivl_expr_type(expr));

@@ -527,42 +527,22 @@ static int show_stmt_assign_vector(ivl_statement_t net)
 	    break;
 
 	  case '+':
-	    fprintf(vvp_out, "    %%add;\n");
-	    put_vec_to_lval(net, slices);
-	    break;
-
 	  case '-':
-	    fprintf(vvp_out, "    %%sub;\n");
-	    put_vec_to_lval(net, slices);
-	    break;
-
 	  case '*':
-	    fprintf(vvp_out, "    %%mul;\n");
+	    draw_arith_opcode(ivl_stmt_opcode(net), "");
 	    put_vec_to_lval(net, slices);
 	    break;
 
 	  case '/':
-	    fprintf(vvp_out, "    %%div%s;\n", ivl_expr_signed(rval)? "/s":"");
-	    put_vec_to_lval(net, slices);
-	    break;
-
 	  case '%':
-	    fprintf(vvp_out, "    %%mod%s;\n", ivl_expr_signed(rval)? "/s":"");
+	    draw_arith_opcode(ivl_stmt_opcode(net), ivl_expr_signed(rval)? "/s":"");
 	    put_vec_to_lval(net, slices);
 	    break;
 
 	  case '&':
-	    fprintf(vvp_out, "    %%and;\n");
-	    put_vec_to_lval(net, slices);
-	    break;
-
 	  case '|':
-	    fprintf(vvp_out, "    %%or;\n");
-	    put_vec_to_lval(net, slices);
-	    break;
-
 	  case '^':
-	    fprintf(vvp_out, "    %%xor;\n");
+	    draw_bitwise_opcode(ivl_stmt_opcode(net), false);
 	    put_vec_to_lval(net, slices);
 	    break;
 
@@ -804,48 +784,21 @@ static int show_stmt_assign_sig_real(ivl_statement_t net)
       assert(ivl_stmt_lvals(net) == 1);
       lval = ivl_stmt_lval(net, 0);
 
+      if (ivl_stmt_opcode(net) == 0) {
+        draw_eval_real(ivl_stmt_rval(net));
+	    store_real_to_lval(lval);
+	    return 0;
+	  }
+
 	/* If this is a compressed assignment, then get the contents
 	   of the l-value. We need this value as part of the r-value
 	   calculation. */
-      if (ivl_stmt_opcode(net) != 0) {
-	    fprintf(vvp_out, "    ; show_stmt_assign_real: Get l-value for compressed %c= operand\n", ivl_stmt_opcode(net));
-            slice = calloc(1, sizeof(struct real_lval_info));
-	    get_real_from_lval(lval, slice);
-      }
+	  fprintf(vvp_out, "    ; show_stmt_assign_real: Get l-value for compressed %c= operand\n", ivl_stmt_opcode(net));
+      slice = calloc(1, sizeof(struct real_lval_info));
+	  get_real_from_lval(lval, slice);
 
       draw_eval_real(ivl_stmt_rval(net));
-
-      switch (ivl_stmt_opcode(net)) {
-	  case 0:
-	    store_real_to_lval(lval);
-	    if (slice) free(slice);
-	    return 0;
-
-	  case '+':
-	    fprintf(vvp_out, "    %%add/wr;\n");
-	    break;
-
-	  case '-':
-	    fprintf(vvp_out, "    %%sub/wr;\n");
-	    break;
-
-	  case '*':
-	    fprintf(vvp_out, "    %%mul/wr;\n");
-	    break;
-
-	  case '/':
-	    fprintf(vvp_out, "    %%div/wr;\n");
-	    break;
-
-	  case '%':
-	    fprintf(vvp_out, "    %%mod/wr;\n");
-	    break;
-
-	  default:
-	    fprintf(vvp_out, "; UNSUPPORTED ASSIGNMENT OPCODE: %c\n", ivl_stmt_opcode(net));
-	    assert(0);
-	    break;
-      }
+	  draw_arith_opcode(ivl_stmt_opcode(net), "/wr");
 
       put_real_to_lval(lval, slice);
       free(slice);
