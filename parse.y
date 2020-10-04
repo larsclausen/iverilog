@@ -4153,6 +4153,19 @@ expr_primary
 	      $$ = base;
 	}
       }
+  | signing '\'' '(' expression ')'
+      { PExpr*base = $4;
+	if (gn_system_verilog()) {
+	      perm_string tn = perm_string::literal($1 ? "$signed" : "$unsigned");
+	      PECallFunction*tmp = make_call_function(tn, base);
+	      FILE_NAME(tmp,@1);
+	      $$ = tmp;
+	} else {
+	      yyerror(@1, "error: Signing cast requires SystemVerilog.");
+	      $$ = base;
+	}
+      }
+
 
   /* Aggregate literals are primaries. */
 
