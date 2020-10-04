@@ -867,6 +867,7 @@ void pform_set_typedef(perm_string name, data_type_t*data_type, std::list<pform_
 
       ivl_assert(*data_type, ref == 0);
       ref = data_type;
+	printf("%p %s %s %p\n", data_type, name.str(), ref->name.str(), unp_ranges);
       ref->name = name;
 
       if (enum_type_t*enum_type = dynamic_cast<enum_type_t*>(data_type))

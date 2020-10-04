@@ -235,6 +235,8 @@ NetScope*NetScope::find_typedef_scope(const Design*des, data_type_t*type)
 {
       assert(type);
 
+	  printf("%s %s\n", type->name.str(), basename().str());
+
       NetScope *cur_scope = this;
       while (cur_scope) {
 	    if (cur_scope->typedefs_ && cur_scope->typedefs_->find(type->name) != cur_scope->typedefs_->end())

@@ -1222,6 +1222,7 @@ data_type /* IEEE1800-2005: A.2.2.1 */
       { lex_in_package_scope($1); }
     TYPE_IDENTIFIER
       { lex_in_package_scope(0);
+	  printf("here2\n");
 	$$ = $4.type;
 	delete[]$4.text;
       }
@@ -2787,6 +2788,7 @@ block_item_decls_opt
 type_declaration
   : K_typedef data_type IDENTIFIER dimensions_opt ';'
       { perm_string name = lex_strings.make($3);
+	  printf("here\n");
 	pform_set_typedef(name, $2, $4);
 	delete[]$3;
       }

@@ -49,9 +49,11 @@ PScope::PScope(perm_string n, LexicalScope*parent)
 
 PScope::~PScope()
 {
-    for(map<perm_string, data_type_t*>::iterator it = typedefs.begin();
-        it != typedefs.end(); ++it)
+#if 0
+    for(map<perm_string, data_type_t*>::reverse_iterator it = typedefs.rbegin();
+        it != typedefs.rend(); ++it)
         delete it->second;
+#endif
 }
 
 PScopeExtra::PScopeExtra(perm_string n, LexicalScope*parent)

@@ -141,6 +141,7 @@ class data_type_t : public PNamedItem {
     public:
       inline explicit data_type_t() { }
       virtual ~data_type_t() = 0;
+//	  virtual data_type_t *clone() = 0;
 	// This method is used to figure out the base type of a packed
 	// compound object. Return IVL_VT_NO_TYPE if the type is not packed.
       virtual ivl_variable_type_t figure_packed_base_type(void)const;
@@ -153,10 +154,11 @@ class data_type_t : public PNamedItem {
 
       perm_string name;
 
-    private:
+    public:
 	// Elaborate the type to an ivl_type_s type.
       virtual ivl_type_s* elaborate_type_raw(Design*des, NetScope*scope) const;
 
+    private:
 	// Keep per-scope elaboration results cached.
       std::map<Definitions*,ivl_type_s*> cache_type_elaborate_;
 };
@@ -196,6 +198,8 @@ struct struct_type_t : public data_type_t {
       virtual void pform_dump(std::ostream&out, unsigned indent) const;
       virtual netstruct_t* elaborate_type_raw(Design*des, NetScope*scope) const;
 
+//	  struct data_type_t* clone() { return new struct_type_t(*this); }
+
       bool packed_flag;
       bool union_flag;
       std::unique_ptr< list<struct_member_t*> > members;
@@ -206,6 +210,7 @@ struct atom2_type_t : public data_type_t {
       : type_code(tc), signed_flag(flag) { }
       int type_code;
       bool signed_flag;
+	  struct data_type_t* clone() { return new atom2_type_t(*this); }
 
       ivl_type_s* elaborate_type_raw(Design*des, NetScope*scope) const;
 };
@@ -239,6 +244,8 @@ struct vector_type_t : public data_type_t {
       virtual void pform_dump(std::ostream&out, unsigned indent) const;
       ivl_type_s* elaborate_type_raw(Design*des, NetScope*scope) const;
 
+//	  struct data_type_t* clone() { return new vector_type_t(*this); }
+
       ivl_variable_type_t base_type;
       bool signed_flag;
       bool reg_flag; // True if "reg" was used
@@ -255,6 +262,17 @@ struct array_base_t : public data_type_t {
       data_type_t*base_type;
       std::unique_ptr< list<pform_range_t> > dims;
 };
+
+struct alias_type_t : public data_type_t {
+      inline explicit alias_type_t(data_type_t*btype)
+      : base_type(btype) { }
+	data_type_t *base_type;
+
+	ivl_type_s* elaborate_type_raw(Design*des, NetScope*scope) const {
+		return base_type->elaborate_type_raw(des, scope);
+	}
+};
+
 
 /*
  * The parray_type_t is a generalization of the vector_type_t in that

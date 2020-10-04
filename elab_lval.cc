@@ -336,6 +336,14 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 	    }
       }
 
+      if (use_sel == index_component_t::SEL_BIT_LAST) {
+	    if (reg->darray_type()) {
+		  NetAssign_*lv = new NetAssign_(reg);
+		  elaborate_lval_darray_bit_(des, scope, lv);
+		  return lv;
+	    }
+      }
+
       ivl_assert(*this, use_sel == index_component_t::SEL_NONE);
 
       if (reg->type()==NetNet::UNRESOLVED_WIRE && !is_force) {

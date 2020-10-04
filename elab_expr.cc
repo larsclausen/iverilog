@@ -2761,9 +2761,9 @@ unsigned PECastSize::test_width(Design*des, NetScope*scope, width_mode_t&)
 
       NetExpr*size_ex = elab_and_eval(des, scope, size_, -1, true);
       NetEConst*size_ce = dynamic_cast<NetEConst*>(size_ex);
-      expr_width_ = size_ce ? size_ce->value().as_ulong() : 0;
+      expr_width_ = size_ce ? size_ce->value().as_long() : 0;
       delete size_ex;
-      if (expr_width_ == 0) {
+      if (expr_width_ <= 0) {
 	    cerr << get_fileline() << ": error: Cast size expression "
 		    "must be constant and greater than zero." << endl;
 	    des->errors += 1;
@@ -3822,7 +3822,7 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 		 << " expects " << net->unpacked_dimensions()
 		 << ", but got " << use_comp.index.size() << "."
 		 << endl;
-	    des->errors += 1;
+//	    des->errors += 1;
 
 	    NetESignal*tmp = new NetESignal(net);
 	    tmp->set_line(*this);
@@ -4936,7 +4936,7 @@ NetExpr* PEIdent::elaborate_expr_net_word_(Design*des, NetScope*scope,
 
 	// Make sure there are enough indices to address an array element.
       if (name_tail.index.size() < net->unpacked_dimensions()) {
-	    cerr << get_fileline() << ": error: Array " << path()
+	    cerr << get_fileline() << ": error2: Array " << path()
 		 << " needs " << net->unpacked_dimensions() << " indices,"
 		 << " but got only " << name_tail.index.size() << "." << endl;
 	    des->errors += 1;

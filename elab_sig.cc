@@ -956,8 +956,10 @@ NetNet* PWire::elaborate_sig(Design*des, NetScope*scope) const
       vector<netrange_t>packed_dimensions;
 
       NetScope*base_type_scope = scope;
-      if (set_data_type_ && !set_data_type_->name.nil())
+      if (set_data_type_ && !set_data_type_->name.nil()) {
+		printf("find\n");
             base_type_scope = scope->find_typedef_scope(des, set_data_type_);
+		}
 
       des->errors += error_cnt_;
 
