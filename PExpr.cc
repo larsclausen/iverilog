@@ -302,6 +302,16 @@ PEConcat::~PEConcat()
       delete repeat_;
 }
 
+PEStreamConcat::PEStreamConcat(const std::list<PExpr*>&p, char op, PExpr*stream)
+: PEConcat(p, nullptr), op_(op), stream_(stream), slice_size_(1)
+{
+}
+
+PEStreamConcat::~PEStreamConcat()
+{
+	delete stream_;
+}
+
 void PEConcat::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)
 {
       for (unsigned idx = 0 ; idx < parms_.size() ; idx += 1) {
@@ -317,6 +327,16 @@ bool PEConcat::has_aa_term(Design*des, NetScope*scope) const
       }
       if (repeat_)
             flag = repeat_->has_aa_term(des, scope) || flag;
+
+      return flag;
+}
+
+bool PEStreamConcat::has_aa_term(Design*des, NetScope*scope) const
+{
+      bool flag;
+      flag = PEConcat::has_aa_term(des, scope);
+      if (stream_)
+            flag = stream_->has_aa_term(des, scope) || flag;
 
       return flag;
 }

@@ -3616,6 +3616,26 @@ unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
       return expr_width_;
 }
 
+
+unsigned PEStreamConcat::test_width(Design*des, NetScope*scope, width_mode_t&
+width_mode)
+{
+	 if (stream_) {
+	    if (PETypename*type_expr = dynamic_cast<PETypename*>(stream_)) {
+		  ivl_type_t tmp_type = type_expr->get_type()->elaborate_type(des, scope);
+		  slice_size_ = tmp_type->packed_width();
+		} else {
+	    NetExpr*tmp = elab_and_eval(des, scope, stream_, -1, true);
+	    NetEConst*rep = dynamic_cast<NetEConst*>(tmp);
+		if (rep)
+			slice_size_ = rep->value().as_ulong();
+
+		}
+	 }
+
+	return PEConcat::test_width(des, scope, width_mode);
+}
+
 // Keep track of the concatenation/repeat depth.
 static int concat_depth = 0;
 
@@ -3731,31 +3751,69 @@ NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 	    return 0;
       }
 
-	/* Make the empty concat expression. */
-      NetEConcat*cncat = new NetEConcat(parm_cnt, repeat_count_, expr_type_);
-      cncat->set_line(*this);
+	  NetExpr *foo;
+	  if (parm_cnt > 1 || repeat_count_ > 1) {
+		/* Make the empty concat expression. */
+		  NetEConcat*cncat = new NetEConcat(parm_cnt, repeat_count_, expr_type_);
+		  cncat->set_line(*this);
 
-	/* Remove any zero width constants. */
-      unsigned off = 0;
-      for (unsigned idx = 0 ;  idx < parm_cnt ;  idx += 1) {
-	    while (parms[off+idx] == 0) off += 1;
-	    cncat->set(idx, parms[off+idx]);
-      }
+		/* Remove any zero width constants. */
+		  unsigned off = 0;
+		  for (unsigned idx = 0 ;  idx < parm_cnt ;  idx += 1) {
+			while (parms[off+idx] == 0) off += 1;
+			cncat->set(idx, parms[off+idx]);
+		  }
 
-      if (wid_sum == 0 && expr_type_ != IVL_VT_STRING) {
-	    cerr << get_fileline() << ": error: Concatenation/replication "
-	         << "may not have zero width in this context." << endl;
-	    des->errors += 1;
-	    concat_depth -= 1;
-	    delete cncat;
-	    return 0;
-      }
+		  if (wid_sum == 0 && expr_type_ != IVL_VT_STRING) {
+			cerr << get_fileline() << ": error: Concatenation/replication "
+				 << "may not have zero width in this context." << endl;
+			des->errors += 1;
+			concat_depth -= 1;
+			delete cncat;
+			return 0;
+		  }
+		  foo = cncat;
+	  } else {
+		foo = parms[0];
+	  }
 
-      NetExpr*tmp = pad_to_width(cncat, expr_wid, signed_flag_, *this);
+      NetExpr*tmp = pad_to_width(foo, expr_wid, signed_flag_, *this);
 
       concat_depth -= 1;
+	printf("hello\n");
+
       return tmp;
 }
+
+NetExpr* PEStreamConcat::elaborate_expr(Design*des, NetScope*scope,
+				  unsigned expr_wid, unsigned flags) const
+{
+	NetExpr *expr = PEConcat::elaborate_expr(des, scope, expr_wid, flags);
+	NetExpr *foo;
+	int wid_sum = 0;
+
+    // Left-to-right streaming does not reorder
+	if (op_ == '>')
+		return expr;
+
+	if (slice_size_ > wid_sum)
+		return expr;
+
+	  NetEConcat*cncat_reverse;
+      cncat_reverse = new NetEConcat((wid_sum + slice_size_ - 1) / slice_size_, 1, expr_type_);
+      cncat_reverse->set_line(*this);
+      for (unsigned idx = 0 ;  idx < wid_sum ;  idx += slice_size_) {
+		  auto ex = new NetEConst(verinum(idx));
+		  ex->set_line(*this);
+
+	    NetESelect*ss = new NetESelect(foo, ex, min(slice_size_, wid_sum - idx));
+	    ss->set_line(*this);
+	    cncat_reverse->set(idx / slice_size_, ss);
+	 }
+
+	 return cncat_reverse;
+}
+
 
 /*
  * Floating point literals are not vectorable. It's not particularly

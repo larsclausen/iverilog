@@ -262,6 +262,29 @@ class PEConcat : public PExpr {
       unsigned repeat_count_;
 };
 
+class PEStreamConcat : public PEConcat {
+
+    public:
+      explicit PEStreamConcat(const std::list<PExpr*>&p, char op, PExpr*stream = 0);
+      ~PEStreamConcat();
+
+      virtual void dump(std::ostream&) const;
+
+      virtual bool has_aa_term(Design*des, NetScope*scope) const;
+
+      virtual unsigned test_width(Design*des, NetScope*scope,
+				  width_mode_t&mode);
+
+      virtual NetExpr*elaborate_expr(Design*des, NetScope*,
+				     unsigned expr_wid,
+                                     unsigned flags) const;
+    private:
+	  char op_;
+      PExpr*stream_;
+      unsigned slice_size_;
+		
+};
+
 /*
  * Event expressions are expressions that can be combined with the
  * event "or" operator. These include "posedge foo" and similar, and

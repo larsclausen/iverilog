@@ -625,7 +625,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <pform_name> hierarchy_identifier implicit_class_handle class_hierarchy_identifier
 %type <expr>  assignment_pattern expression expr_mintypmax
-%type <expr>  expr_primary_or_typename expr_primary
+%type <expr>  expr_primary_or_typename expr_primary expr_primary_or_simple_type
 %type <expr>  class_new dynamic_array_new
 %type <expr>  var_decl_initializer_opt initializer_opt
 %type <expr>  inc_or_dec_expression inside_expression lpvalue
@@ -640,7 +640,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <decl_assignments> list_of_variable_decl_assignments
 
 %type <data_type>  data_type data_type_opt data_type_or_implicit data_type_or_implicit_or_void
-%type <data_type>  simple_type_or_string let_formal_type
+%type <data_type>  simple_type_or_string let_formal_type simple_type
 %type <data_type>  packed_array_data_type
 %type <data_type>  ps_type_identifier
 %type <data_type>  simple_packed_type
@@ -2152,7 +2152,7 @@ simple_immediate_assertion_statement /* IEEE1800-2012 A.6.10 */
       }
   ;
 
-simple_type_or_string /* IEEE1800-2005: A.2.2.1 */
+simple_type /* IEEE1800-2005: A.2.2.1 */
   : integer_vector_type
       { vector_type_t*tmp = new vector_type_t($1, false, 0);
 	FILE_NAME(tmp, @1);
@@ -2173,12 +2173,16 @@ simple_type_or_string /* IEEE1800-2005: A.2.2.1 */
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
+  | ps_type_identifier
+  ;
+
+simple_type_or_string /* IEEE1800-2005: A.2.2.1 */
+  : simple_type
   | K_string
       { string_type_t*tmp = new string_type_t;
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
-  | ps_type_identifier
   ;
 
 statement /* IEEE1800-2005: A.6.4 */
@@ -2198,28 +2202,47 @@ statement_or_null /* IEEE1800-2005: A.6.4 */
       { $$ = 0; }
   ;
 
-stream_expression
-  : expression
-  ;
-
-stream_expression_list
-  : stream_expression_list ',' stream_expression
-  | stream_expression
-  ;
-
 stream_operator
   : K_LS
   | K_RS
   ;
 
+expr_primary_or_simple_type
+  : expr_primary
+
+  /* There are a few special cases (notably $bits argument) where the
+     expression may be a type name. Let the elaborator sort this out. */
+  | simple_type 
+      { 
+	PETypename*tmp = new PETypename($1);
+	FILE_NAME(tmp,@1);
+	$$ = tmp;
+      }
+
+  ;
+
+
 streaming_concatenation /* IEEE1800-2005: A.8.1 */
-  : '{' stream_operator '{' stream_expression_list '}' '}'
+  : '{' stream_operator '{' expression_list_proper '}' '}'
       { /* streaming concatenation is a SystemVerilog thing. */
 	if (pform_requires_sv(@2, "Streaming concatenation")) {
-	      yyerror(@2, "sorry: Streaming concatenation not supported.");
-	      $$ = 0;
+	    PEStreamConcat*tmp = new PEStreamConcat(*$4, '>');
+	    FILE_NAME(tmp, @1);
+	    delete $4;
+	    $$ = tmp;
 	} else {
-	      $$ = 0;
+	    $$ = 0;
+	}
+      }
+  | '{' stream_operator expr_primary_or_simple_type '{' expression_list_proper '}' '}'
+      { /* streaming concatenation is a SystemVerilog thing. */
+	if (pform_requires_sv(@2, "Streaming concatenation")) {
+	    PEStreamConcat*tmp = new PEStreamConcat(*$5, '>', $3);
+	    FILE_NAME(tmp, @1);
+	    delete $5;
+	    $$ = tmp;
+	} else {
+	    $$ = 0;
 	}
       }
   ;

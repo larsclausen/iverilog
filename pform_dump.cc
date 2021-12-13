@@ -389,6 +389,17 @@ void PEConcat::dump(ostream&out) const
       if (repeat_) out << "}";
 }
 
+void PEStreamConcat::dump(ostream&out) const
+{
+	  out << "{<<";
+
+	  PEConcat::dump(out);
+
+      out << "}";
+}
+
+
+
 void PECallFunction::dump(ostream &out) const
 {
       if (package_) out << package_->pscope_name() << "::";
