@@ -159,24 +159,18 @@ static void draw_binary_vec4_arith(ivl_expr_t expr)
 	    fprintf(vvp_out, "    %%pad/%c %u;\n", ivl_expr_signed(re)? 's' : 'u', ewid);
       }
 
+
       switch (ivl_expr_opcode(expr)) {
+
 	  case '+':
-	    fprintf(vvp_out, "    %%add;\n");
-	    break;
 	  case '-':
-	    fprintf(vvp_out, "    %%sub;\n");
-	    break;
 	  case '*':
-	    fprintf(vvp_out, "    %%mul;\n");
+	    draw_arith_opcode(ivl_expr_opcode(expr), "");
 	    break;
 	  case '/':
-	    fprintf(vvp_out, "    %%div%s;\n", signed_string);
-	    break;
 	  case '%':
-	    fprintf(vvp_out, "    %%mod%s;\n", signed_string);
-	    break;
 	  case 'p':
-	    fprintf(vvp_out, "    %%pow%s;\n", signed_string);
+	    draw_arith_opcode(ivl_expr_opcode(expr), signed_string);
 	    break;
 
 	  default:
@@ -185,34 +179,64 @@ static void draw_binary_vec4_arith(ivl_expr_t expr)
       }
 }
 
+void draw_arith_opcode(char opcode, const char *suffix)
+{
+	switch (opcode) {
+	  case '+':
+	    fprintf(vvp_out, "    %%add%s;\n", suffix);
+	    break;
+	  case '-':
+	    fprintf(vvp_out, "    %%sub%s;\n", suffix);
+	    break;
+	  case '*':
+	    fprintf(vvp_out, "    %%mul%s;\n", suffix);
+	    break;
+	  case '/':
+	    fprintf(vvp_out, "    %%div%s;\n", suffix);
+	    break;
+	  case '%':
+	    fprintf(vvp_out, "    %%mod%s;\n", suffix);
+	    break;
+	  case 'p':
+	    fprintf(vvp_out, "    %%pow%s;\n", suffix);
+	    break;
+	}
+}
+
+void draw_bitwise_opcode(char opcode, bool reduce)
+{
+	const char *suffix = reduce ? "/r" : "";
+
+	switch (opcode) {
+	  case '&':
+	    fprintf(vvp_out, "    %%and%s;\n", suffix);
+	    break;
+	  case '|':
+	    fprintf(vvp_out, "    %%or%s;\n", suffix);
+	    break;
+	  case '^':
+	    fprintf(vvp_out, "    %%xor%s;\n", suffix);
+	    break;
+	  case 'A': /* ~& */
+	    fprintf(vvp_out, "    %%nand%s;\n", suffix);
+	    break;
+	  case 'O': /* ~| */
+	    fprintf(vvp_out, "    %%nor%s;\n", suffix);
+	    break;
+	  case 'X': /* ~^ */
+	    fprintf(vvp_out, "    %%xnor%s;\n", suffix);
+	    break;
+	default:
+	    fprintf(stderr, "ERROR: Bitwise operator %c not implemented\n", opcode);
+	    break;
+	}
+}
+
 static void draw_binary_vec4_bitwise(ivl_expr_t expr)
 {
       draw_eval_vec4(ivl_expr_oper1(expr));
       draw_eval_vec4(ivl_expr_oper2(expr));
-
-      switch (ivl_expr_opcode(expr)) {
-	  case '&':
-	    fprintf(vvp_out, "    %%and;\n");
-	    break;
-	  case '|':
-	    fprintf(vvp_out, "    %%or;\n");
-	    break;
-	  case '^':
-	    fprintf(vvp_out, "    %%xor;\n");
-	    break;
-	  case 'A': /* ~& */
-	    fprintf(vvp_out, "    %%nand;\n");
-	    break;
-	  case 'O': /* ~| */
-	    fprintf(vvp_out, "    %%nor;\n");
-	    break;
-	  case 'X': /* ~^ */
-	    fprintf(vvp_out, "    %%xnor;\n");
-	    break;
-	  default:
-	    assert(0);
-	    break;
-      }
+	  draw_bitwise_opcode(ivl_expr_opcode(expr), false);
 }
 
 static void draw_binary_vec4_compare_real(ivl_expr_t expr)
@@ -1207,6 +1231,7 @@ static void draw_unary_inc_dec(ivl_expr_t sub, bool incr, bool pre)
 static void draw_unary_vec4(ivl_expr_t expr)
 {
       ivl_expr_t sub = ivl_expr_oper1(expr);
+	  char opcode = ivl_expr_opcode(expr);
 
       if (debug_draw) {
 	    fprintf(vvp_out, " ; %s:%u:draw_unary_vec4: opcode=%c\n",
@@ -1214,20 +1239,18 @@ static void draw_unary_vec4(ivl_expr_t expr)
 		    ivl_expr_opcode(expr));
       }
 
-      switch (ivl_expr_opcode(expr)) {
-	  case '&':
+      switch (opcode) {
+	  case 'N':
+		opcode = 'O';
+		/* fallthrough */
+	  case '&': /* and */
+	  case '|': /* or */
+	  case '^': /* xor */
+	  case 'A': /* nand (~&) */
+	  case 'O': /* nor (~|) */
+	  case 'X': /* xnor (~^) */
 	    draw_eval_vec4(sub);
-	    fprintf(vvp_out, "    %%and/r;\n");
-	    break;
-
-	  case '|':
-	    draw_eval_vec4(sub);
-	    fprintf(vvp_out, "    %%or/r;\n");
-	    break;
-
-	  case '^':
-	    draw_eval_vec4(sub);
-	    fprintf(vvp_out, "    %%xor/r;\n");
+		draw_bitwise_opcode(opcode, true);
 	    break;
 
 	  case '~':
@@ -1247,11 +1270,6 @@ static void draw_unary_vec4(ivl_expr_t expr)
 	    fprintf(vvp_out, "    %%add;\n");
 	    break;
 
-	  case 'A': /* nand (~&) */
-	    draw_eval_vec4(sub);
-	    fprintf(vvp_out, "    %%nand/r;\n");
-	    break;
-
 	  case 'D': /* pre-decrement (--x) */
 	    draw_unary_inc_dec(sub, false, true);
 	    break;
@@ -1266,16 +1284,6 @@ static void draw_unary_vec4(ivl_expr_t expr)
 
 	  case 'i': /* post-increment (x++) */
 	    draw_unary_inc_dec(sub, true, false);
-	    break;
-
-	  case 'N': /* nor (~|) */
-	    draw_eval_vec4(sub);
-	    fprintf(vvp_out, "    %%nor/r;\n");
-	    break;
-
-	  case 'X': /* xnor (~^) */
-	    draw_eval_vec4(sub);
-	    fprintf(vvp_out, "    %%xnor/r;\n");
 	    break;
 
 	  case 'm': /* abs(m) */
@@ -1346,7 +1354,7 @@ static void draw_unary_vec4(ivl_expr_t expr)
 	    break;
 
 	  default:
-	    fprintf(stderr, "XXXX Unary operator %c not implemented\n", ivl_expr_opcode(expr));
+	    fprintf(stderr, "XXXX Unary operator %c not implemented\n", opcode);
 	    break;
       }
 }

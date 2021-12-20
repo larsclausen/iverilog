@@ -22,6 +22,7 @@
 # include  "vvp_config.h"
 # include  "ivl_target.h"
 # include  <stdio.h>
+# include  <stdbool.h>
 
 extern int debug_draw;
 
@@ -279,5 +280,7 @@ extern unsigned thread_count;
 
 extern void darray_new(ivl_type_t element_type, unsigned size_reg);
 
+extern void draw_arith_opcode(char opcode, const char *suffix);
+extern void draw_bitwise_opcode(char opcode, bool reduce);
 
 #endif /* IVL_vvp_priv_H */
