@@ -2894,8 +2894,31 @@ LexicalScope::range_t* pform_parameter_value_range(bool exclude_flag,
       return tmp;
 }
 
+static void pform_set_type_parameter(const struct vlltype&loc, perm_string name,
+				     bool is_local, PExpr *expr,
+				     LexicalScope::range_t*value_range)
+{
+      pform_requires_sv(loc, "Type parameter");
+
+      if (!is_local)
+	    VLerror(loc, "sorry: Overridable type parameters are not supported yet.");
+
+      if (value_range)
+	    VLerror(loc, "error: type parameter must not have value range.");
+
+      if (!expr)
+	    return;
+
+      PETypename *type = dynamic_cast<PETypename*>(expr);
+      if (type)
+	    pform_set_typedef(name, type->get_type(), 0);
+      else
+	    VLerror(loc, "error: Type parameter default is not a type.");
+}
+
 void pform_set_parameter(const struct vlltype&loc,
-			 perm_string name, bool is_local, data_type_t*data_type, PExpr*expr,
+			 perm_string name, bool is_local, bool is_type,
+			 data_type_t*data_type, PExpr*expr,
 			 LexicalScope::range_t*value_range)
 {
       LexicalScope*scope = lexical_scope;
@@ -2937,6 +2960,11 @@ void pform_set_parameter(const struct vlltype&loc,
 
       if (pform_in_class())
 	    overridable = false;
+
+      if (is_type) {
+	    pform_set_type_parameter(loc, name, is_local, expr, value_range);
+	    return;
+      }
 
       Module::param_expr_t*parm = new Module::param_expr_t();
       FILE_NAME(parm, loc);

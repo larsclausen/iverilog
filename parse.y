@@ -40,6 +40,7 @@ extern void lex_end_table();
 
 static data_type_t* param_data_type = 0;
 static bool param_is_local = false;
+static bool param_is_type = false;
 static std::list<pform_range_t>* specparam_active_range = 0;
 
 /* Port declaration lists use this structure for context. */
@@ -4788,6 +4789,10 @@ module_parameter_port_list_opt
     ')'
   ;
 
+type_param
+  : K_type { param_is_type = true; }
+  ;
+
 module_parameter
   : parameter param_type parameter_assign
   | localparam param_type parameter_assign
@@ -4800,20 +4805,28 @@ module_parameter_port_list
   | data_type_opt
     { param_data_type = $1;
       param_is_local = false;
+      param_is_type = false;
     }
     parameter_assign
     { pform_requires_sv(@3, "Omitting initial `parameter` in parameter port "
 			    "list");
     }
+  | type_param
+    {
+      param_is_local = false;
+    }
+    parameter_assign
   | module_parameter_port_list ',' module_parameter
   | module_parameter_port_list ',' data_type_opt
     { if ($3) {
 	    pform_requires_sv(@3, "Omitting `parameter`/`localparam` before "
 				  "data type in parameter port list");
 	    param_data_type = $3;
+	    param_is_type = false;
       }
     }
     parameter_assign
+  | module_parameter_port_list ',' type_param parameter_assign
   ;
 
 module_item
@@ -5426,7 +5439,12 @@ net_type
      This is used by parameter_assign, which is found to the right of
      the param_type in various rules. */
 
-param_type : data_type_or_implicit { param_data_type = $1; }
+param_type
+  : data_type_or_implicit
+    { param_is_type = false;
+      param_data_type = $1;
+    }
+  | type_param
 
 parameter : K_parameter { param_is_local = false; };
 localparam : K_localparam { param_is_local = true; };
@@ -5452,13 +5470,13 @@ parameter_assign_list
 parameter_assign
   : IDENTIFIER parameter_value_ranges_opt
       { pform_set_parameter(@1, lex_strings.make($1), param_is_local,
-			    param_data_type, 0, $2);
+			    param_is_type, param_data_type, 0, $2);
 	delete[]$1;
       }
   | IDENTIFIER '=' expression parameter_value_ranges_opt
       { PExpr*tmp = $3;
 	pform_set_parameter(@1, lex_strings.make($1), param_is_local,
-			    param_data_type, tmp, $4);
+			    param_is_type, param_data_type, tmp, $4);
 	delete[]$1;
       }
   ;
