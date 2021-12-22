@@ -2466,6 +2466,14 @@ NetProc* PAssign::elaborate_compressed_(Design*des, NetScope*scope) const
       NetAssign_*lv = elaborate_lval(des, scope);
       if (lv == 0) return 0;
 
+      if (lv->enumeration()) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_)
+		       << "= operator does not support enum."
+		       << endl;
+		  des->errors += 1;
+      }
+
 	// Compressed assignments should behave identically to the
 	// equivalent uncompressed assignments. This means we need
 	// to take the type of the LHS into account when determining

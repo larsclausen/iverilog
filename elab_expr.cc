@@ -7169,6 +7169,15 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 	  case 'I':
 	  case 'D':
 	  case 'd':
+		  if (ip->enumeration()) {
+			  cerr << get_fileline() << ": error: "
+				   << human_readable_op(op_, true)
+				   << " operator does not support enum."
+				   << endl;
+			  des->errors += 1;
+			  return 0;
+		  }
+
 		t = ip->expr_type();
 		if (expr_wid != expr_->expr_width()) {
 			/*
