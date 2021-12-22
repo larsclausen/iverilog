@@ -2958,26 +2958,11 @@ PAssign* pform_compressed_assign_from_inc_dec(const struct vlltype&loc, PExpr*ex
       PEUnary*expu = dynamic_cast<PEUnary*> (exp);
       ivl_assert(*exp, expu != 0);
 
-      char use_op = 0;
-      switch (expu->get_op()) {
-	  case 'i':
-	  case 'I':
-	    use_op = '+';
-	    break;
-	  case 'd':
-	  case 'D':
-	    use_op = '-';
-	    break;
-	  default:
-	    ivl_assert(*exp, 0);
-	    break;
-      }
-
       PExpr*lval = expu->get_expr();
       PExpr*rval = new PENumber(new verinum((uint64_t)1, 1));
       FILE_NAME(rval, loc);
 
-      PAssign*tmp = new PAssign(lval, use_op, rval);
+      PAssign*tmp = new PAssign(lval, expu->get_op(), rval);
       FILE_NAME(tmp, loc);
 
       delete exp;

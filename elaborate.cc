@@ -2457,6 +2457,14 @@ static NetExpr*elaborate_delay_expr(PExpr*expr, Design*des, NetScope*scope)
       return dex;
 }
 
+static bool expr_is_integral(const NetExpr*e) {
+	return type_is_vectorable(e->expr_type());
+}
+
+static bool expr_is_integral_or_real(const NetExpr*e) {
+	return type_is_vectorable(e->expr_type()) || e->expr_type() == IVL_VT_REAL;
+}
+
 NetProc* PAssign::elaborate_compressed_(Design*des, NetScope*scope) const
 {
       ivl_assert(*this, ! delay_);
@@ -2501,6 +2509,49 @@ NetProc* PAssign::elaborate_compressed_(Design*des, NetScope*scope) const
       char op = op_;
       if ((op == 'R') && !lv->get_signed())
 	    op = 'r';
+
+	 switch (op) {
+	  case 'i':
+	  case 'I':
+	    op = '+';
+	    break;
+	  case 'd':
+	  case 'D':
+	    op = '-';
+	    break;
+	  default:
+	    break;
+      }
+
+      switch (op) {
+	   case '+':
+	   case '-':
+	   case '*':
+	   case '/':
+	   case '%':
+	    if (!expr_is_integral_or_real(rv)) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_)
+		       << "= operator may only have INTEGRAL or REAL operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+	    }
+
+
+		   break;
+	   default:
+	    if (!expr_is_integral(rv)) {
+		  cerr << get_fileline() << ": error: "
+		       << human_readable_op(op_)
+		       << "= operator may only have INTEGRAL operands."
+		       << endl;
+		  des->errors += 1;
+		  return 0;
+	    }
+
+		  break;
+		}
 
       NetAssign*cur = new NetAssign(lv, op, rv);
       cur->set_line(*this);

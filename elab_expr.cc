@@ -7089,11 +7089,18 @@ unsigned PEUnary::test_width(Design*des, NetScope*scope, width_mode_t&mode)
 	// Evaluate the expression width to get the correct type information
       expr_width_  = expr_->test_width(des, scope, mode);
 
-      if (expr_->expr_type() == IVL_VT_CLASS) {
+	  switch (expr_->expr_type()) {
+      case IVL_VT_REAL:
+      case IVL_VT_BOOL:
+      case IVL_VT_LOGIC:
+      case IVL_VT_STRING:
+		break;
+	default:
 	    cerr << get_fileline() << ": error: "
-	    << "Class/null is not allowed with the '"
-	    << human_readable_op(op_) << "' operator." << endl;
+	    << "Array/Event/Class/null is not allowed with the '"
+	    << human_readable_op(op_, true) << "' operator." << endl;
 	    des->errors += 1;
+		break;
       }
 
       switch (op_) {
@@ -7138,6 +7145,10 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 {
       flags &= ~SYS_TASK_ARG; // don't propagate the SYS_TASK_ARG flag
       ivl_variable_type_t t;
+
+	  if (expr_type_ == IVL_VT_NO_TYPE) {
+		return 0;
+	  }
 
       unsigned sub_width = expr_wid;
       switch (op_) {
