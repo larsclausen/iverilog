@@ -1055,12 +1055,23 @@ NetExpr*PEBLeftWidth::elaborate_expr(Design*des, NetScope*scope,
       return elaborate_expr_leaf(des, lp, rp, expr_wid);
 }
 
-NetExpr*PEBPower::elaborate_expr_leaf(Design*, NetExpr*lp, NetExpr*rp,
+NetExpr*PEBPower::elaborate_expr_leaf(Design*des, NetExpr*lp, NetExpr*rp,
 				      unsigned expr_wid) const
 {
       if (debug_elaborate) {
 	    cerr << get_fileline() << ": debug: elaborate expression "
 		 << *this << " expr_wid=" << expr_wid << endl;
+      }
+
+      if (!expr_is_integral_or_real(lp) || !expr_is_integral_or_real(rp)) {
+		  cerr << get_fileline() << ": error: "
+	           << human_readable_op(op_)
+		       << " operator may only have INTEGRAL or REAL operands."
+		       << endl;
+	    des->errors += 1;
+            delete lp;
+            delete rp;
+	    return 0;
       }
 
       NetExpr*tmp = new NetEBPow(op_, lp, rp, expr_wid, signed_flag_);
