@@ -1601,6 +1601,12 @@ NetExpr* NetECast::eval_arguments_(const NetExpr*ex) const
 		  res = new NetECReal(res_val);
 	    }
 	    break;
+	  case 's':
+	    if (const NetEConst*val = dynamic_cast<const NetEConst*>(ex)) {
+		  verinum res_val(val->value().as_string());
+		  res = new NetEConst(res_val);
+	    }
+	    break;
 	  case '2':
 	    if (const NetEConst*val = dynamic_cast<const NetEConst*>(ex)) {
 		  verinum res_val(val->value());

@@ -197,6 +197,7 @@ extern NetNet*cast_to_real(Design*des, NetScope*scope, NetNet*src);
 extern NetExpr*cast_to_int4(NetExpr*expr, unsigned width);
 extern NetExpr*cast_to_int2(NetExpr*expr, unsigned width);
 extern NetExpr*cast_to_real(NetExpr*expr);
+extern NetExpr*cast_to_string(NetExpr*expr);
 
 /*
  * Take the input expression and return a variation that assures that

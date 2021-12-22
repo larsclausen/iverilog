@@ -142,6 +142,7 @@ NetExpr* elaborate_rval_expr(Design*des, NetScope*scope, ivl_type_t lv_net_type,
 	  case IVL_VT_DARRAY:
 	  case IVL_VT_QUEUE:
 	  case IVL_VT_CLASS:
+	  case IVL_VT_STRING:
 	      // For these types, use a different elab_and_eval that
 	      // uses the lv_net_type. We should eventually transition
 	      // all the types to this new form.
@@ -149,7 +150,6 @@ NetExpr* elaborate_rval_expr(Design*des, NetScope*scope, ivl_type_t lv_net_type,
 		  return elab_and_eval(des, scope, expr, lv_net_type, need_const);
 	    break;
 	  case IVL_VT_REAL:
-	  case IVL_VT_STRING:
 	    break;
 	  case IVL_VT_BOOL:
 	  case IVL_VT_LOGIC:
@@ -3521,7 +3521,8 @@ NetExpr* PECastType::elaborate_expr(Design*des, NetScope*scope,
 		  return sub; // no conversion
 	    if (base_->expr_type() == IVL_VT_LOGIC ||
 		base_->expr_type() == IVL_VT_BOOL)
-		  return sub; // handled by the target as special cases
+		  return cast_to_string(sub);
+
       } else if (target_type_ && target_type_->packed()) {
 	    switch (target_type_->base_type()) {
 		case IVL_VT_BOOL:

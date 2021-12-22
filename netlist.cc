@@ -2621,6 +2621,9 @@ ivl_variable_type_t NetECast::expr_type() const
 	  case '2':
 	    ret = IVL_VT_BOOL;
 	    break;
+	  case 's':
+	    ret = IVL_VT_STRING;
+	    break;
 	  default:
 	    assert(0);
       }

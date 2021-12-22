@@ -185,6 +185,21 @@ NetExpr* cast_to_real(NetExpr*expr)
       return cast;
 }
 
+NetExpr* cast_to_string(NetExpr*expr)
+{
+      if (expr->expr_type() == IVL_VT_STRING)
+	    return expr;
+
+      if (debug_elaborate || 1)
+	    cerr << expr->get_fileline() << ": debug: "
+		 << "Cast expression to string." << endl;
+
+      NetECast*cast = new NetECast('s', expr, 1, false);
+      cast->set_line(*expr);
+      return cast;
+}
+
+
 /*
  * Add a signed constant to an existing expression. Generate a new
  * NetEBAdd node that has the input expression and an expression made
@@ -952,11 +967,27 @@ NetExpr* elab_and_eval(Design*des, NetScope*scope, PExpr*pe,
                   tmp = cast_to_int4(tmp, pos_context_width);
                   break;
                 default:
-                  break;
+				  break;
             }
       }
 
+
+
       eval_expr(tmp, context_width);
+
+	if (cast_type == IVL_VT_STRING && tmp->expr_type() != IVL_VT_STRING) {
+				  if (NetEConst *c = dynamic_cast <NetEConst *>(tmp)) {
+					if (c->value().is_string())
+					return tmp;
+					}
+					  cerr << tmp->get_fileline() << ": error: "
+							  "The expression '" << *pe << "' cannot be implicitly "
+							  "cast to the target type." << endl;
+					  des->errors += 1;
+					  delete tmp;
+					  return 0;
+	  }
+
 
       if (NetEConst*ce = dynamic_cast<NetEConst*>(tmp)) {
             if ((mode >= PExpr::LOSSLESS) && (context_width < 0))
