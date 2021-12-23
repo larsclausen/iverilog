@@ -6954,62 +6954,15 @@ NetExpr*PETernary::elaborate_expr(Design*des, NetScope*scope,
 	/* Make sure the condition expression reduces to a single bit. */
       con = condition_reduce(con);
 
-	// Verilog doesn't say that we must do short circuit evaluation
-	// of ternary expressions, but it doesn't disallow it.
-      if (NetEConst*tmp = dynamic_cast<NetEConst*> (con)) {
-	    verinum cval = tmp->value();
-	    ivl_assert(*this, cval.len()==1);
-
-	      // Condition is constant TRUE, so we only need the true clause.
-	    if (cval.get(0) == verinum::V1) {
-		  if (debug_elaborate)
-			cerr << get_fileline() << ": debug: Short-circuit "
-			        "elaborate TRUE clause of ternary."
-			     << endl;
-
-		    // Evaluate the alternate expression to find any errors.
-		  NetExpr*dmy = elab_and_eval_alternative_(des, scope, fal_,
-		                                           expr_wid, flags,
-		                                           true);
-		  delete dmy;
-
-		  delete con;
-		  return elab_and_eval_alternative_(des, scope, tru_,
-                                                    expr_wid, flags, true);
-	    }
-
-	      // Condition is constant FALSE, so we only need the
-	      // false clause.
-	    if (cval.get(0) == verinum::V0) {
-		  if (debug_elaborate)
-			cerr << get_fileline() << ": debug: Short-circuit "
-			        "elaborate FALSE clause of ternary."
-			<< endl;
-
-		    // Evaluate the alternate expression to find any errors.
-		  NetExpr*dmy = elab_and_eval_alternative_(des, scope, tru_,
-		                                           expr_wid, flags,
-		                                           true);
-		  delete dmy;
-
-		  delete con;
-		  return elab_and_eval_alternative_(des, scope, fal_,
-                                                    expr_wid, flags, true);
-	    }
-
-	      // X and Z conditions need to blend both results, so we
-	      // can't short-circuit.
-      }
-
       NetExpr*tru = elab_and_eval_alternative_(des, scope, tru_,
-					       expr_wid, flags, false);
+					       expr_wid, flags);
       if (tru == 0) {
 	    delete con;
 	    return 0;
       }
 
       NetExpr*fal = elab_and_eval_alternative_(des, scope, fal_,
-					       expr_wid, flags, false);
+					       expr_wid, flags);
       if (fal == 0) {
 	    delete con;
 	    delete tru;
@@ -7038,7 +6991,7 @@ NetExpr*PETernary::elaborate_expr(Design*des, NetScope*scope,
  */
 NetExpr* PETernary::elab_and_eval_alternative_(Design*des, NetScope*scope,
 					       PExpr*expr, unsigned expr_wid,
-                                               unsigned flags, bool short_cct) const
+                                               unsigned flags) const
 {
       int context_wid = expr_wid;
       if (type_is_vectorable(expr->expr_type()) && !type_is_vectorable(expr_type_)) {
@@ -7049,10 +7002,6 @@ NetExpr* PETernary::elab_and_eval_alternative_(Design*des, NetScope*scope,
       }
       NetExpr*tmp = expr->elaborate_expr(des, scope, expr_wid, flags);
       if (tmp == 0) return 0;
-
-      if (short_cct && (expr_type_ == IVL_VT_REAL)
-          && (expr->expr_type() != IVL_VT_REAL))
-	    tmp = cast_to_real(tmp);
 
       eval_expr(tmp, context_wid);
 
@@ -7247,27 +7196,8 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 		  delete ip;
 		  return 0;
 	    }
-	    if (NetEConst*ipc = dynamic_cast<NetEConst*>(ip)) {
-
-		  verinum val = - ipc->value();
-		  tmp = new NetEConst(val);
-		  tmp->cast_signed(signed_flag_);
-		  tmp->set_line(*this);
-		  delete ip;
-
-	    } else if (NetECReal*ipr = dynamic_cast<NetECReal*>(ip)) {
-
-		    /* When taking the - of a real, fold this into the
-		       constant value. */
-		  verireal val = - ipr->value();
-		  tmp = new NetECReal(val);
-		  tmp->set_line(*this);
-		  delete ip;
-
-	    } else {
-		  tmp = new NetEUnary(op_, ip, expr_wid, signed_flag_);
-		  tmp->set_line(*this);
-	    }
+		 tmp = new NetEUnary(op_, ip, expr_wid, signed_flag_);
+		 tmp->set_line(*this);
 	    break;
 
 	  case '+':
@@ -7285,54 +7215,12 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 		  delete ip;
 		  return 0;
 	    }
-	      /* If the operand to unary ! is a constant, then I can
-		 evaluate this expression here and return a logical
-		 constant in its place. */
-	    if (NetEConst*ipc = dynamic_cast<NetEConst*>(ip)) {
-		  verinum val = ipc->value();
-		  unsigned v1 = 0;
-		  unsigned vx = 0;
-		  for (unsigned idx = 0 ;  idx < val.len() ;  idx += 1)
-			switch (val[idx]) {
-			    case verinum::V0:
-			      break;
-			    case verinum::V1:
-			      v1 += 1;
-			      break;
-			    default:
-			      vx += 1;
-			      break;
-			}
-
-		  verinum::V res;
-		  if (v1 > 0)
-			res = verinum::V0;
-		  else if (vx > 0)
-			res = verinum::Vx;
-		  else
-			res = verinum::V1;
-
-		  verinum vres (res, 1, true);
-		  tmp = new NetEConst(vres);
-		  tmp->set_line(*this);
-		  delete ip;
-	    } else if (NetECReal*ipr = dynamic_cast<NetECReal*>(ip)) {
-		  verinum::V res;
-		  if (ipr->value().as_double() == 0.0) res = verinum::V1;
-		  else res = verinum::V0;
-		  verinum vres (res, 1, true);
-		  tmp = new NetEConst(vres);
-		  tmp->set_line(*this);
-		  delete ip;
+	    if (ip->expr_type() == IVL_VT_REAL) {
+		  tmp = new NetEBComp('e', ip, new NetECReal(verireal(0.0)));
 	    } else {
-		  if (ip->expr_type() == IVL_VT_REAL) {
-			tmp = new NetEBComp('e', ip,
-			                    new NetECReal(verireal(0.0)));
-		  } else {
-			tmp = new NetEUReduce(op_, ip);
-		  }
-		  tmp->set_line(*this);
+		  tmp = new NetEUReduce(op_, ip);
 	    }
+		 tmp->set_line(*this);
             tmp = pad_to_width(tmp, expr_wid, signed_flag_, *this);
 	    break;
 
@@ -7359,34 +7247,11 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 		  return 0;
 	    }
 
-	    tmp = elaborate_expr_bits_(ip, expr_wid);
+	    tmp = new NetEUBits(op_, operand, expr_wid, signed_flag_);
+	    tmp->set_line(*this);
 	    break;
       }
 
-      return tmp;
-}
-
-NetExpr* PEUnary::elaborate_expr_bits_(NetExpr*operand, unsigned expr_wid) const
-{
-	// Handle the special case that the operand is a
-	// constant. Simply calculate the constant results of the
-	// expression and return that.
-      if (NetEConst*ctmp = dynamic_cast<NetEConst*> (operand)) {
-	    verinum value = ctmp->value();
-
-	      // The only operand that I know can get here is the
-	      // unary not (~).
-	    ivl_assert(*this, op_ == '~');
-	    value = ~value;
-
-	    ctmp = new NetEConst(value);
-	    ctmp->set_line(*this);
-	    delete operand;
-	    return ctmp;
-      }
-
-      NetEUBits*tmp = new NetEUBits(op_, operand, expr_wid, signed_flag_);
-      tmp->set_line(*this);
       return tmp;
 }
 

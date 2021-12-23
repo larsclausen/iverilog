@@ -715,9 +715,6 @@ class PEUnary : public PExpr {
       inline PExpr*get_expr() const { return expr_; }
 
     private:
-      NetExpr* elaborate_expr_bits_(NetExpr*operand, unsigned expr_wid) const;
-
-    private:
       char op_;
       PExpr*expr_;
 };
@@ -868,7 +865,7 @@ class PETernary : public PExpr {
     private:
       NetExpr* elab_and_eval_alternative_(Design*des, NetScope*scope,
 					  PExpr*expr, unsigned expr_wid,
-                                          unsigned flags, bool short_cct) const;
+                                          unsigned flags) const;
 
     private:
       PExpr*expr_;
