@@ -320,8 +320,7 @@ verinum::verinum(const verinum&that)
       has_len_ = that.has_len_;
       has_sign_ = that.has_sign_;
       is_single_ = that.is_single_;
-      for (unsigned idx = 0 ;  idx < nbits_ ;  idx += 1)
-	    bits_[idx] = that.bits_[idx];
+	  set(0, that);
 }
 
 verinum::verinum(const verinum&that, unsigned nbits)
@@ -385,8 +384,7 @@ verinum& verinum::operator= (const verinum&that)
             nbits_ = that.nbits_;
             bits_ = new V[that.nbits_];
       }
-      for (unsigned idx = 0 ;  idx < nbits_ ;  idx += 1)
-	    bits_[idx] = that.bits_[idx];
+	  set(0, that);
 
       has_len_ = that.has_len_;
       has_sign_ = that.has_sign_;
@@ -669,8 +667,7 @@ verinum pad_to_width(const verinum&that, unsigned width)
 
       verinum val(pad, width, that.has_len());
 
-      for (unsigned idx = 0 ;  idx < that.len() ;  idx += 1)
-	    val.set(idx, that[idx]);
+      val.set(0, that);
 
       val.has_sign(that.has_sign());
       if (that.is_string() && (width % 8) == 0) {
@@ -705,8 +702,7 @@ verinum cast_to_width(const verinum&that, unsigned width)
 
       verinum val(pad, width, true);
 
-      for (unsigned idx = 0 ;  idx < that.len() ;  idx += 1)
-	    val.set(idx, that[idx]);
+      val.set(0, that);	
 
       val.has_sign(that.has_sign());
       return val;
@@ -1611,11 +1607,8 @@ verinum concat(const verinum&left, const verinum&right)
       }
 
       verinum res (verinum::V0, left.len() + right.len());
-      for (unsigned idx = 0 ;  idx < right.len() ;  idx += 1)
-	    res.set(idx, right.get(idx));
-
-      for (unsigned idx = 0 ;  idx < left.len() ;  idx += 1)
-	    res.set(idx+right.len(), left.get(idx));
+      res.set(0, right);
+      res.set(right.len(), left);
 
       return res;
 }

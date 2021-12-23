@@ -1166,9 +1166,9 @@ NetEConst* NetEConcat::eval_arguments_(const vector<NetExpr*>&vals,
 		  return 0;
 
 	    verinum tmp = expr->value();
-	    for (unsigned bit = 0;  bit < tmp.len(); bit += 1, cur += 1)
-		  for (unsigned rep = 0 ;  rep < repeat_val ;  rep += 1)
-			val.set(rep*gap+cur, tmp[bit]);
+	    for (unsigned rep = 0 ;  rep < repeat_val ;  rep += 1)
+		  val.set(rep*gap+cur, tmp);
+	    cur += tmp.len();
 
 	    is_string_flag = is_string_flag && tmp.is_string();
       }
