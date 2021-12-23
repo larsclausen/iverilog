@@ -4338,6 +4338,7 @@ class NetEBMult : public NetEBinary {
     private:
       NetExpr* eval_arguments_(const NetExpr*l, const NetExpr*r) const;
       NetExpr* eval_tree_real_(const NetExpr*l, const NetExpr*r) const;
+      NetExpr* eval_partial_const_(const NetEConst*c, const NetExpr*nc ) const;
 };
 
 /*

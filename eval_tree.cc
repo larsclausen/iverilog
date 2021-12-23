@@ -993,6 +993,18 @@ NetExpr* NetEBMult::eval_tree_real_(const NetExpr*l, const NetExpr*r) const
       return res;
 }
 
+NetExpr* NetEBMult::eval_partial_const_(const NetEConst*c, const NetExpr*nc ) const
+{
+	   const verinum &const_val = c->value();
+
+	   if (!const_val.is_defined() && (nc->expr_type() == IVL_VT_LOGIC))
+	     return make_const_x(expr_width());
+
+	   if (const_val.is_zero() && (nc->expr_type() == IVL_VT_BOOL))
+	     return make_const_0(expr_width());
+	return 0;
+}
+
 NetExpr* NetEBMult::eval_arguments_(const NetExpr*l, const NetExpr*r) const
 {
       if (expr_type() == IVL_VT_REAL) return eval_tree_real_(l,r);
@@ -1000,12 +1012,20 @@ NetExpr* NetEBMult::eval_arguments_(const NetExpr*l, const NetExpr*r) const
 
       const NetEConst*lc = dynamic_cast<const NetEConst*>(l);
       const NetEConst*rc = dynamic_cast<const NetEConst*>(r);
+      unsigned wid = expr_width();
+
+#if 0
+		if (rc == 0 && lc != 0)
+			return eval_partial_const_(lc, r);
+
+		if (lc == 0 && rc != 0)
+			return eval_partial_const_(rc, l);
+#endif
       if (lc == 0 || rc == 0) return 0;
 
       verinum lval = lc->value();
       verinum rval = rc->value();
 
-      unsigned wid = expr_width();
       ivl_assert(*this, wid > 0);
       ivl_assert(*this, lval.len() == wid);
       ivl_assert(*this, rval.len() == wid);

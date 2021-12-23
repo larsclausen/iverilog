@@ -582,34 +582,6 @@ NetExpr* PEBinary::elaborate_expr_base_mult_(Design*des,
 		  return 0;
 		}
 
-	// Keep constants on the right side.
-      if (dynamic_cast<NetEConst*>(lp)) {
-	    NetExpr*tmp = lp;
-	    lp = rp;
-	    rp = tmp;
-      }
-
-	// Handle a few special case multiplies against constants.
-      if (NetEConst*rp_const = dynamic_cast<NetEConst*> (rp)) {
-	    verinum rp_val = rp_const->value();
-
-	    if (!rp_val.is_defined() && (lp->expr_type() == IVL_VT_LOGIC)) {
-		  NetEConst*tmp = make_const_x(expr_wid);
-                  tmp->cast_signed(signed_flag_);
-                  tmp->set_line(*this);
-
-		  return tmp;
-	    }
-
-	    if (rp_val.is_zero() && (lp->expr_type() == IVL_VT_BOOL)) {
-		  NetEConst*tmp = make_const_0(expr_wid);
-                  tmp->cast_signed(signed_flag_);
-                  tmp->set_line(*this);
-
-		  return tmp;
-	    }
-      }
-
       NetEBMult*tmp = new NetEBMult(op_, lp, rp, expr_wid, signed_flag_);
       tmp->set_line(*this);
 
@@ -3567,13 +3539,13 @@ NetExpr* PECastType::elaborate_expr(Design*des, NetScope*scope,
 unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
 {
       expr_width_ = 0;
-      enum {NO, MAYBE, YES} expr_is_string = MAYBE;
+      enum {MAYBE, YES} expr_is_string = MAYBE;
       for (unsigned idx = 0 ; idx < parms_.size() ; idx += 1) {
 	      // Add in the width of this sub-expression.
 	    expr_width_ += parms_[idx]->test_width(des, scope, width_modes_[idx]);
 
 	      // If we already know this is not a string, then move on.
-	    if (expr_is_string == NO)
+	    if (expr_is_string == YES)
 		  continue;
 
 	      // If this expression is a string, then the
@@ -3581,15 +3553,7 @@ unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
 	      // deny it.
 	    if (parms_[idx]->expr_type()==IVL_VT_STRING) {
 		  expr_is_string = YES;
-		  continue;
 	    }
-
-	      // If this is a string literal, then this may yet be a string.
-	    if (dynamic_cast<PEString*> (parms_[idx]))
-		  continue;
-
-	      // Failed to allow a string result.
-	    expr_is_string = NO;
       }
 
       expr_type_   = (expr_is_string==YES) ? IVL_VT_STRING : IVL_VT_LOGIC;
@@ -7247,7 +7211,7 @@ NetExpr* PEUnary::elaborate_expr(Design*des, NetScope*scope,
 		  return 0;
 	    }
 
-	    tmp = new NetEUBits(op_, operand, expr_wid, signed_flag_);
+	    tmp = new NetEUBits(op_, ip, expr_wid, signed_flag_);
 	    tmp->set_line(*this);
 	    break;
       }
