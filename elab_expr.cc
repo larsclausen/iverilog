@@ -91,7 +91,9 @@ static NetBranch* find_existing_implicit_branch(NetNet*sig, NetNet*gnd)
       return 0;
 }
 
-NetExpr* elaborate_rval_expr(Design*des, NetScope*scope, ivl_type_t lv_net_type,
+typedef std::unique_ptr<NetExpr> NetExprPtr;
+
+NetExprPtr elaborate_rval_expr(Design*des, NetScope*scope, ivl_type_t lv_net_type,
 			     ivl_variable_type_t lv_type, unsigned lv_width,
 			     PExpr*expr, bool need_const, bool force_unsigned)
 {
@@ -161,7 +163,7 @@ unsigned PExpr::test_width(Design*des, NetScope*, width_mode_t&)
       return 1;
 }
 
-NetExpr* PExpr::elaborate_expr(Design*des, NetScope*scope, ivl_type_t, unsigned flags) const
+NetExprPtr PExpr::elaborate_expr(Design*des, NetScope*scope, ivl_type_t, unsigned flags) const
 {
 	// Fall back to the old method. Currently the new method won't be used
 	// if the target is a vector type, so we can use an arbitrary width.
@@ -169,7 +171,7 @@ NetExpr* PExpr::elaborate_expr(Design*des, NetScope*scope, ivl_type_t, unsigned 
 }
 
 
-NetExpr* PExpr::elaborate_expr(Design*des, NetScope*, unsigned, unsigned) const
+NetExprPtr PExpr::elaborate_expr(Design*des, NetScope*, unsigned, unsigned) const
 {
       cerr << get_fileline() << ": internal error: I do not know how to"
 	   << " elaborate this expression. " << endl;
@@ -195,7 +197,7 @@ unsigned PEAssignPattern::test_width(Design*, NetScope*, width_mode_t&)
       return 1;
 }
 
-NetExpr*PEAssignPattern::elaborate_expr(Design*des, NetScope*scope,
+NetExprPtr PEAssignPattern::elaborate_expr(Design*des, NetScope*scope,
 					ivl_type_t ntype, unsigned flags) const
 {
 	// Special case: If this is an empty pattern (i.e. '{}) and
@@ -204,7 +206,7 @@ NetExpr*PEAssignPattern::elaborate_expr(Design*des, NetScope*scope,
 	// represent nil dynamic arrays.
       if (parms_.size() == 0 && (ntype->base_type()==IVL_VT_DARRAY ||
                                  ntype->base_type()==IVL_VT_QUEUE)) {
-	    NetENull*tmp = new NetENull;
+	    auto tmp = std::make_unique<NetENull>();
 	    tmp->set_line(*this);
 	    return tmp;
       }
@@ -221,7 +223,7 @@ NetExpr*PEAssignPattern::elaborate_expr(Design*des, NetScope*scope,
       return 0;
 }
 
-NetExpr*PEAssignPattern::elaborate_expr_darray_(Design*des, NetScope*scope,
+NetExprPtr PEAssignPattern::elaborate_expr_darray_(Design*des, NetScope*scope,
 						ivl_type_t ntype, unsigned flags) const
 {
       const netdarray_t*array_type = dynamic_cast<const netdarray_t*> (ntype);
@@ -231,18 +233,18 @@ NetExpr*PEAssignPattern::elaborate_expr_darray_(Design*des, NetScope*scope,
 	// the expression and elaborate each as if they are
 	// element_type expressions.
       ivl_type_t elem_type = array_type->element_type();
-      vector<NetExpr*> elem_exprs (parms_.size());
+      vector<NetExprPtr> elem_exprs (parms_.size());
       for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
-	    NetExpr*tmp = parms_[idx]->elaborate_expr(des, scope, elem_type, flags);
+	    auto tmp = parms_[idx]->elaborate_expr(des, scope, elem_type, flags);
 	    elem_exprs[idx] = tmp;
       }
 
-      NetEArrayPattern*res = new NetEArrayPattern(array_type, elem_exprs);
+      auto res = std::make_unique<NetEArrayPattern>(array_type, elem_exprs);
       res->set_line(*this);
       return res;
 }
 
-NetExpr* PEAssignPattern::elaborate_expr(Design*des, NetScope*, unsigned, unsigned) const
+NetExprPtr PEAssignPattern::elaborate_expr(Design*des, NetScope*, unsigned, unsigned) const
 {
       cerr << get_fileline() << ": sorry: I do not know how to"
 	   << " elaborate assignment patterns using old method." << endl;
@@ -354,7 +356,7 @@ unsigned PEBinary::test_width(Design*des, NetScope*scope, width_mode_t&mode)
  * and right sides, and creating one of a variety of different NetExpr
  * types.
  */
-NetExpr* PEBinary::elaborate_expr(Design*des, NetScope*scope,
+NetExprPtr PEBinary::elaborate_expr(Design*des, NetScope*scope,
 				  unsigned expr_wid, unsigned flags) const
 {
       flags &= ~SYS_TASK_ARG; // don't propagate the SYS_TASK_ARG flag
@@ -382,12 +384,10 @@ NetExpr* PEBinary::elaborate_expr(Design*des, NetScope*scope,
             left_->cast_signed(signed_flag_);
       }
 
-      NetExpr*lp =  left_->elaborate_expr(des, scope, l_width, flags);
-      NetExpr*rp = right_->elaborate_expr(des, scope, r_width, flags);
-      if ((lp == 0) || (rp == 0)) {
-	    delete lp;
-	    delete rp;
-	    return 0;
+      NetExprPtr lp =  left_->elaborate_expr(des, scope, l_width, flags);
+      NetExprPtr rp = right_->elaborate_expr(des, scope, r_width, flags);
+      if (!lp || !rp) {
+	    return nullptr;
       }
 
       return elaborate_expr_base_(des, lp, rp, expr_wid);
@@ -398,8 +398,8 @@ NetExpr* PEBinary::elaborate_expr(Design*des, NetScope*scope,
  * operands are elaborated as necessary, and all I need to do is make
  * the correct NetEBinary object and connect the parameters.
  */
-NetExpr* PEBinary::elaborate_expr_base_(Design*des,
-					NetExpr*lp, NetExpr*rp,
+NetExprPtr PEBinary::elaborate_expr_base_(Design*des,
+					NetExprPtr lp, NetExprPtr rp,
 					unsigned expr_wid) const
 {
       if (debug_elaborate) {
@@ -407,11 +407,11 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 		 << *this << " expr_width=" << expr_wid << endl;
       }
 
-      NetExpr*tmp;
+      NetExprPtr tmp;
 
       switch (op_) {
 	  default:
-	    tmp = new NetEBinary(op_, lp, rp, expr_wid, signed_flag_);
+	    tmp = std::make_unique<NetEBinary>(op_, lp, rp, expr_wid, signed_flag_);
 	    tmp->set_line(*this);
 	    break;
 
@@ -424,7 +424,7 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 		 << " Should have been handled in NetEBLogic::elaborate."
 		 << endl;
 	    des->errors += 1;
-	    return 0;
+	    return nullptr;
 
 	  case 'p':
 	    cerr << get_fileline() << ": internal error: "
@@ -432,7 +432,7 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 		 << " Should have been handled in NetEBPower::elaborate."
 		 << endl;
 	    des->errors += 1;
-	    return 0;
+	    return nullptr;
 
 	  case '*':
 	    tmp = elaborate_expr_base_mult_(des, lp, rp, expr_wid);
@@ -451,7 +451,7 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 		 << " Should have been handled in NetEBShift::elaborate."
 		 << endl;
 	    des->errors += 1;
-	    return 0;
+	    return nullptr;
 
 	  case '^':
 	  case '&':
@@ -464,7 +464,7 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 
 	  case '+':
 	  case '-':
-	    tmp = new NetEBAdd(op_, lp, rp, expr_wid, signed_flag_);
+	    tmp = std::make_unique<NetEBAdd>(op_, lp, rp, expr_wid, signed_flag_);
 	    tmp->set_line(*this);
 	    break;
 
@@ -481,11 +481,11 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
 		 << " Should have been handled in NetEBComp::elaborate."
 		 << endl;
 	    des->errors += 1;
-	    return 0;
+	    return nullptr;
 
 	  case 'm': // min(l,r)
 	  case 'M': // max(l,r)
-	    tmp = new NetEBMinMax(op_, lp, rp, expr_wid, signed_flag_);
+	    tmp = std::make_unique<NetEBMinMax>(op_, lp, rp, expr_wid, signed_flag_);
 	    tmp->set_line(*this);
 	    break;
       }
@@ -493,8 +493,8 @@ NetExpr* PEBinary::elaborate_expr_base_(Design*des,
       return tmp;
 }
 
-NetExpr* PEBinary::elaborate_expr_base_bits_(Design*des,
-					     NetExpr*lp, NetExpr*rp,
+NetExprPtr PEBinary::elaborate_expr_base_bits_(Design*des,
+					     NetExprPtr lp, NetExprPtr rp,
 					     unsigned expr_wid) const
 {
       if (lp->expr_type() == IVL_VT_REAL || rp->expr_type() == IVL_VT_REAL) {
@@ -502,17 +502,17 @@ NetExpr* PEBinary::elaborate_expr_base_bits_(Design*des,
 	         << human_readable_op(op_)
 	         << " operator may not have REAL operands." << endl;
 	    des->errors += 1;
-	    return 0;
+	    return nullptr;
       }
 
-      NetEBBits*tmp = new NetEBBits(op_, lp, rp, expr_wid, signed_flag_);
+      auto tmp = std::make_unique<NetEBBits>(op_, lp, rp, expr_wid, signed_flag_);
       tmp->set_line(*this);
 
       return tmp;
 }
 
-NetExpr* PEBinary::elaborate_expr_base_div_(Design*des,
-					    NetExpr*lp, NetExpr*rp,
+NetExprPtr PEBinary::elaborate_expr_base_div_(Design*des,
+					    NetExprPtr lp, NetExprPtr rp,
 					    unsigned expr_wid) const
 {
 	/* The % operator does not support real arguments in
@@ -527,7 +527,7 @@ NetExpr* PEBinary::elaborate_expr_base_div_(Design*des,
 	    }
       }
 
-      NetEBDiv*tmp = new NetEBDiv(op_, lp, rp, expr_wid, signed_flag_);
+      auto tmp = std::make_unique<NetEBDiv>(op_, lp, rp, expr_wid, signed_flag_);
       tmp->set_line(*this);
 
       return tmp;
@@ -549,7 +549,7 @@ NetExpr* PEBinary::elaborate_expr_base_mult_(Design*,
 	    verinum rp_val = rp_const->value();
 
 	    if (!rp_val.is_defined() && (lp->expr_type() == IVL_VT_LOGIC)) {
-		  NetEConst*tmp = make_const_x(expr_wid);
+		  auto tmp = make_const_x(expr_wid);
                   tmp->cast_signed(signed_flag_);
                   tmp->set_line(*this);
 
@@ -557,7 +557,7 @@ NetExpr* PEBinary::elaborate_expr_base_mult_(Design*,
 	    }
 
 	    if (rp_val.is_zero() && (lp->expr_type() == IVL_VT_BOOL)) {
-		  NetEConst*tmp = make_const_0(expr_wid);
+		  auto tmp = make_const_0(expr_wid);
                   tmp->cast_signed(signed_flag_);
                   tmp->set_line(*this);
 
@@ -565,7 +565,7 @@ NetExpr* PEBinary::elaborate_expr_base_mult_(Design*,
 	    }
       }
 
-      NetEBMult*tmp = new NetEBMult(op_, lp, rp, expr_wid, signed_flag_);
+      auto tmp = std::make_unique<NetEBMult>(op_, lp, rp, expr_wid, signed_flag_);
       tmp->set_line(*this);
 
       return tmp;
@@ -658,7 +658,7 @@ unsigned PEBComp::test_width(Design*des, NetScope*scope, width_mode_t&)
       return expr_width_;
 }
 
-NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
+NetExprPtr PEBComp::elaborate_expr(Design*des, NetScope*scope,
 				 unsigned expr_wid, unsigned flags) const
 {
       flags &= ~SYS_TASK_ARG; // don't propagate the SYS_TASK_ARG flag
@@ -684,22 +684,19 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
       if (type_is_vectorable(right_->expr_type()) && !right_->has_sign())
 	    left_->cast_signed(false);
 
-      NetExpr*lp =  left_->elaborate_expr(des, scope, l_width_, flags);
+      auto lp = left_->elaborate_expr(des, scope, l_width_, flags);
       if (lp && debug_elaborate) {
 	    cerr << get_fileline() << ": PEBComp::elaborate_expr: "
 		 << "Elaborated left_: " << *lp << endl;
       }
-      NetExpr*rp = right_->elaborate_expr(des, scope, r_width_, flags);
+      auto rp = right_->elaborate_expr(des, scope, r_width_, flags);
       if (rp && debug_elaborate) {
 	    cerr << get_fileline() << ": PEBComp::elaborate_expr: "
 		 << "Elaborated right_: " << *rp << endl;
       }
 
-      if ((lp == 0) || (rp == 0)) {
-	    delete lp;
-	    delete rp;
-	    return 0;
-      }
+      if (!lp || !rp)
+	    return nullptr;
 
       eval_expr(lp, l_width_);
       eval_expr(rp, r_width_);
@@ -736,7 +733,7 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 	    break;
       }
 
-      NetExpr*tmp = new NetEBComp(op_, lp, rp);
+      auto tmp = std::make_unique<NetEBComp>(op_, lp, rp);
       tmp->set_line(*this);
 
       return pad_to_width(tmp, expr_wid, signed_flag_, *this);
