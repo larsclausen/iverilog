@@ -503,7 +503,7 @@ signed long verinum::as_long() const
 
       if (has_sign_ && (bits_[nbits_-1] == V1)) {
 	    val = -1;
-	    signed long mask = ~1L;
+	    unsigned long mask = ~1UL;
 	    for (unsigned idx = 0 ;  idx < top ;  idx += 1) {
 		  if (bits_[idx] == V0) val &= mask;
 		  mask = (mask << 1) | 1L;
