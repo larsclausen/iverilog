@@ -4370,7 +4370,7 @@ NetCAssign* PCAssign::elaborate(Design*des, NetScope*scope) const
 	// lv_net_type argument to elaborate_rval_expr here. This
 	// would entail getting the NetAssign_ to give us an
 	// ivl_type_t as needed.
-      NetExpr*rexp = elaborate_rval_expr(des, scope, 0, ltype, lwid, expr_);
+      NetExpr*rexp = elaborate_rval_expr(des, scope, lval->net_type(), ltype, lwid, expr_);
       if (rexp == 0)
 	    return 0;
 
