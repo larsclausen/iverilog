@@ -572,6 +572,9 @@ string verinum::as_string() const
 	    if (*(--bp) == V1) char_val |= 0x02;
 	    if (*(--bp) == V1) char_val |= 0x01;
 
+		if (char_val == 0)
+			continue;
+
 	    if (char_val == '"' || char_val == '\\') {
 		  char tmp[5];
 		  snprintf(tmp, sizeof tmp, "\\%03o", char_val);
