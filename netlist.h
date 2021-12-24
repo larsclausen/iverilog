@@ -4333,12 +4333,14 @@ class NetEBMult : public NetEBinary {
       virtual ivl_variable_type_t expr_type() const;
 
       virtual NetEBMult* dup_expr() const;
+      virtual NetExpr* eval_tree();
       virtual NetNet* synthesize(Design*, NetScope*scope, NetExpr*root);
 
     private:
       NetExpr* eval_arguments_(const NetExpr*l, const NetExpr*r) const;
       NetExpr* eval_tree_real_(const NetExpr*l, const NetExpr*r) const;
       NetExpr* eval_partial_const_(const NetEConst*c, const NetExpr*nc ) const;
+	  bool rebalance_();
 };
 
 /*

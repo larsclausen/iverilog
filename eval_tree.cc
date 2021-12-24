@@ -135,11 +135,8 @@ NetECReal* NetEBAdd::eval_tree_real_(const NetExpr*l, const NetExpr*r) const
 
 NetExpr* NetEBAdd::eval_tree()
 {
-      eval_expr(left_);
-      eval_expr(right_);
-
 	// First try to elaborate the expression completely.
-      NetExpr*res = eval_arguments_(left_,right_);
+      NetExpr*res = NetEBinary::eval_tree();
       if (res != 0) return res;
 
 	// If the expression type is real, then do not attempt the
@@ -1021,7 +1018,10 @@ NetExpr* NetEBMult::eval_arguments_(const NetExpr*l, const NetExpr*r) const
 		if (lc == 0 && rc != 0)
 			return eval_partial_const_(rc, l);
 #endif
-      if (lc == 0 || rc == 0) return 0;
+
+
+		if (rc == 0 || lc == 0)
+		return 0;
 
       verinum lval = lc->value();
       verinum rval = rc->value();
@@ -1035,6 +1035,22 @@ NetExpr* NetEBMult::eval_arguments_(const NetExpr*l, const NetExpr*r) const
       ivl_assert(*this, tmp);
       eval_debug(this, tmp, false);
       return tmp;
+}
+
+bool NetEBMult::rebalance_()
+{
+	return true;
+}
+
+
+NetExpr* NetEBMult::eval_tree()
+{
+	eval_expr(left_);
+	rebalance_();
+	eval_expr(right_);
+
+
+    return eval_arguments_(left_, right_);
 }
 
 NetExpr* NetEBPow::eval_tree_real_(const NetExpr*l, const NetExpr*r) const

@@ -329,6 +329,7 @@ struct string_type_t : public data_type_t {
       ~string_type_t();
 
       ivl_type_t elaborate_type_raw(Design*des, NetScope*scope) const;
+      void pform_dump(std::ostream&out, unsigned indent) const;
 };
 
 struct class_type_t : public data_type_t {

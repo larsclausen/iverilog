@@ -1857,3 +1857,9 @@ void pform_dump(std::ostream&fd, const PTaskFunc*obj)
 {
       obj->dump(fd, 0);
 }
+
+
+void string_type_t::pform_dump(ostream&out, unsigned indent) const
+{
+	out << setw(indent) << "string";
+}
