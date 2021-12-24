@@ -64,6 +64,19 @@ static bool expr_is_integral_or_real(const NetExpr*e)
 	return expr_is_integral(e) || e->expr_type() == IVL_VT_REAL;
 }
 
+static bool expr_is_string_or_string_literal(const NetExpr*e)
+{
+	if (e->expr_type() == IVL_VT_STRING)
+		return true;
+
+	if (const NetEConst *c = dynamic_cast<const NetEConst *>(e)) {
+		if (c->value().is_string())
+			return true;
+	}
+
+	return false;
+}
+
 static void operator_type_error(Design*des, const std::string &fileline,
 	char op, const char *type, bool unary = false)
 {
@@ -142,13 +155,13 @@ NetExpr* elaborate_rval_expr(Design*des, NetScope*scope, ivl_type_t lv_net_type,
 	  case IVL_VT_DARRAY:
 	  case IVL_VT_QUEUE:
 	  case IVL_VT_CLASS:
-	  case IVL_VT_STRING:
 	      // For these types, use a different elab_and_eval that
 	      // uses the lv_net_type. We should eventually transition
 	      // all the types to this new form.
 	    if (lv_net_type)
 		  return elab_and_eval(des, scope, expr, lv_net_type, need_const);
 	    break;
+	  case IVL_VT_STRING:
 	  case IVL_VT_REAL:
 	    break;
 	  case IVL_VT_BOOL:
@@ -720,6 +733,7 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 
       eval_expr(lp, l_width_);
       eval_expr(rp, r_width_);
+	  std::cout << *lp << " " << *rp << std::endl;
 
 	// Handle some operand-specific special cases...
       switch (op_) {
@@ -751,9 +765,7 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 	    /* Both operands must either be numerical or both operands must be string
 		 * objects. */
 	    if (!(expr_is_integral_or_real(lp) && expr_is_integral_or_real(rp)) &&
-			!((lp->expr_type() == IVL_VT_STRING && rp->expr_type() == IVL_VT_STRING) ||
-			  (lp->expr_type() == IVL_VT_STRING && dynamic_cast<PEString*> (right_)) ||
-			  (rp->expr_type() == IVL_VT_STRING && dynamic_cast<PEString*> (left_)))) {
+			!(expr_is_string_or_string_literal(lp) && expr_is_string_or_string_literal(rp))) {
 		  operator_type_error(des, get_fileline(), op_, "INTEGRAL, REAL or STRING");
 		  return 0;
 		}
@@ -761,8 +773,9 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 	  default:
 	    /* Both operands must either be numerical or both operands must be an
 		 * object of the same type. */
-		 #if 0
-	    if (expr_is_integral_or_real(lp) != expr_is_integral_or_real(rp)) {
+	    if (!(expr_is_integral_or_real(lp) && expr_is_integral_or_real(rp)) &&
+		    !(expr_is_string_or_string_literal(lp) && expr_is_string_or_string_literal(rp)) &&
+			!(lp->expr_type() == rp->expr_type())) {
 		  cerr << get_fileline() << ": error: "
 				<< human_readable_op(op_)
 		       << " operator operands must be assignment compatible. "
@@ -771,7 +784,6 @@ NetExpr* PEBComp::elaborate_expr(Design*des, NetScope*scope,
 		  des->errors += 1;
 		  return 0;
 		}
-		#endif
 	    break;
       }
 
@@ -3436,7 +3448,7 @@ unsigned PECastType::test_width(Design*des, NetScope*scope, width_mode_t&)
 
       } else if (const netstring_t*use_string = dynamic_cast<const netstring_t*>(target_type_)) {
 	    expr_type_  = use_string->base_type();
-	    expr_width_ = 8;
+	    expr_width_ = 0;
 
       } else {
 	    expr_type_  = target_type_->base_type();

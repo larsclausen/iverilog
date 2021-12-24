@@ -1743,6 +1743,7 @@ bool of_CAST_VEC4_STR(vthread_t thr, vvp_code_t cp)
 
       vvp_vector4_t vec(wid, BIT4_0);
 
+#if 0
       if (wid != 8*str.length()) {
 	    cerr << thr->get_fileline()
 	         << "VVP error: size mismatch when casting string to vector." << endl;
@@ -1750,9 +1751,12 @@ bool of_CAST_VEC4_STR(vthread_t thr, vvp_code_t cp)
             schedule_stop(0);
             return false;
       }
+#endif
 
       unsigned sdx = 0;
       unsigned vdx = wid;
+	  if (8*str.length() < wid)
+		vdx = 8*str.length();
       while (vdx > 0) {
             char ch = str[sdx++];
             vdx -= 8;

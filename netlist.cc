@@ -2351,6 +2351,20 @@ void NetEConst::trim()
       expr_width(value_.len());
 }
 
+NetEConstString::NetEConstString(const std::string&s)
+: NetEConst(verinum(s))
+{
+}
+
+NetEConstString::~NetEConstString()
+{
+}
+
+ivl_variable_type_t NetEConstString::expr_type() const
+{
+      return IVL_VT_STRING;
+}
+
 NetEConstParam::NetEConstParam(const NetScope*s, perm_string n, const verinum&v)
 : NetEConst(v), scope_(s), name_(n)
 {
@@ -2369,6 +2383,11 @@ perm_string NetEConstParam::name() const
 const NetScope* NetEConstParam::scope() const
 {
       return scope_;
+}
+
+ivl_variable_type_t NetEConstParam::expr_type() const
+{
+      return IVL_VT_STRING;
 }
 
 NetEEvent::NetEEvent(NetEvent*e)

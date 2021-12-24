@@ -108,7 +108,7 @@ class verinum {
 
       signed long   as_long() const;
       double as_double() const;
-      std::string as_string() const;
+      std::string as_string(bool strip_null = true) const;
     private:
       void signed_trim();
 

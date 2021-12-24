@@ -2179,10 +2179,21 @@ class NetEConstParam  : public NetEConst {
       virtual void dump(std::ostream&) const;
 
       virtual NetEConstParam* dup_expr() const;
+      virtual ivl_variable_type_t expr_type() const;
 
     private:
       const NetScope*scope_;
       perm_string name_;
+};
+
+
+class NetEConstString  : public NetEConst {
+
+    public:
+      explicit NetEConstString(const std::string&s);
+      ~NetEConstString();
+
+      virtual ivl_variable_type_t expr_type() const;
 };
 
 /*

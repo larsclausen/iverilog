@@ -1352,6 +1352,18 @@ static void draw_unary_vec4(ivl_expr_t expr)
 		  break;
 	    }
 	    break;
+	  case 's': /* Cast to string */
+	    switch (ivl_expr_value(sub)) {
+		case IVL_VT_LOGIC:
+		case IVL_VT_BOOL:
+		  draw_eval_vec4(sub);
+		  break;
+		default:
+			assert(0);
+			}
+		break;
+
+	  
 
 	  default:
 	    fprintf(stderr, "XXXX Unary operator %c not implemented\n", opcode);

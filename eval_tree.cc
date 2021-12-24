@@ -687,9 +687,50 @@ NetEConst* NetEBComp::eval_weqeq_(bool ne_flag, const NetExpr*le, const NetExpr*
       return result;
 }
 
+NetEConst *str_compare(char op_, const NetExpr*l, const NetExpr*r)
+{
+      const NetEConst*lc = dynamic_cast<const NetEConst*>(l);
+      const NetEConst*rc = dynamic_cast<const NetEConst*>(r);
+      if (lc == 0 || rc == 0) return 0;
+	
+	  int cmp;
+      bool res = false;
+
+	  cmp = strcmp(lc->value().as_string().c_str(), rc->value().as_string().c_str());
+
+	  switch (op_) {
+	  case 'e':
+		res = (cmp == 0);
+		break;
+	  case 'n':
+		res = (cmp != 0);
+		break;
+	  case '<':
+		res = (cmp < 0);
+		break;
+	  case 'L':
+		res = (cmp <= 0);
+		break;
+	  case '>':
+		res = (cmp > 0);
+		break;
+	  case 'G':
+		res = (cmp >= 0);
+		break;
+	  default:
+		assert(0);
+	  }
+
+      return new NetEConst(verinum(res ?  verinum::V1 : verinum::V0, 1));
+}
+
 NetEConst* NetEBComp::eval_arguments_(const NetExpr*l, const NetExpr*r) const
 {
       NetEConst*res = 0;
+
+      if (l->expr_type() == IVL_VT_STRING || r->expr_type() == IVL_VT_STRING) 
+	    return str_compare(op_, l, r);
+      std::cout << l->expr_type() << " " <<  r->expr_type() << std::endl;
 
       switch (op_) {
 	  case 'E': // Case equality (===)
@@ -1322,6 +1363,7 @@ NetExpr* NetETernary::eval_tree()
 			rc->set_line(*this);
 			return rc;
 		  }
+	      return cast_to_real(false_val_->dup_expr());
 	    }
 
 	    return false_val_->dup_expr();
@@ -1347,6 +1389,7 @@ NetExpr* NetETernary::eval_tree()
 			rc->set_line(*this);
 			return rc;
 		  }
+	      return cast_to_real(true_val_->dup_expr());
 	    }
 
 	    return true_val_->dup_expr();
@@ -1639,8 +1682,8 @@ NetExpr* NetECast::eval_arguments_(const NetExpr*ex) const
 	    break;
 	  case 's':
 	    if (const NetEConst*val = dynamic_cast<const NetEConst*>(ex)) {
-		  verinum res_val(val->value().as_string());
-		  res = new NetEConst(res_val);
+		  res = new NetEConstString(val->value().as_string(true));
+		  std::cout << *res << std::endl;
 	    }
 	    break;
 	  case '2':

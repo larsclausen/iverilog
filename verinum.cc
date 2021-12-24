@@ -552,7 +552,7 @@ double verinum::as_double() const
       return val;
 }
 
-string verinum::as_string() const
+string verinum::as_string(bool strip_null) const
 {
       assert( nbits_%8 == 0 );
       if (nbits_ == 0)
@@ -572,7 +572,7 @@ string verinum::as_string() const
 	    if (*(--bp) == V1) char_val |= 0x02;
 	    if (*(--bp) == V1) char_val |= 0x01;
 
-		if (char_val == 0)
+		if (char_val == 0 && strip_null)
 			continue;
 
 	    if (char_val == '"' || char_val == '\\') {
