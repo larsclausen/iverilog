@@ -93,10 +93,10 @@ static bool get_real_arguments(const NetExpr*le, const NetExpr*re,
 
 NetExpr* NetEBinary::eval_tree()
 {
-      eval_expr(left_);
-      eval_expr(right_);
+      eval_expr(left_.get());
+      eval_expr(right_.get());
 
-      return eval_arguments_(left_, right_);
+      return eval_arguments_(left_.get(), right_.get());
 }
 
 NetExpr* NetEBinary::eval_arguments_(const NetExpr*, const NetExpr*) const

@@ -2002,9 +2002,12 @@ class NetTran  : public NetNode, public IslandBranch {
  */
 class NetExpr  : public LineInfo {
     public:
+	  using Ptr = std::unique_ptr<NetExpr>;
+
       explicit NetExpr(unsigned w =0);
       explicit NetExpr(ivl_type_t t);
       virtual ~NetExpr() =0;
+
 
       virtual void expr_scan(struct expr_scan_t*) const =0;
       virtual void dump(std::ostream&) const;
@@ -2661,6 +2664,8 @@ enum DelayType { NO_DELAY, ZERO_DELAY, POSSIBLE_DELAY, DEFINITE_DELAY };
 class NetProc : public virtual LineInfo {
 
     public:
+	  using Ptr = std::unique_ptr<NetProc>;
+
       explicit NetProc();
       virtual ~NetProc();
 
@@ -3213,9 +3218,9 @@ class NetCondit  : public NetProc {
 				     std::map<perm_string,LocalVar>&ctx) const;
 
     private:
-      NetExpr* expr_;
-      NetProc*if_;
-      NetProc*else_;
+      NetExpr::Ptr expr_;
+      NetProc::Ptr if_;
+      NetProc::Ptr else_;
 };
 
 /*
@@ -3842,7 +3847,7 @@ class NetSTask  : public NetProc {
     private:
       const char* name_;
       ivl_sfunc_as_task_t sfunc_as_task_;
-      std::vector<NetExpr*>parms_;
+      std::vector<NetExpr::Ptr>parms_;
 };
 
 /*
@@ -3935,7 +3940,7 @@ class NetEUFunc  : public NetExpr {
       NetScope*scope_;
       NetScope*func_;
       NetESignal*result_sig_;
-      std::vector<NetExpr*> parms_;
+      std::vector<NetExpr::Ptr> parms_;
       bool need_const_;
 
     private: // not implemented
@@ -4141,8 +4146,8 @@ class NetEBinary  : public NetExpr {
       NetEBinary(char op, NetExpr*l, NetExpr*r, unsigned wid, bool signed_flag);
       ~NetEBinary();
 
-      const NetExpr*left() const { return left_; }
-      const NetExpr*right() const { return right_; }
+      const NetExpr*left() const { return left_.get(); }
+      const NetExpr*right() const { return right_.get(); }
 
       char op() const { return op_; }
 
@@ -4163,8 +4168,8 @@ class NetEBinary  : public NetExpr {
 
     protected:
       char op_;
-      NetExpr* left_;
-      NetExpr* right_;
+      NetExpr::Ptr left_;
+      NetExpr::Ptr right_;
 
       virtual NetExpr* eval_arguments_(const NetExpr*l, const NetExpr*r) const;
 };
@@ -4840,9 +4845,9 @@ class NetETernary  : public NetExpr {
     private:
       NetExpr* blended_arguments_(const NetExpr*t, const NetExpr*f) const;
 
-      NetExpr*cond_;
-      NetExpr*true_val_;
-      NetExpr*false_val_;
+      NetExpr::Ptr cond_;
+      NetExpr::Ptr true_val_;
+      NetExpr::Ptr false_val_;
 };
 
 /*
@@ -4875,7 +4880,7 @@ class NetEUnary  : public NetExpr {
       ~NetEUnary();
 
       char op() const { return op_; }
-      const NetExpr* expr() const { return expr_; }
+      const NetExpr* expr() const { return expr_.get(); }
 
       virtual NetEUnary* dup_expr() const;
       virtual NetExpr* eval_tree();
@@ -4891,7 +4896,7 @@ class NetEUnary  : public NetExpr {
 
     protected:
       char op_;
-      NetExpr* expr_;
+      NetExpr::Ptr expr_;
 
     private:
       virtual NetExpr* eval_arguments_(const NetExpr*ex) const;

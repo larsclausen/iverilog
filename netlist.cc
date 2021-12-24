@@ -2042,35 +2042,31 @@ NetCondit::NetCondit(NetExpr*ex, NetProc*i, NetProc*e)
 
 NetCondit::~NetCondit()
 {
-      delete expr_;
-      delete if_;
-      delete else_;
 }
 
 const NetExpr* NetCondit::expr() const
 {
-      return expr_;
+      return expr_.get();
 }
 
 NetExpr* NetCondit::expr()
 {
-      return expr_;
+      return expr_.get();
 }
 
 void NetCondit::set_expr(NetExpr*ex)
 {
-      delete expr_;
       expr_ = ex;
 }
 
 NetProc* NetCondit::if_clause()
 {
-      return if_;
+      return if_.get();
 }
 
 NetProc* NetCondit::else_clause()
 {
-      return else_;
+      return else_.get();
 }
 
 NetConst::NetConst(NetScope*s, perm_string n, verinum::V v)
@@ -2169,9 +2165,6 @@ NetSTask::NetSTask(const char*na, ivl_sfunc_as_task_t sfat,
 
 NetSTask::~NetSTask()
 {
-      for (unsigned idx = 0 ;  idx < parms_.size() ;  idx += 1)
-	    delete parms_[idx];
-
 	/* The name_ string is perm-allocated in lex_strings. */
 }
 
@@ -2192,7 +2185,7 @@ unsigned NetSTask::nparms() const
 
 const NetExpr* NetSTask::parm(unsigned idx) const
 {
-      return parms_[idx];
+      return parms_[idx].get();
 }
 
 NetEUFunc::NetEUFunc(NetScope*scope, NetScope*def, NetESignal*res,
@@ -2204,8 +2197,6 @@ NetEUFunc::NetEUFunc(NetScope*scope, NetScope*def, NetESignal*res,
 
 NetEUFunc::~NetEUFunc()
 {
-      for (unsigned idx = 0 ;  idx < parms_.size() ;  idx += 1)
-	    delete parms_[idx];
 }
 #if 0
 const string NetEUFunc::name() const
@@ -2324,8 +2315,6 @@ NetEBinary::NetEBinary(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signe
 
 NetEBinary::~NetEBinary()
 {
-      delete left_;
-      delete right_;
 }
 
 bool NetEBinary::has_width() const
@@ -2534,9 +2523,6 @@ NetETernary::NetETernary(NetExpr*c, NetExpr*t, NetExpr*f,
 
 NetETernary::~NetETernary()
 {
-      delete cond_;
-      delete true_val_;
-      delete false_val_;
 }
 
 const netenum_t* NetETernary::enumeration() const
@@ -2603,7 +2589,6 @@ NetEUnary::NetEUnary(char op__, NetExpr*ex, unsigned wid, bool signed_flag)
 
 NetEUnary::~NetEUnary()
 {
-      delete expr_;
 }
 
 ivl_variable_type_t NetEUnary::expr_type() const

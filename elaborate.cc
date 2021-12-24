@@ -3009,15 +3009,15 @@ static NetExpr*elab_and_eval_case(Design*des, NetScope*scope, PExpr*pe,
 	    pe->cast_signed(false);
 
       unsigned width = context_is_real ? pe->expr_width() : context_width;
-      NetExpr*expr = pe->elaborate_expr(des, scope, width, PExpr::NO_FLAGS);
+      NetExpr::Ptr expr{pe->elaborate_expr(des, scope, width, PExpr::NO_FLAGS)};
       if (expr == 0) return 0;
 
       if (context_is_real)
-	    expr = cast_to_real(expr);
+	    expr.reset(cast_to_real(expr.release()));
 
       eval_expr(expr, context_width);
 
-      return expr;
+      return expr.release();
 }
 
 /*
@@ -4881,8 +4881,8 @@ NetProc* PEventStatement::elaborate_wait(Design*des, NetScope*scope,
 
       PExpr::width_mode_t mode = PExpr::SIZED;
       pe->test_width(des, scope, mode);
-      NetExpr*expr = pe->elaborate_expr(des, scope, pe->expr_width(),
-                                        PExpr::NO_FLAGS);
+      NetExpr::Ptr expr{pe->elaborate_expr(des, scope, pe->expr_width(),
+                                        PExpr::NO_FLAGS)};
       if (expr == 0) {
 	    cerr << get_fileline() << ": error: Unable to elaborate"
 		  " wait condition expression." << endl;
@@ -4902,9 +4902,9 @@ NetProc* PEventStatement::elaborate_wait(Design*des, NetScope*scope,
 
       if (expr->expr_width() > 1) {
 	    assert(expr->expr_width() > 1);
-	    NetEUReduce*cmp = new NetEUReduce('|', expr);
+	    NetEUReduce*cmp = new NetEUReduce('|', expr.release());
 	    cmp->set_line(*pe);
-	    expr = cmp;
+	    expr.reset(cmp);
       }
 
 	/* precalculate as much as possible of the wait expression. */
@@ -4920,7 +4920,6 @@ NetProc* PEventStatement::elaborate_wait(Design*des, NetScope*scope,
 
 	      /* Constant true -- wait(1) <s1> reduces to <s1>. */
 	    if (val[0] == verinum::V1) {
-		  delete expr;
 		  assert(enet);
 		  return enet;
 	    }
@@ -4943,7 +4942,6 @@ NetProc* PEventStatement::elaborate_wait(Design*des, NetScope*scope,
 	    wait->add_event(wait_event);
 	    wait->set_line(*this);
 
-	    delete expr;
 	    delete enet;
 	    return wait;
       }

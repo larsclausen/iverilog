@@ -420,7 +420,7 @@ extern bool evaluate_ranges(Design*des, NetScope*scope, const LineInfo*li,
  * This procedure evaluates an expression and if the evaluation is
  * successful the original expression is replaced with the new one.
  */
-void eval_expr(NetExpr*&expr, int context_width =-1);
+void eval_expr(NetExpr::Ptr &expr, int context_width =-1);
 
 /*
  * Get the long integer value for the passed in expression, if

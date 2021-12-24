@@ -1149,7 +1149,7 @@ bool evaluate_ranges(Design*des, NetScope*scope, const LineInfo*li,
       return dimensions_ok;
 }
 
-void eval_expr(NetExpr*&expr, int context_width)
+void eval_expr(NetExpr::Ptr &expr, int context_width)
 {
       assert(expr);
       if (dynamic_cast<NetECReal*>(expr)) return;
@@ -1157,7 +1157,6 @@ void eval_expr(NetExpr*&expr, int context_width)
       NetExpr*tmp = expr->eval_tree();
       if (tmp != 0) {
 	    tmp->set_line(*expr);
-	    delete expr;
 	    expr = tmp;
       }
 
@@ -1173,7 +1172,6 @@ void eval_expr(NetExpr*&expr, int context_width)
             verinum value(ce->value(), context_width);
             ce = new NetEConst(value);
             ce->set_line(*expr);
-            delete expr;
             expr = ce;
       }
 }
