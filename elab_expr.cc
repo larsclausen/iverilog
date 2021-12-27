@@ -5066,9 +5066,18 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
       return 0;
 }
 
-static verinum param_part_select_bits(const verinum&par_val, long wid,
+static verinum param_part_select_bits(
+					    ivl_type_t par_type, const verinum&par_val, long wid,
 				     long lsv)
 {
+	bool is_string = false;
+
+	  if (dynamic_cast<const netstring_t*>(par_type)) {
+			wid *= 8;
+			lsv = par_val.len() - (lsv+1)*8;
+			is_string = true;
+	  }
+
       verinum result (verinum::Vx, wid, true);
 
       for (long idx = 0 ; idx < wid ; idx += 1) {
@@ -5087,7 +5096,7 @@ static verinum param_part_select_bits(const verinum&par_val, long wid,
 
 	// If the input is a string, and the part select is working on
 	// byte boundaries, then make the result into a string.
-      if (par_val.is_string() && (labs(lsv)%8 == 0) && (wid%8 == 0))
+      if (!is_string && par_val.is_string() && (labs(lsv)%8 == 0) && (wid%8 == 0))
 	    return verinum(result.as_string());
 
       return result;
@@ -5146,31 +5155,9 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
 	    if (par_msv >= par_lsv) sel_v -= par_lsv;
 	    else sel_v = par_lsv - sel_v;
 
-	      // Select a bit from the parameter.
-	    verinum par_v = par_ex->value();
-	    verinum::V rtn = verinum::Vx;
+        verinum result = param_part_select_bits(par_type, par_ex->value(), 1, sel_v);
+	    NetEConst*res = new NetEConst(result);
 
-	      // A constant in range select.
-	    if ((sel_v >= 0) && ((unsigned long) sel_v < par_v.len())) {
-		  rtn = par_v[sel_v];
-	      // An unsized after select.
-	    } else if ((sel_v >= 0) && (! par_v.has_len())) {
-		  if (par_v.has_sign()) rtn = par_v[par_v.len()-1];
-		  else rtn = verinum::V0;
-	    } else if (warn_ob_select) {
-		  cerr << get_fileline() << ": warning: "
-		          "Constant bit select [" << sel_c->value().as_long()
-		       << "] is ";
-		  if (sel_v < 0) cerr << "before ";
-		  else cerr << "after ";
-		  cerr << name << "[";
-		  if (par_v.has_len()) cerr << par_msv;
-		  else cerr << "<inf>";
-		  cerr << ":" << par_lsv << "]." << endl;
-		  cerr << get_fileline() << ":        : "
-		          "Replacing select with a constant 1'bx." << endl;
-	    }
-	    NetEConst*res = new NetEConst(verinum(rtn, 1));
 	    res->set_line(*this);
 	    return res;
       }
@@ -5272,7 +5259,7 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 	    }
       }
 
-      verinum result = param_part_select_bits(par_ex->value(), wid, base);
+      verinum result = param_part_select_bits(par_type, par_ex->value(), wid, base);
       NetEConst*result_ex = new NetEConst(result);
       result_ex->set_line(*this);
 
@@ -5374,7 +5361,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_up_(Design*des, NetScope*scope,
                   warn_param_ob(par_msv, par_lsv, defined, lsv-par_base, wid,
                                 pwid, this, name, true);
 	    }
-	    verinum result = param_part_select_bits(par_ex->value(), wid,
+	    verinum result = param_part_select_bits(par_type, par_ex->value(), wid,
 						    lsv-par_base);
 	    NetEConst*result_ex = new NetEConst(result);
 	    result_ex->set_line(*this);
@@ -5455,7 +5442,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_do_(Design*des, NetScope*scope,
                                 pwid, this, name, false);
 	    }
 
-	    verinum result = param_part_select_bits(par_ex->value(), wid,
+	    verinum result = param_part_select_bits(par_type, par_ex->value(), wid,
 						    lsv-par_base);
 	    NetEConst*result_ex = new NetEConst(result);
 	    result_ex->set_line(*this);
