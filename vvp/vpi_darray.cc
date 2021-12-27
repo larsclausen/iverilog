@@ -301,24 +301,29 @@ __vpiQueueVar::__vpiQueueVar(__vpiScope*sc, const char*na, vvp_net_t*ne)
 int __vpiQueueVar::get_type_code(void) const
 { return vpiArrayVar; }
 
-
-int __vpiQueueVar::vpi_get(int code)
+unsigned int __vpiQueueVar::get_size() const
 {
-      vvp_fun_signal_object*fun = dynamic_cast<vvp_fun_signal_object*> (get_net()->fun);
+	 vvp_fun_signal_object*fun = dynamic_cast<vvp_fun_signal_object*> (get_net()->fun);
       assert(fun);
       vvp_object_t val = fun->get_object();
       vvp_queue*aval = val.peek<vvp_queue>();
+
+	    if (aval == 0)
+		  return 0;
+	    else
+		  return aval->get_size();
+}
+
+
+int __vpiQueueVar::vpi_get(int code)
+{
 
       switch (code) {
 	  case vpiArrayType:
 	    return vpiQueueArray;
 	  case vpiSize:
-	    if (aval == 0)
-		  return 0;
-	    else
-		  return aval->get_size();
-
-	  default:
+	    return get_size();
+     	  default:
 	    return 0;
       }
 }
