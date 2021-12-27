@@ -300,6 +300,9 @@ class vvp_vector4_t {
 	// Multiply this by that in the Verilog way.
       void mul(const vvp_vector4_t&that);
 
+	void blend(const vvp_vector4_t &other);
+
+	vvp_bit4_t or_reduce() const;
 	// Test that the vectors are exactly equal
       bool eeq(const vvp_vector4_t&that) const;
 
@@ -311,6 +314,8 @@ class vvp_vector4_t {
 
 	// Change all Z bits to X bits.
       void change_z2x();
+
+	  void change_xz_to_0();
 
 	// Change all bits to X bits.
       void set_to_x() { set_all_bits(BIT4_X); }

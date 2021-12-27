@@ -1824,6 +1824,116 @@ void vvp_vector4_t::change_z2x()
       }
 }
 
+void vvp_vector4_t::change_xz_to_0()
+{
+	// This method relies on the fact that both BIT4_X and BIT4_Z
+	// have the bbit set in the vector4 encoding, and also that
+	// the BIT4_X has abit set in the vector4 encoding. By simply
+	// or-ing the bbit into the abit, BIT4_X and BIT4_Z both
+	// become BIT4_X.
+
+      if (size_ <= BITS_PER_WORD) {
+	    abits_val_ &= bbits_val_;
+	    bbits_val_ = 0;
+      } else {
+	    unsigned words = (size_+BITS_PER_WORD-1) / BITS_PER_WORD;
+	    for (unsigned idx = 0 ;  idx < words ;  idx += 1) {
+		  abits_ptr_[idx] &= bbits_ptr_[idx];
+		  bbits_ptr_[idx] = 0;;
+		}
+      }
+}
+
+void vvp_vector4_t::blend(const vvp_vector4_t &other)
+{
+	unsigned long mask;
+
+	if (size_ <= BITS_PER_WORD) {
+		mask = (abits_val_ ^ other.abits_val_) | (bbits_val_ ^ other.bbits_val_);
+		abits_val_ &= ~mask;
+		bbits_val_ |= mask;
+	} else {
+	    unsigned words = (size_+BITS_PER_WORD-1) / BITS_PER_WORD;
+	    for (unsigned idx = 0 ;  idx < words ;  idx += 1) {
+			mask = (abits_val_ ^ other.abits_val_) | (bbits_val_ ^
+			other.bbits_val_);
+			abits_val_ &= ~mask;
+			bbits_val_ |= mask;
+		}
+	}
+}
+
+vvp_bit4_t vvp_vector4_t::or_reduce() const
+{
+	unsigned long mask = ~(-1UL << (size_ % BITS_PER_WORD));
+	vvp_bit4_t result = BIT4_0;
+
+	if (size_ <= BITS_PER_WORD) {
+		if ((abits_val_ & ~bbits_val_ & mask) != 0)
+			return BIT4_1;
+		if ((bbits_val_ & mask) != 0)
+			result = BIT4_X;
+	} else {
+	    unsigned words = (size_+BITS_PER_WORD-1) / BITS_PER_WORD;
+		unsigned int idx;
+	    for (idx = 0 ;  idx < words - 1;  idx += 1) {
+			if ((abits_ptr_[idx] & ~bbits_ptr_[idx]) != 0)
+				return BIT4_1;
+			if (bbits_ptr_[idx] != 0)
+				result = BIT4_X;
+		}
+			if ((abits_ptr_[idx] & ~bbits_ptr_[idx] & mask) != 0)
+				return BIT4_1;
+			if ((bbits_ptr_[idx] & mask) != 0)
+				result = BIT4_X;
+
+	}
+
+	return result;
+}
+
+#if 0
+vvp_bit4_t vvp_vector4_t::xor_reduce()
+{
+	unsigned long mask = 0;
+
+	if (size_ <= BITS_PER_WORD) {
+		if (bbits_val_ != 0)
+			return BIT4_X;
+		mask = abits_ptr_[i];
+	} else {
+	    unsigned words = (size_+BITS_PER_WORD-1) / BITS_PER_WORD;
+	    for (unsigned idx = 0; idx < words; idx += 1) {
+			if (bbits_ptr_[i] != 0)
+				return BIT4_X;
+			mask ^= abits_ptr_[i];
+		}
+	}
+
+	return result;
+}
+
+vvp_bit4_t vvp_vector4_t::and_reduce()
+{
+	if (size_ <= BITS_PER_WORD) {
+		if ((abits_val_ | bbits_val_) != ~0UL)
+			return BIT4_0;
+		if (bbits_val_ != 0)
+			return BIT4_X;
+	} else {
+	    unsigned words = (size_+BITS_PER_WORD-1) / BITS_PER_WORD;
+	    for (unsigned idx = 0 ;  idx < words ;  idx += 1) {
+			if ((abits_ptr_[i] | bbits_ptr_[i]) != ~0UL)
+				return BIT4_0;
+			if (bbits_ptr_[i] != 0)
+				result = BIT4_X;
+		}
+	}
+
+	return BIT4_1;
+}
+#endif
+
 void vvp_vector4_t::set_all_bits(vvp_bit4_t val)
 {
       /* note: this relies on the bit encoding for the vvp_bit4_t. */

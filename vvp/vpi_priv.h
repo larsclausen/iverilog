@@ -783,6 +783,8 @@ class __vpiQueueVar : public __vpiBaseVar {
       int get_type_code(void) const;
       int vpi_get(int code);
       void vpi_get_value(p_vpi_value val);
+	private:
+      unsigned get_size() const;
 };
 
 extern vpiHandle vpip_make_queue_var(const char*name, vvp_net_t*net);

@@ -126,6 +126,13 @@ struct vthread_s {
       {
 	    stack_vec4_.push_back(val);
       }
+
+	  template<class... Args>
+      inline void emplace_vec4(Args&&... args)
+      {
+	    stack_vec4_.emplace_back(args...);
+      }
+
       inline const vvp_vector4_t& peek_vec4(unsigned depth)
       {
 	    unsigned size = stack_vec4_.size();
@@ -1428,12 +1435,7 @@ bool of_BLEND(vthread_t thr, vvp_code_t)
       vvp_vector4_t valb = thr->pop_vec4();
       assert(vala.size() == valb.size());
 
-      for (unsigned idx = 0 ; idx < vala.size() ; idx += 1) {
-	    if (vala.value(idx) == valb.value(idx))
-		  continue;
-
-	    vala.set_bit(idx, BIT4_X);
-      }
+	  vala.blend(valb);
 
       thr->push_vec4(vala);
       return true;
@@ -1679,18 +1681,7 @@ bool of_CASSIGN_WR(vthread_t thr, vvp_code_t cp)
 bool of_CAST2(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-      unsigned wid = val.size();
-
-      for (unsigned idx = 0 ; idx < wid ; idx += 1) {
-	    switch (val.value(idx)) {
-		case BIT4_0:
-		case BIT4_1:
-		  break;
-		default:
-		  val.set_bit(idx, BIT4_0);
-		  break;
-	    }
-      }
+	  val.change_xz_to_0();
 
       return true;
 }
@@ -3445,12 +3436,14 @@ bool of_FORCE_WR(vthread_t thr, vvp_code_t cp)
 bool of_FORK(vthread_t thr, vvp_code_t cp)
 {
       vthread_t child = vthread_new(cp->cptr2, cp->scope);
+		printf("fork: %p %p\n", child->wt_context, child->rd_context);
 
       if (cp->scope->is_automatic()) {
               /* The context allocated for this child is the top entry
                  on the write context stack. */
             child->wt_context = thr->wt_context;
             child->rd_context = thr->wt_context;
+			printf("fork: %p %p\n", child->wt_context, child->rd_context);
       }
 
       child->parent = thr;
@@ -4036,8 +4029,8 @@ bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
       thr->push_vec4(vvp_vector4_t());
       vvp_vector4_t&sig_value = thr->peek_vec4();
 
+	  if (!cp->sig) {
       vvp_net_t*net = cp->net;
-
 	// For the %load to work, the functor must actually be a
 	// signal functor. Only signals save their vector value.
       vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (net->fil);
@@ -4050,10 +4043,12 @@ bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
 	    assert(sig);
 	    return true;
       }
+	  cp->sig = sig;
+	  }
 
 	// Extract the value from the signal and directly into the
 	// target stack position.
-      sig->vec4_value(sig_value);
+      cp->sig->vec4_value(sig_value);
 
       return true;
 }
@@ -4745,22 +4740,11 @@ bool of_NANDR(vthread_t thr, vvp_code_t)
  */
 bool of_ORR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
+      const vvp_vector4_t&val = thr->peek_vec4();
+      vvp_bit4_t lb = val.or_reduce();
+	  thr->pop_vec4(1);
 
-      vvp_bit4_t lb = BIT4_0;
-      for (unsigned idx = 0 ; idx < val.size() ; idx += 1) {
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_1) {
-		  lb = BIT4_1;
-		  break;
-	    }
-
-	    if (rb != BIT4_0)
-		  lb = BIT4_X;
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
+      thr->emplace_vec4(1, lb);
       return true;
 }
 
