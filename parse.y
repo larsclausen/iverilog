@@ -701,6 +701,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <statement_list> statement_or_null_list statement_or_null_list_opt
 
 %type <statement> analog_statement
+%type <statement> call_statement
 
 %type <join_keyword> join_keyword
 
@@ -6227,6 +6228,30 @@ spec_notifier
 	;
 
 
+call_statement
+  : SYSTEM_IDENTIFIER argument_list_parens_opt ';'
+      { PCallTask*tmp = new PCallTask(lex_strings.make($1), *$2);
+	FILE_NAME(tmp,@1);
+	delete[]$1;
+	delete $2;
+	$$ = tmp;
+      }
+
+  | hierarchy_identifier argument_list_parens_opt ';'
+      { PCallTask*tmp = pform_make_call_task(@1, *$1, *$2);
+	delete $1;
+	delete $2;
+	$$ = tmp;
+      }
+  | class_hierarchy_identifier argument_list_parens_opt ';'
+      { PCallTask*tmp = new PCallTask(*$1, *$2);
+	FILE_NAME(tmp, @1);
+	delete $1;
+	delete $2;
+	$$ = tmp;
+      }
+  ;
+
 statement_item /* This is roughly statement_item in the LRM */
 
   /* assign and deassign statements are procedural code to do
@@ -6576,21 +6601,6 @@ statement_item /* This is roughly statement_item in the LRM */
 		  FILE_NAME(tmp,@1);
 		  $$ = tmp;
 		}
-	| SYSTEM_IDENTIFIER argument_list_parens_opt ';'
-		{ PCallTask*tmp = new PCallTask(lex_strings.make($1), *$2);
-		  FILE_NAME(tmp,@1);
-		  delete[]$1;
-		  delete $2;
-		  $$ = tmp;
-		}
-
-  | hierarchy_identifier argument_list_parens_opt ';'
-      { PCallTask*tmp = pform_make_call_task(@1, *$1, *$2);
-	delete $1;
-	delete $2;
-	$$ = tmp;
-      }
-
   | hierarchy_identifier K_with '{' constraint_block_item_list_opt '}' ';'
       { /* ....randomize with { <constraints> } */
 	if ($1 && peek_tail_name(*$1) == "randomize") {
@@ -6606,13 +6616,12 @@ statement_item /* This is roughly statement_item in the LRM */
 	$$ = tmp;
       }
 
-  | class_hierarchy_identifier argument_list_parens_opt ';'
-      { PCallTask*tmp = new PCallTask(*$1, *$2);
-	FILE_NAME(tmp, @1);
-	delete $1;
-	delete $2;
-	$$ = tmp;
-      }
+  | K_void '\'' '(' call_statement ')' ';'
+    { $$ = $4;
+    }
+  | call_statement ';'
+    { $$ = $1;
+    }
 
     /* IEEE1800 A.1.8: class_constructor_declaration with a call to
        parent constructor. Note that the implicit_class_handle must

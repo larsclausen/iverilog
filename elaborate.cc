@@ -3560,6 +3560,14 @@ NetProc* PCallTask::elaborate_usr(Design*des, NetScope*scope) const
 	    return 0;
       }
 
+	if (void_cast_) {
+		  cerr << get_fileline() << ": error: illegal void cast for task " <<
+		  path_ << std::endl;
+		  des->errors += 1;
+		  return 0;
+		}
+
+
       assert(task);
       assert(task->type() == NetScope::TASK);
       NetTaskDef*def = task->task_def();
@@ -3954,8 +3962,10 @@ NetProc* PCallTask::elaborate_function_(Design*des, NetScope*scope) const
       PAssign*tmp = new PAssign(0, rval);
       tmp->set_file(get_file());
       tmp->set_lineno(get_lineno());
+	  if (!void_cast_) {
       cerr << get_fileline() << ": warning: User function '"
            << peek_tail_name(path_) << "' is being called as a task." << endl;
+	  }
 	// Elaborate the assignment to a dummy variable.
       return tmp->elaborate(des, scope);
 }
@@ -3994,10 +4004,17 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 	      // continue with the elaboration as if it were OK so
 	      // that we can catch more errors.
 	    test_task_calls_ok_(des, scope);
+	if (void_cast_) {
+		  cerr << get_fileline() << ": error: illegal void cast for task " <<
+		  std::endl;
+		  des->errors += 1;
+		  return 0;
+		}
+
 
       } else if (task->type() == NetScope::FUNC) {
 	    NetFuncDef*tmp = task->func_def();
-	    if (!tmp->is_void()) {
+	    if (!tmp->is_void() && !void_cast_) {
 		  cerr << get_fileline() << ": error: "
 		       << "Calling a non-void function as a task." << endl;
 		  des->errors += 1;
