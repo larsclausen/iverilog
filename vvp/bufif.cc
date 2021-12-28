@@ -37,10 +37,16 @@ void vvp_fun_bufif::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 {
       switch (ptr.port()) {
 	  case 0:
-	    bit_ = inv_? ~bit : bit;
+		if (inv_)
+			bit_.copy_inverted_from_(bit);
+		else
+			bit_.copy_from_(bit);
 	    break;
 	  case 1:
-	    en_ = pol_? ~bit : bit;
+		if (pol_)
+			en_.copy_inverted_from_(bit);
+		else
+			en_.copy_from_(bit);
 	    break;
 	  default:
 	    return;

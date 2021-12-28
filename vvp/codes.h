@@ -208,6 +208,7 @@ extern bool of_PROP_V(vthread_t thr, vvp_code_t code);
 extern bool of_PUSHI_STR(vthread_t thr, vvp_code_t code);
 extern bool of_PUSHI_REAL(vthread_t thr, vvp_code_t code);
 extern bool of_PUSHI_VEC4(vthread_t thr, vvp_code_t code);
+extern bool of_PUSHI_ZERO(vthread_t thr, vvp_code_t code);
 extern bool of_PUSHV_STR(vthread_t thr, vvp_code_t code);
 extern bool of_PUTC_STR_VEC4(vthread_t thr, vvp_code_t code);
 extern bool of_RELEASE_NET(vthread_t thr, vvp_code_t code);
@@ -282,6 +283,7 @@ extern bool of_REAP_UFUNC(vthread_t thr, vvp_code_t code);
 extern bool of_CHUNK_LINK(vthread_t thr, vvp_code_t code);
 
 struct vvp_signal_value;
+struct waitable_hooks_s;
 
 /*
  * This is the format of a machine code instruction.
@@ -301,11 +303,16 @@ struct vvp_code_s {
 
       union {
 	    uint32_t    bit_idx[2];
+		vvp_vector4_t *imm;
 	    vvp_net_t   *net2;
 	    vvp_code_t   cptr2;
 	    class ufunc_core*ufunc_core_ptr;
-		vvp_signal_value *sig;
       };
+
+	  union {
+		vvp_signal_value *sig;
+		waitable_hooks_s*ep;
+	  };
 };
 
 /*

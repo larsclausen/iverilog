@@ -204,7 +204,8 @@ void vvp_fun_signal4_sa::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	      // than this signal. Note we don't yet support the case of
 	      // the linked source being narrower than this signal, or
 	      // the case of an expression being assigned.
-	    bits4_ = coerce_to_width(bit, bits4_.size());
+		bits4_ = bit;
+	    bits4_ = coerce_to_width(std::move(bits4_), bits4_.size());
 	    assign_mask_ = vvp_vector2_t(vvp_vector2_t::FILL1, bits4_.size());
 	    ptr.ptr()->send_vec4(bits4_, 0);
 	    break;
@@ -353,7 +354,7 @@ void vvp_fun_signal4_aa::reset_instance(vvp_context_t context)
       vvp_vector4_t*bits = static_cast<vvp_vector4_t*>
             (vvp_get_context_item(context, context_idx_));
 
-      bits->set_to(init_);
+      bits->set_all_bits(init_);
 }
 
 #ifdef CHECK_WITH_VALGRIND
@@ -837,7 +838,7 @@ void vvp_fun_force::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
       vvp_net_t*dst = net->port[3].ptr();
       assert(dst->fil);
 
-      dst->force_vec4(coerce_to_width(bit, dst->fil->filter_size()), vvp_vector2_t(vvp_vector2_t::FILL1, dst->fil->filter_size()));
+//      dst->force_vec4(coerce_to_width(bit, dst->fil->filter_size()), vvp_vector2_t(vvp_vector2_t::FILL1, dst->fil->filter_size()));
 }
 
 void vvp_fun_force::recv_real(vvp_net_ptr_t ptr, double bit, vvp_context_t)

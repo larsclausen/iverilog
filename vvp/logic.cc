@@ -129,9 +129,8 @@ void vvp_fun_equiv::run_run()
       assert(input_[1].size() == 1);
 
       vvp_bit4_t bit = ~(input_[0].value(0) ^ input_[1].value(0));
-      vvp_vector4_t result (1, bit);
 
-      ptr->send_vec4(result, 0);
+      ptr->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_fun_impl::vvp_fun_impl()
@@ -153,9 +152,8 @@ void vvp_fun_impl::run_run()
       assert(input_[1].size() == 1);
 
       vvp_bit4_t bit = ~input_[0].value(0) | input_[1].value(0);
-      vvp_vector4_t result (1, bit);
 
-      ptr->send_vec4(result, 0);
+      ptr->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_fun_buf::vvp_fun_buf(unsigned wid)

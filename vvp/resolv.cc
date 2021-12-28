@@ -238,7 +238,8 @@ void resolv_wired_logic::recv_vec4_(unsigned port, const vvp_vector4_t&bit)
             unsigned op = next_base + (port / 4);
             unsigned ll = min(ip + 4, next_base);
 
-            vvp_vector4_t out = val_[ip];
+            vvp_vector4_t out;
+			out.copy_from_(val_[ip]);
             for (ip = ip + 1; ip < ll; ip += 1) {
                   if (val_[ip].size() == 0)
                         continue;

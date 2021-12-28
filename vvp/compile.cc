@@ -63,6 +63,9 @@ enum operand_e {
 	/* The operand is a thread bit index or short integer */
       OA_BIT1,
       OA_BIT2,
+	/* */
+	 OA_IMM1,
+	 OA_IMM2,
 	/* The operand is a pointer to code space */
       OA_CODE_PTR,
       OA_CODE_PTR2,
@@ -88,7 +91,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%abs/wr", of_ABS_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%add",    of_ADD,    0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%add/wr", of_ADD_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
-      { "%addi",   of_ADDI,   3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
+      { "%addi",   of_ADDI,   3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
       { "%alloc",  of_ALLOC,  1,  {OA_VPI_PTR,  OA_NONE,     OA_NONE} },
       { "%and",    of_AND,    0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%and/r",  of_ANDR,   0,  {OA_NONE,     OA_NONE,     OA_NONE} },
@@ -133,14 +136,14 @@ static const struct opcode_table_s opcode_table[] = {
       { "%cmp/wu",  of_CMPWU,  2,  {OA_BIT1,     OA_BIT2,     OA_NONE} },
       { "%cmp/x",   of_CMPX,   0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%cmp/z",   of_CMPZ,   0,  {OA_NONE,     OA_NONE,     OA_NONE} },
-      { "%cmpi/e",  of_CMPIE,  3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
-      { "%cmpi/ne", of_CMPINE, 3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
-      { "%cmpi/s",  of_CMPIS,  3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
-      { "%cmpi/u",  of_CMPIU,  3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
+      { "%cmpi/e",  of_CMPIE,  3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
+      { "%cmpi/ne", of_CMPINE, 3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
+      { "%cmpi/s",  of_CMPIS,  3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
+      { "%cmpi/u",  of_CMPIU,  3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
       { "%concat/str",  of_CONCAT_STR,  0,{OA_NONE,  OA_NONE,  OA_NONE} },
       { "%concat/vec4", of_CONCAT_VEC4, 0,{OA_NONE,  OA_NONE,  OA_NONE} },
       { "%concati/str", of_CONCATI_STR, 1,{OA_STRING,OA_NONE,  OA_NONE} },
-      { "%concati/vec4",of_CONCATI_VEC4,3,{OA_BIT1,  OA_BIT2,  OA_NUMBER} },
+      { "%concati/vec4",of_CONCATI_VEC4,3,{OA_IMM1,  OA_IMM2,  OA_NUMBER} },
       { "%cvt/rv",   of_CVT_RV,  0, {OA_NONE,   OA_NONE,     OA_NONE} },
       { "%cvt/rv/s", of_CVT_RV_S,0, {OA_NONE,   OA_NONE,     OA_NONE} },
       { "%cvt/sr", of_CVT_SR, 1,  {OA_BIT1,     OA_NONE,     OA_NONE} },
@@ -219,7 +222,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%mov/wu", of_MOV_WU, 2,  {OA_BIT1,     OA_BIT2,     OA_NONE} },
       { "%mul",    of_MUL,    0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%mul/wr", of_MUL_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
-      { "%muli",   of_MULI,   3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
+      { "%muli",   of_MULI,   3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
       { "%nand",   of_NAND,   0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%nand/r", of_NANDR,  0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%new/cobj",  of_NEW_COBJ,  1, {OA_VPI_PTR,OA_NONE,  OA_NONE} },
@@ -249,7 +252,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%prop/v",  of_PROP_V,  1,  {OA_NUMBER,   OA_NONE,     OA_NONE} },
       { "%pushi/real",of_PUSHI_REAL,2,{OA_BIT1,   OA_BIT2,   OA_NONE} },
       { "%pushi/str", of_PUSHI_STR, 1,{OA_STRING, OA_NONE,   OA_NONE} },
-      { "%pushi/vec4",of_PUSHI_VEC4,3,{OA_BIT1,   OA_BIT2,   OA_NUMBER} },
+      { "%pushi/vec4",of_PUSHI_VEC4,3,{OA_IMM1,   OA_IMM2,   OA_NUMBER} },
       { "%pushv/str", of_PUSHV_STR, 0,{OA_NONE,   OA_NONE,   OA_NONE} },
       { "%putc/str/vec4",of_PUTC_STR_VEC4,2,{OA_FUNC_PTR,OA_BIT1,OA_NONE} },
       { "%qinsert/real",of_QINSERT_REAL,2,{OA_FUNC_PTR,OA_BIT1,OA_NONE} },
@@ -308,7 +311,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%store/vec4a",   of_STORE_VEC4A,   3, {OA_ARR_PTR, OA_BIT1, OA_BIT2} },
       { "%sub",    of_SUB,    0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%sub/wr", of_SUB_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
-      { "%subi",   of_SUBI,   3,  {OA_BIT1,     OA_BIT2,     OA_NUMBER} },
+      { "%subi",   of_SUBI,   3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
       { "%substr",     of_SUBSTR,     2,{OA_BIT1,    OA_BIT2, OA_NONE} },
       { "%substr/vec4",of_SUBSTR_VEC4,2,{OA_BIT1,    OA_BIT2, OA_NONE} },
       { "%test_nul",     of_TEST_NUL,     1,{OA_FUNC_PTR,OA_NONE,    OA_NONE} },
@@ -957,8 +960,6 @@ void input_connect(vvp_net_t*fdx, unsigned port, char*label)
 	/* Is this a vvp_vector4_t constant value? */
       if (c4string_test(label)) {
 
-	    vvp_vector4_t tmp = c4string_to_vector4(label);
-
 	      // Inputs that are constants are schedule to execute as
 	      // soon at the simulation starts. In Verilog, constants
 	      // start propagating when the simulation starts, just
@@ -966,7 +967,7 @@ void input_connect(vvp_net_t*fdx, unsigned port, char*label)
 	      // scheduler distribute the constant value has the
 	      // additional advantage that the constant is not
 	      // propagated until the network is fully linked.
-	    schedule_set_vector(ifdx, tmp);
+	    schedule_set_vector(ifdx, c4string_to_vector4(label));
 
 	    free(label);
 	    return;
@@ -1745,6 +1746,20 @@ char **compile_udp_table(char **table, char *row)
   return table;
 }
 
+static std::vector<vvp_vector4_t> imm;
+
+static vvp_vector4_t *get_imm(unsigned int size, unsigned long a, unsigned long b)
+{
+//	vvp_vector4_t val(size, a, b);
+#if 0
+	for (int i = 0; i < imm.size(); i++) {
+		if (imm[i] == val)
+			return &imm[i];
+	}
+	#endif
+	imm.emplace_back(size, a, b);
+	return &imm.back();
+}
 
 /*
  * The parser uses this function to compile and link an executable
@@ -1786,6 +1801,8 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 	/* Pull the operands that the instruction expects from the
 	   list that the parser supplied. */
 
+	   bool imm = false;
+
       for (unsigned idx = 0 ;  idx < op->argc ;  idx += 1) {
 
 	    switch (op->argt[idx]) {
@@ -1801,6 +1818,8 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		  compile_array_lookup(code, opa->argv[idx].symb.text);
 		  break;
 
+		case OA_IMM1:
+			imm = true;
 		case OA_BIT1:
 		  if (opa->argv[idx].ltype != L_NUMB) {
 			yyerror("operand format");
@@ -1809,6 +1828,7 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		  code->bit_idx[0] = opa->argv[idx].numb;
 		  break;
 
+		case OA_IMM2:
 		case OA_BIT2:
 		  if (opa->argv[idx].ltype != L_NUMB) {
 			yyerror("operand format");
@@ -1839,6 +1859,7 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		  }
 
 		  functor_ref_lookup(&code->net, opa->argv[idx].symb.text);
+		  printf("code->net: %s %p %s\n", mnem, code->net, opa->argv[idx].symb.text);
 		  break;
 
 		case OA_FUNC_PTR2:
@@ -1860,6 +1881,15 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		  }
 
 		  code->number = opa->argv[idx].numb;
+		  if (imm) {
+		  if (code->opcode == of_PUSHI_VEC4) {
+		    if (code->bit_idx[0] == 0 && code->bit_idx[1] == 0) {
+				code->opcode = of_PUSHI_ZERO;
+				break;
+			}
+		  }
+		//  code->imm = get_imm(code->number,code->bit_idx[0], code->bit_idx[1]);
+		  }
 		  break;
 
 		case OA_VPI_PTR:
@@ -1884,6 +1914,7 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		  break;
 	    }
       }
+
 
       free(opa);
 

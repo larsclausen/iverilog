@@ -172,18 +172,19 @@ void del_thr_event_s::single_step_display(void)
 struct assign_vector4_event_s  : public event_s {
 	/* The default constructor. */
       explicit assign_vector4_event_s(const vvp_vector4_t&that) : val(that) {
-	    base = 0;
-	    vwid = 0;
       }
+      explicit assign_vector4_event_s(vvp_vector4_t&&that) : val(std::move(that)) {
+      }
+
 
 	/* Where to do the assign. */
       vvp_net_ptr_t ptr;
 	/* Value to assign. */
       vvp_vector4_t val;
 	/* Offset of the part into the destination. */
-      unsigned base;
+      unsigned base = 0;
 	/* Width of the destination vector. */
-      unsigned vwid;
+      unsigned vwid = 0;
       void run_run(void);
       void single_step_display(void);
 
@@ -331,7 +332,7 @@ unsigned long count_assign_aword_pool(void) { return array_w_heap.pool; }
 
 struct force_vector4_event_s  : public event_s {
 	/* The default constructor. */
-      explicit force_vector4_event_s(const vvp_vector4_t&that): val(that) {
+      explicit force_vector4_event_s(vvp_vector4_t&&that): val(std::move(that)) {
 	    net = NULL;
 	    base = 0;
 	    vwid = 0;
@@ -407,7 +408,8 @@ unsigned long count_force4_pool(void) { return force4_heap.pool; }
  */
 struct propagate_vector4_event_s : public event_s {
 	/* The default constructor. */
-      explicit propagate_vector4_event_s(const vvp_vector4_t&that) : val(that) {
+      explicit propagate_vector4_event_s(const vvp_vector4_t&that) :
+	  val(that) {
 	    net = NULL;
       }
 	/* A constructor that makes the val directly. */
@@ -826,7 +828,7 @@ void schedule_vthread(vthread_t thr, vvp_time64_t delay, bool push_flag)
 void schedule_t0_trigger(vvp_net_ptr_t ptr)
 {
       vvp_vector4_t bit (1, BIT4_X);
-      struct assign_vector4_event_s*cur = new struct assign_vector4_event_s(bit);
+      struct assign_vector4_event_s*cur = new struct assign_vector4_event_s(std::move(bit));
       cur->ptr = ptr;
       schedule_event_(cur, 0, SEQ_INACTIVE);
 }
@@ -862,10 +864,10 @@ void schedule_final_vthread(vthread_t thr)
 
 void schedule_assign_vector(vvp_net_ptr_t ptr,
 			    unsigned base, unsigned vwid,
-			    const vvp_vector4_t&bit,
+			    vvp_vector4_t&&bit,
 			    vvp_time64_t delay)
 {
-      struct assign_vector4_event_s*cur = new struct assign_vector4_event_s(bit);
+      struct assign_vector4_event_s*cur = new struct assign_vector4_event_s(std::move(bit));
       cur->ptr = ptr;
       cur->base = base;
       cur->vwid = vwid;
@@ -874,10 +876,11 @@ void schedule_assign_vector(vvp_net_ptr_t ptr,
 
 void schedule_force_vector(vvp_net_t*net,
 			    unsigned base, unsigned vwid,
-			    const vvp_vector4_t&bit,
+			    vvp_vector4_t&&bit,
 			    vvp_time64_t delay)
 {
-      struct force_vector4_event_s*cur = new struct force_vector4_event_s(bit);
+      struct force_vector4_event_s*cur = new struct
+	  force_vector4_event_s(std::move(bit));
       cur->net = net;
       cur->base = base;
       cur->vwid = vwid;
@@ -900,9 +903,8 @@ void schedule_propagate_vector(vvp_net_t*net,
 void schedule_propagate_event(vvp_net_t*net,
                               vvp_time64_t delay)
 {
-      vvp_vector4_t tmp (1, BIT4_X);
       struct propagate_vector4_event_s*cur
-	    = new struct propagate_vector4_event_s(tmp);
+	    = new struct propagate_vector4_event_s(single_bit_vector(BIT4_X));
       cur->net = net;
       schedule_event_(cur, delay, SEQ_NBASSIGN);
 }
@@ -910,7 +912,7 @@ void schedule_propagate_event(vvp_net_t*net,
 void schedule_assign_array_word(vvp_array_t mem,
 				unsigned word_addr,
 				unsigned off,
-				const vvp_vector4_t&val,
+				vvp_vector4_t&&val,
 				vvp_time64_t delay)
 {
       struct assign_array_word_s*cur = new struct assign_array_word_s;
@@ -933,9 +935,10 @@ void schedule_assign_array_word(vvp_array_t mem,
       schedule_event_(cur, delay, SEQ_NBASSIGN);
 }
 
-void schedule_set_vector(vvp_net_ptr_t ptr, const vvp_vector4_t&bit)
+void schedule_set_vector(vvp_net_ptr_t ptr, vvp_vector4_t&&bit)
 {
-      struct assign_vector4_event_s*cur = new struct assign_vector4_event_s(bit);
+      struct assign_vector4_event_s*cur = new struct
+	  assign_vector4_event_s(std::move(bit));
       cur->ptr = ptr;
       cur->base = 0;
       cur->vwid = 0;
@@ -960,7 +963,8 @@ void schedule_set_vector(vvp_net_ptr_t ptr, double bit)
 
 void schedule_init_vector(vvp_net_ptr_t ptr, const vvp_vector4_t&bit)
 {
-      struct assign_vector4_event_s*cur = new struct assign_vector4_event_s(bit);
+      struct assign_vector4_event_s*cur = new struct
+	  assign_vector4_event_s(bit);
       cur->ptr = ptr;
       cur->base = 0;
       cur->vwid = 0;
@@ -983,9 +987,10 @@ void schedule_init_vector(vvp_net_ptr_t ptr, double bit)
       schedule_init_event(cur);
 }
 
-void schedule_init_propagate(vvp_net_t*net, vvp_vector4_t bit)
+void schedule_init_propagate(vvp_net_t*net, const vvp_vector4_t&bit)
 {
-      struct propagate_vector4_event_s*cur = new struct propagate_vector4_event_s(bit);
+      struct propagate_vector4_event_s*cur = new struct
+	  propagate_vector4_event_s(bit);
       cur->net = net;
       schedule_init_event(cur);
 }

@@ -46,6 +46,9 @@
 
 using namespace std;
 
+#undef assert
+#define assert(x)
+
 /* This is the size of an unsigned long in bits. This is just a
    convenience macro. */
 # define CPU_WORD_BITS (8*sizeof(unsigned long))
@@ -114,27 +117,63 @@ struct vthread_s {
 
     private:
       vector<vvp_vector4_t>stack_vec4_;
+	   vvp_wire_vec4 *sig_;
     public:
       inline vvp_vector4_t pop_vec4(void)
       {
+		vvp_vector4_t val;
+	    if (sig_ && 0) {
+			val = sig_->vec4_value2();
+			sig_ = 0;
+		} else {
 	    assert(! stack_vec4_.empty());
-	    vvp_vector4_t val = stack_vec4_.back();
+	    val = std::move(stack_vec4_.back());
 	    stack_vec4_.pop_back();
+		}
 	    return val;
       }
+	  inline void flush_sig() {
+		return;
+		if (sig_) {
+			stack_vec4_.emplace_back(sig_->vec4_value2());
+			sig_ = 0;
+		}
+	  }
+
       inline void push_vec4(const vvp_vector4_t&val)
       {
+	    flush_sig();
 	    stack_vec4_.push_back(val);
       }
+	  inline void push_sig(vvp_wire_vec4 *sig) {
+			stack_vec4_.emplace_back(sig->vec4_value2());
+			return;
+		if (sig_)
+        emplace_vec4(sig_->vec4_value2());
+		sig_ = sig;
+	  }
+
 
 	  template<class... Args>
       inline void emplace_vec4(Args&&... args)
       {
-	    stack_vec4_.emplace_back(args...);
+	    flush_sig();
+	    stack_vec4_.emplace_back(std::forward<Args>(args)...);
+      }
+
+	  template<class... Args>
+      inline vvp_vector4_t&alloc_vec4(Args&&... args)
+      {
+	    flush_sig();
+		stack_vec4_.emplace_back(args...);
+		return stack_vec4_.back();
       }
 
       inline const vvp_vector4_t& peek_vec4(unsigned depth)
       {
+
+	    flush_sig();
+
 	    unsigned size = stack_vec4_.size();
 	    assert(depth < size);
 	    unsigned use_index = size-1-depth;
@@ -142,18 +181,23 @@ struct vthread_s {
       }
       inline vvp_vector4_t& peek_vec4(void)
       {
-	    unsigned use_index = stack_vec4_.size();
-	    assert(use_index >= 1);
-	    return stack_vec4_[use_index-1];
+	    flush_sig();
+	    assert(!stack_vec4_.empty());
+	    return stack_vec4_.back();
       }
       inline void poke_vec4(unsigned depth, const vvp_vector4_t&val)
       {
+	    flush_sig();
 	    assert(depth < stack_vec4_.size());
 	    unsigned use_index = stack_vec4_.size()-1-depth;
 	    stack_vec4_[use_index] = val;
       }
       inline void pop_vec4(unsigned cnt)
       {
+	    if (sig_&& cnt && 0) {
+			sig_ = 0;
+			cnt--;
+		}
 	    while (cnt > 0) {
 		  stack_vec4_.pop_back();
 		  cnt -= 1;
@@ -582,10 +626,10 @@ inline static void dq_default(vvp_vector4_t&value, unsigned wid)
 }
 
 
-template <class T> T coerce_to_width(const T&that, unsigned width)
+template <class T> T coerce_to_width(T&&that, unsigned width)
 {
       if (that.size() == width)
-	    return that;
+	    return std::move(that);
 
       assert(that.size() > width);
       T res (width);
@@ -596,7 +640,7 @@ template <class T> T coerce_to_width(const T&that, unsigned width)
 }
 
 /* Explicitly define the vvp_vector4_t version of coerce_to_width(). */
-template vvp_vector4_t coerce_to_width(const vvp_vector4_t&that,
+template vvp_vector4_t coerce_to_width(vvp_vector4_t&&that,
                                        unsigned width);
 
 
@@ -842,6 +886,13 @@ void vthread_delay_delete()
 	    running_thread->delay_delete = 1;
 }
 
+static inline bool vthread_run_next(vthread_t thr)
+{
+		  vvp_code_t cp = thr->pc;
+		  thr->pc += 1;
+		  return cp->opcode(thr, cp);
+}
+
 /*
  * This function runs each thread by fetching an instruction,
  * incrementing the PC, and executing the instruction. The thread may
@@ -859,13 +910,10 @@ void vthread_run(vthread_t thr)
             running_thread = thr;
 
 	    for (;;) {
-		  vvp_code_t cp = thr->pc;
-		  thr->pc += 1;
-
 		    /* Run the opcode implementation. If the execution of
 		       the opcode returns false, then the thread is meant to
 		       be paused, so break out of the loop. */
-		  bool rc = (cp->opcode)(thr, cp);
+		  bool rc = vthread_run_next(thr);
 		  if (rc == false)
 			break;
 	    }
@@ -883,7 +931,7 @@ bool of_CHUNK_LINK(vthread_t thr, vvp_code_t code)
 {
       assert(code->cptr);
       thr->pc = code->cptr;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -935,7 +983,7 @@ vvp_context_item_t vthread_get_rd_context_item(unsigned context_idx)
 bool of_ABS_WR(vthread_t thr, vvp_code_t)
 {
       thr->push_real( fabs(thr->pop_real()) );
-      return true;
+	  return vthread_run_next(thr);
 }
 
 bool of_ALLOC(vthread_t thr, vvp_code_t cp)
@@ -947,16 +995,18 @@ bool of_ALLOC(vthread_t thr, vvp_code_t cp)
       vvp_set_stacked_context(child_context, thr->wt_context);
       thr->wt_context = child_context;
 
-      return true;
+	  return vthread_run_next(thr);
 }
 
 bool of_AND(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t valb = thr->pop_vec4();
-      vvp_vector4_t&vala = thr->peek_vec4();
-      assert(vala.size() == valb.size());
-      vala &= valb;
-      return true;
+	  {
+		  vvp_vector4_t valb = thr->pop_vec4();
+		  vvp_vector4_t&vala = thr->peek_vec4();
+		  assert(vala.size() == valb.size());
+		  vala &= valb;
+	  }
+	  return vthread_run_next(thr);
 }
 
 /*
@@ -964,49 +1014,13 @@ bool of_AND(vthread_t thr, vvp_code_t)
  * size, and initialized with BIT4_0 bits. Certain optimizations rely
  * on that.
  */
-static void get_immediate_rval(vvp_code_t cp, vvp_vector4_t&val)
+static vvp_vector4_t get_immediate_rval(vvp_code_t cp)
 {
-      uint32_t vala = cp->bit_idx[0];
-      uint32_t valb = cp->bit_idx[1];
+      unsigned long vala = cp->bit_idx[0];
+      unsigned long valb = cp->bit_idx[1];
       unsigned wid  = cp->number;
 
-      if (valb == 0) {
-	      // Special case: if the value is zero, we are done
-	      // before we start.
-	    if (vala == 0) return;
-
-	      // Special case: The value has no X/Z bits, so we can
-	      // use the setarray method to write the value all at once.
-	    unsigned use_wid = 8*sizeof(unsigned long);
-	    if (wid < use_wid)
-		  use_wid = wid;
-	    unsigned long tmp[1];
-	    tmp[0] = vala;
-	    val.setarray(0, use_wid, tmp);
-	    return;
-      }
-
-	// The immediate value can be values bigger then 32 bits, but
-	// only if the high bits are zero. So at most we need to run
-	// through the loop below 32 times. Maybe less, if the target
-	// width is less. We don't have to do anything special on that
-	// because vala/valb bits will shift away so (vala|valb) will
-	// turn to zero at or before 32 shifts.
-
-      for (unsigned idx = 0 ; idx < wid && (vala|valb) ; idx += 1) {
-	    uint32_t ba = 0;
-	      // Convert the vala/valb bits to a ba number that
-	      // matches the encoding of the vvp_bit4_t enumeration.
-	    ba = (valb & 1) << 1;
-	    ba |= vala & 1;
-
-	      // Note that the val is already pre-filled with BIT4_0
-	      // bits, os we only need to set non-zero bit values.
-	    if (ba) val.set_bit(idx, (vvp_bit4_t)ba);
-
-	    vala >>= 1;
-	    valb >>= 1;
-      }
+	  return vvp_vector4_t(wid, vala, valb);
 }
 
 /*
@@ -1029,7 +1043,7 @@ bool of_ADD(vthread_t thr, vvp_code_t)
 
       l.add(r);
 
-      return true;
+	  return vthread_run_next(thr);
 }
 
 /*
@@ -1044,15 +1058,9 @@ bool of_ADDI(vthread_t thr, vvp_code_t cp)
 
       vvp_vector4_t&l = thr->peek_vec4();
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t r (wid, BIT4_0);
-      get_immediate_rval (cp, r);
+      l.add(get_immediate_rval (cp));
 
-      l.add(r);
-
-      return true;
+	  return vthread_run_next(thr);
 }
 
 /*
@@ -1063,7 +1071,7 @@ bool of_ADD_WR(vthread_t thr, vvp_code_t)
       double r = thr->pop_real();
       double l = thr->pop_real();
       thr->push_real(l + r);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /* %assign/ar <array>, <delay>
@@ -1082,7 +1090,7 @@ bool of_ASSIGN_AR(vthread_t thr, vvp_code_t cp)
 	    schedule_assign_array_word(cp->array, adr, value, delay);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /* %assign/ar/d <array>, <delay_idx>
@@ -1100,7 +1108,7 @@ bool of_ASSIGN_ARD(vthread_t thr, vvp_code_t cp)
 	    schedule_assign_array_word(cp->array, adr, value, delay);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /* %assign/ar/e <array>
@@ -1124,7 +1132,7 @@ bool of_ASSIGN_ARE(vthread_t thr, vvp_code_t cp)
 	    }
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1134,12 +1142,23 @@ bool of_ASSIGN_VEC4(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_ptr_t ptr (cp->net, 0);
       unsigned delay = cp->bit_idx[0];
-      const vvp_vector4_t&val = thr->peek_vec4();
 
-      schedule_assign_vector(ptr, 0, 0, val, delay);
-      thr->pop_vec4(1);
-      return true;
+      schedule_assign_vector(ptr, 0, 0, thr->pop_vec4(), delay);
+      return vthread_run_next(thr);
 }
+
+/*
+ * %assign/vec4 <var>, <delay>
+ */
+bool of_ASSIGNI_VEC4(vthread_t thr, vvp_code_t cp)
+{
+      vvp_net_ptr_t ptr (cp->net, 0);
+      unsigned delay = cp->bit_idx[0];
+
+      schedule_assign_vector(ptr, 0, 0, thr->pop_vec4(), delay);
+      return vthread_run_next(thr);
+}
+
 
 /*
  * %assign/vec4/a/d <arr>, <offx>, <delx>
@@ -1161,13 +1180,13 @@ bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
       if (off >= (long)array_wid)
-	    return true;
+      return vthread_run_next(thr);
       if (off < 0) {
 	    if ((unsigned)-off >= array_wid)
-		  return true;
+      return vthread_run_next(thr);
 
 	    int use_off = -off;
 	    assert(wid > (unsigned)use_off);
@@ -1180,9 +1199,9 @@ bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
 	    val = val.subvalue(0, array_wid-off);
       }
 
-      schedule_assign_array_word(cp->array, adr, off, val, del);
+      schedule_assign_array_word(cp->array, adr, off, std::move(val), del);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1203,13 +1222,13 @@ bool of_ASSIGN_VEC4_A_E(vthread_t thr, vvp_code_t cp)
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
       if (off >= (long)array_wid)
-	    return true;
+      return vthread_run_next(thr);
       if (off < 0) {
 	    if ((unsigned)-off >= array_wid)
-		  return true;
+      return vthread_run_next(thr);
 
 	    int use_off = -off;
 	    assert(wid > (unsigned)use_off);
@@ -1223,12 +1242,12 @@ bool of_ASSIGN_VEC4_A_E(vthread_t thr, vvp_code_t cp)
       }
 
       if (thr->ecount == 0) {
-	    schedule_assign_array_word(cp->array, adr, off, val, 0);
+	    schedule_assign_array_word(cp->array, adr, off, std::move(val), 0);
       } else {
 	    schedule_evctl(cp->array, adr, val, off, thr->event, thr->ecount);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1248,16 +1267,19 @@ bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      vvp_signal_value*sig;
+	  if (!cp->sig)
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  sig = cp->sig;
       assert(sig);
 
       if (off >= (long)sig->value_size())
-	    return true;
+      return vthread_run_next(thr);
       if (off < 0) {
 	    if ((unsigned)-off >= wid)
-		  return true;
+      return vthread_run_next(thr);
 
 	    int use_off = -off;
 	    assert(wid > (unsigned)use_off);
@@ -1270,8 +1292,8 @@ bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
 	    val = val.subvalue(0, sig->value_size()-off);
       }
 
-      schedule_assign_vector(ptr, off, sig->value_size(), val, del);
-      return true;
+      schedule_assign_vector(ptr, off, sig->value_size(), std::move(val), del);
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1289,16 +1311,19 @@ bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      vvp_signal_value*sig;
+	  if (!cp->sig)
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  sig = cp->sig;
       assert(sig);
 
       if (off >= (long)sig->value_size())
-	    return true;
+      return vthread_run_next(thr);
       if (off < 0) {
 	    if ((unsigned)-off >= wid)
-		  return true;
+      return vthread_run_next(thr);
 
 	    int use_off = -off;
 	    assert((int)wid > use_off);
@@ -1312,12 +1337,12 @@ bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
       }
 
       if (thr->ecount == 0) {
-	    schedule_assign_vector(ptr, off, sig->value_size(), val, 0);
+	    schedule_assign_vector(ptr, off, sig->value_size(), std::move(val), 0);
       } else {
 	    schedule_evctl(ptr, val, off, sig->value_size(), thr->event, thr->ecount);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1329,14 +1354,15 @@ bool of_ASSIGN_VEC4D(vthread_t thr, vvp_code_t cp)
       unsigned del_index = cp->bit_idx[0];
       vvp_time64_t del = thr->words[del_index].w_int;
 
-      vvp_vector4_t value = thr->pop_vec4();
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      vvp_signal_value*sig;
+	  if (!cp->sig)
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  sig = cp->sig;
       assert(sig);
 
-      schedule_assign_vector(ptr, 0, sig->value_size(), value, del);
+      schedule_assign_vector(ptr, 0, sig->value_size(), thr->pop_vec4(), del);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1347,18 +1373,21 @@ bool of_ASSIGN_VEC4E(vthread_t thr, vvp_code_t cp)
       vvp_net_ptr_t ptr (cp->net, 0);
       vvp_vector4_t value = thr->pop_vec4();
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      vvp_signal_value*sig;
+	  if (!cp->sig)
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  sig = cp->sig;
       assert(sig);
 
       if (thr->ecount == 0) {
-	    schedule_assign_vector(ptr, 0, sig->value_size(), value, 0);
+	    schedule_assign_vector(ptr, 0, sig->value_size(), std::move(value), 0);
       } else {
 	    schedule_evctl(ptr, value, 0, sig->value_size(), thr->event, thr->ecount);
       }
 
       thr->event = 0;
       thr->ecount = 0;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1384,7 +1413,7 @@ bool of_ASSIGN_WR(vthread_t thr, vvp_code_t cp)
       val.value.real = value;
       vpi_put_value(tmp, &val, &del, vpiTransportDelay);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_ASSIGN_WRD(vthread_t thr, vvp_code_t cp)
@@ -1403,7 +1432,7 @@ bool of_ASSIGN_WRD(vthread_t thr, vvp_code_t cp)
       val.value.real = value;
       vpi_put_value(tmp, &val, &del, vpiTransportDelay);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_ASSIGN_WRE(vthread_t thr, vvp_code_t cp)
@@ -1426,19 +1455,18 @@ bool of_ASSIGN_WRE(vthread_t thr, vvp_code_t cp)
       thr->event = 0;
       thr->ecount = 0;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_BLEND(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t vala = thr->pop_vec4();
-      vvp_vector4_t valb = thr->pop_vec4();
+      vvp_vector4_t&valb = thr->peek_vec4();
       assert(vala.size() == valb.size());
 
-	  vala.blend(valb);
+	  valb.blend(vala);
 
-      thr->push_vec4(vala);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_BLEND_WR(vthread_t thr, vvp_code_t)
@@ -1446,12 +1474,12 @@ bool of_BLEND_WR(vthread_t thr, vvp_code_t)
       double f = thr->pop_real();
       double t = thr->pop_real();
       thr->push_real((t == f) ? t : 0.0);
-      return true;
+      return vthread_run_next(thr);
 }
 
-bool of_BREAKPOINT(vthread_t, vvp_code_t)
+bool of_BREAKPOINT(vthread_t thr, vvp_code_t)
 {
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1484,7 +1512,7 @@ static bool do_callf_void(vthread_t thr, vthread_t child)
 
       if (child->i_have_ended) {
 	    do_join(thr, child);
-	    return true;
+      return vthread_run_next(thr);
       } else {
 	    thr->i_am_joining = 1;
 	    return false;
@@ -1530,7 +1558,7 @@ bool of_CALLF_VEC4(vthread_t thr, vvp_code_t cp)
 
 	// This is the return value. Push a place-holder value. The function
 	// will replace this with the actual value using a %ret/real instruction.
-      thr->push_vec4(vvp_vector4_t(scope_func->get_func_width(), scope_func->get_func_init_val()));
+      thr->emplace_vec4(scope_func->get_func_width(), scope_func->get_func_init_val());
       child->args_vec4.push_back(0);
 
       return do_callf_void(thr, child);
@@ -1549,7 +1577,7 @@ bool of_CALLF_VOID(vthread_t thr, vvp_code_t cp)
  * unlinked without specifically knowing the source that this
  * instruction used.
  */
-bool of_CASSIGN_LINK(vthread_t, vvp_code_t cp)
+bool of_CASSIGN_LINK(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*dst = cp->net;
       vvp_net_t*src = cp->net2;
@@ -1568,7 +1596,7 @@ bool of_CASSIGN_LINK(vthread_t, vvp_code_t cp)
       vvp_net_ptr_t dst_ptr (dst, 1);
       src->link(dst_ptr);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1615,7 +1643,7 @@ bool of_CASSIGN_VEC4(vthread_t thr, vvp_code_t cp)
       vvp_net_ptr_t ptr (net, 1);
       vvp_send_vec4(ptr, value, 0);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1630,19 +1658,22 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
       unsigned wid = value.size();
 
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
 	/* Remove any previous continuous assign to this net. */
       cassign_unlink(net);
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (net->fil);
+      vvp_signal_value*sig;
+	  if (!cp->sig)
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  sig = cp->sig;
       assert(sig);
 
       if (base < 0 && (wid <= (unsigned)-base))
-	    return true;
+      return vthread_run_next(thr);
 
       if (base >= (long)sig->value_size())
-	    return true;
+      return vthread_run_next(thr);
 
       if (base < 0) {
 	    wid -= (unsigned) -base;
@@ -1657,7 +1688,7 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 
       vvp_net_ptr_t ptr (net, 1);
       vvp_send_vec4_pv(ptr, value, base, wid, sig->value_size(), 0);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CASSIGN_WR(vthread_t thr, vvp_code_t cp)
@@ -1672,7 +1703,7 @@ bool of_CASSIGN_WR(vthread_t thr, vvp_code_t cp)
       vvp_net_ptr_t ptr (net, 1);
       vvp_send_real(ptr, value, 0);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1683,7 +1714,7 @@ bool of_CAST2(vthread_t thr, vvp_code_t)
       vvp_vector4_t&val = thr->peek_vec4();
 	  val.change_xz_to_0();
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool do_cast_vec_dar(vthread_t thr, vvp_code_t cp, bool as_vec4)
@@ -1700,12 +1731,12 @@ bool do_cast_vec_dar(vthread_t thr, vvp_code_t cp, bool as_vec4)
       if (vec.size() != wid) {
 	    cerr << thr->get_fileline()
 	         << "VVP error: size mismatch when casting dynamic array to vector." << endl;
-            thr->push_vec4(vvp_vector4_t(wid));
+            thr->emplace_vec4(wid);
             schedule_stop(0);
             return false;
       }
-      thr->push_vec4(vec);
-      return true;
+      thr->push_vec4(std::move(vec));
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1732,7 +1763,7 @@ bool of_CAST_VEC4_STR(vthread_t thr, vvp_code_t cp)
       unsigned wid = cp->number;
       string str = thr->pop_str();
 
-      vvp_vector4_t vec(wid, BIT4_0);
+      vvp_vector4_t &vec = thr->alloc_vec4(wid, BIT4_0);
 
 #if 0
       if (wid != 8*str.length()) {
@@ -1758,8 +1789,7 @@ bool of_CAST_VEC4_STR(vthread_t thr, vvp_code_t cp)
             }
       }
 
-      thr->push_vec4(vec);
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void do_CMPE(vthread_t thr, const vvp_vector4_t&lval, const vvp_vector4_t&rval)
@@ -1769,7 +1799,7 @@ static void do_CMPE(vthread_t thr, const vvp_vector4_t&lval, const vvp_vector4_t
       if (lval.has_xz() || rval.has_xz()) {
 
 	    unsigned wid = lval.size();
-	    vvp_bit4_t eq  = BIT4_1;
+	    vvp_bit4_t eq  = BIT4_X;
 	    vvp_bit4_t eeq = BIT4_1;
 
 	    for (unsigned idx = 0 ; idx < wid ; idx += 1) {
@@ -1779,15 +1809,11 @@ static void do_CMPE(vthread_t thr, const vvp_vector4_t&lval, const vvp_vector4_t
 		  if (lv != rv)
 			eeq = BIT4_0;
 
-		  if (eq==BIT4_1 && (bit4_is_xz(lv) || bit4_is_xz(rv)))
-			eq = BIT4_X;
-		  if ((lv == BIT4_0) && (rv==BIT4_1))
+		  if (((lv == BIT4_0) && (rv==BIT4_1)) ||
+		      ((lv == BIT4_1) && (rv==BIT4_0))) {
 			eq = BIT4_0;
-		  if ((lv == BIT4_1) && (rv==BIT4_0))
-			eq = BIT4_0;
-
-		  if (eq == BIT4_0)
 			break;
+		  }
 	    }
 
 	    thr->flags[4] = eq;
@@ -1815,13 +1841,13 @@ bool of_CMPE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPE(thr, lval, rval);
 
       thr->pop_vec4(2);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPNE(vthread_t thr, vvp_code_t)
@@ -1829,7 +1855,7 @@ bool of_CMPNE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPE(thr, lval, rval);
@@ -1838,7 +1864,7 @@ bool of_CMPNE(vthread_t thr, vvp_code_t)
       thr->flags[6] =  ~thr->flags[6];
 
       thr->pop_vec4(2);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1850,39 +1876,21 @@ bool of_CMPIE(vthread_t thr, vvp_code_t cp)
 {
       unsigned wid = cp->number;
 
-      const vvp_vector4_t&lval = thr->peek_vec4();
+      do_CMPE(thr, thr->pop_vec4(), get_immediate_rval(cp));
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t rval (wid, BIT4_0);
-      get_immediate_rval (cp, rval);
-
-      do_CMPE(thr, lval, rval);
-
-      thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPINE(vthread_t thr, vvp_code_t cp)
 {
       unsigned wid = cp->number;
 
-      const vvp_vector4_t&lval = thr->peek_vec4();
-
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t rval (wid, BIT4_0);
-      get_immediate_rval (cp, rval);
-
-      do_CMPE(thr, lval, rval);
+      do_CMPE(thr, thr->pop_vec4(), get_immediate_rval(cp));
 
       thr->flags[4] =  ~thr->flags[4];
       thr->flags[6] =  ~thr->flags[6];
 
-      thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 
@@ -1967,13 +1975,13 @@ bool of_CMPS(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPS(thr, lval, rval);
 
       thr->pop_vec4(2);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -1985,18 +1993,9 @@ bool of_CMPIS(vthread_t thr, vvp_code_t cp)
 {
       unsigned wid = cp->number;
 
-      const vvp_vector4_t&lval = thr->peek_vec4();
+      do_CMPS(thr, thr->pop_vec4(), get_immediate_rval(cp));
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t rval (wid, BIT4_0);
-      get_immediate_rval (cp, rval);
-
-      do_CMPS(thr, lval, rval);
-
-      thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPSTR(vthread_t thr, vvp_code_t)
@@ -2023,7 +2022,7 @@ bool of_CMPSTR(vthread_t thr, vvp_code_t)
       thr->flags[4] = eq;
       thr->flags[5] = lt;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void of_CMPU_the_hard_way(vthread_t thr, unsigned wid,
@@ -2070,46 +2069,25 @@ static void do_CMPU(vthread_t thr, const vvp_vector4_t&lval, const vvp_vector4_t
       assert(rval.size() == lval.size());
       unsigned wid = lval.size();
 
-      unsigned long*larray = lval.subarray(0,wid);
-      if (larray == 0) return of_CMPU_the_hard_way(thr, wid, lval, rval);
-
-      unsigned long*rarray = rval.subarray(0,wid);
-      if (rarray == 0) {
-	    delete[]larray;
-	    return of_CMPU_the_hard_way(thr, wid, lval, rval);
-      }
-
-      unsigned words = (wid+CPU_WORD_BITS-1) / CPU_WORD_BITS;
-
-      for (unsigned wdx = 0 ; wdx < words ; wdx += 1) {
-	    if (larray[wdx] == rarray[wdx])
-		  continue;
-
-	    eq = BIT4_0;
-	    if (larray[wdx] < rarray[wdx])
-		  lt = BIT4_1;
-	    else
-		  lt = BIT4_0;
-      }
-
-      delete[]larray;
-      delete[]rarray;
-
-      thr->flags[4] = eq;
+//	  if (lval.has_xz() || rval.has_xz())
+		return of_CMPU_the_hard_way(thr, wid, lval, rval);
+/*
+      thr->flags[4] = lval.eeq(rval);
       thr->flags[5] = lt;
-      thr->flags[6] = eq;
+      thr->flags[6] = thr->flags[4];
+	  */
 }
 
 bool of_CMPU(vthread_t thr, vvp_code_t)
 {
 
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPU(thr, lval, rval);
 
       thr->pop_vec4(2);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2123,16 +2101,10 @@ bool of_CMPIU(vthread_t thr, vvp_code_t cp)
 
       const vvp_vector4_t&lval = thr->peek_vec4();
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t rval (wid, BIT4_0);
-      get_immediate_rval (cp, rval);
-
-      do_CMPU(thr, lval, rval);
+      do_CMPU(thr, lval, get_immediate_rval(cp));
 
       thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 
@@ -2158,7 +2130,7 @@ bool of_CMPX(vthread_t thr, vvp_code_t)
       }
 
       thr->flags[4] = eq;
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void do_CMPWE(vthread_t thr, const vvp_vector4_t&lval, const vvp_vector4_t&rval)
@@ -2201,13 +2173,13 @@ bool of_CMPWE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPWE(thr, lval, rval);
 
       thr->pop_vec4(2);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPWNE(vthread_t thr, vvp_code_t)
@@ -2215,7 +2187,7 @@ bool of_CMPWNE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPWE(thr, lval, rval);
@@ -2223,7 +2195,7 @@ bool of_CMPWNE(vthread_t thr, vvp_code_t)
       thr->flags[4] =  ~thr->flags[4];
 
       thr->pop_vec4(2);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPWR(vthread_t thr, vvp_code_t)
@@ -2237,7 +2209,7 @@ bool of_CMPWR(vthread_t thr, vvp_code_t)
       thr->flags[4] = eq;
       thr->flags[5] = lt;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPWS(vthread_t thr, vvp_code_t cp)
@@ -2251,7 +2223,7 @@ bool of_CMPWS(vthread_t thr, vvp_code_t cp)
       thr->flags[4] = eq;
       thr->flags[5] = lt;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_CMPWU(vthread_t thr, vvp_code_t cp)
@@ -2265,7 +2237,7 @@ bool of_CMPWU(vthread_t thr, vvp_code_t cp)
       thr->flags[4] = eq;
       thr->flags[5] = lt;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2290,7 +2262,7 @@ bool of_CMPZ(vthread_t thr, vvp_code_t)
       }
 
       thr->flags[4] = eq;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2300,7 +2272,7 @@ bool of_CONCAT_STR(vthread_t thr, vvp_code_t)
 {
       string text = thr->pop_str();
       thr->peek_str(0).append(text);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2310,7 +2282,7 @@ bool of_CONCATI_STR(vthread_t thr, vvp_code_t cp)
 {
       const char*text = cp->text;
       thr->peek_str(0).append(filter_string(text));
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2318,7 +2290,7 @@ bool of_CONCATI_STR(vthread_t thr, vvp_code_t cp)
  */
 bool of_CONCAT_VEC4(vthread_t thr, vvp_code_t)
 {
-      const vvp_vector4_t&lsb = thr->peek_vec4(0);
+      const vvp_vector4_t&lsb = thr->peek_vec4();
       const vvp_vector4_t&msb = thr->peek_vec4(1);
 
 	// The result is the size of the top two vectors in the stack.
@@ -2334,7 +2306,7 @@ bool of_CONCAT_VEC4(vthread_t thr, vvp_code_t)
       thr->pop_vec4(1);
       thr->peek_vec4() = res;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2393,7 +2365,7 @@ bool of_CONCATI_VEC4(vthread_t thr, vvp_code_t cp)
       res.set_vec(lsb.size(), msb);
 
       msb = res;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2405,7 +2377,7 @@ bool of_CVT_RV(vthread_t thr, vvp_code_t)
       vvp_vector4_t val4 = thr->pop_vec4();
       vector4_to_value(val4, val, false);
       thr->push_real(val);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2417,7 +2389,7 @@ bool of_CVT_RV_S(vthread_t thr, vvp_code_t)
       vvp_vector4_t val4 = thr->pop_vec4();
       vector4_to_value(val4, val, true);
       thr->push_real(val);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2430,7 +2402,7 @@ bool of_CVT_SR(vthread_t thr, vvp_code_t cp)
       double r = thr->pop_real();
       thr->words[cp->bit_idx[0]].w_int = i64round(r);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2444,7 +2416,7 @@ bool of_CVT_UR(vthread_t thr, vvp_code_t cp)
       else
 	    thr->words[cp->bit_idx[0]].w_uint = (uint64_t)ceil(r-0.5);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2455,9 +2427,8 @@ bool of_CVT_VR(vthread_t thr, vvp_code_t cp)
       double r = thr->pop_real();
       unsigned wid = cp->number;
 
-      vvp_vector4_t tmp(wid, r);
-      thr->push_vec4(tmp);
-      return true;
+      thr->emplace_vec4(wid, r);
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2465,7 +2436,7 @@ bool of_CVT_VR(vthread_t thr, vvp_code_t cp)
  * long(1) to port-3 of the addressed net. This turns off an active
  * continuous assign activated by %cassign/v
  */
-bool of_DEASSIGN(vthread_t, vvp_code_t cp)
+bool of_DEASSIGN(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*net = cp->net;
       unsigned base  = cp->bit_idx[0];
@@ -2476,7 +2447,8 @@ bool of_DEASSIGN(vthread_t, vvp_code_t cp)
       vvp_fun_signal_vec*sig = dynamic_cast<vvp_fun_signal_vec*>(net->fun);
       assert(sig);
 
-      if (base >= fil->value_size()) return true;
+      if (base >= fil->value_size())
+      return vthread_run_next(thr);
       if (base+width > fil->value_size()) width = fil->value_size() - base;
 
       bool full_sig = base == 0 && width == fil->value_size();
@@ -2501,10 +2473,10 @@ bool of_DEASSIGN(vthread_t, vvp_code_t cp)
 	    sig->deassign_pv(base, width);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
-bool of_DEASSIGN_WR(vthread_t, vvp_code_t cp)
+bool of_DEASSIGN_WR(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*net = cp->net;
 
@@ -2521,7 +2493,7 @@ bool of_DEASSIGN_WR(vthread_t, vvp_code_t cp)
 
       sig->deassign();
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2531,7 +2503,7 @@ bool of_DEBUG_THR(vthread_t thr, vvp_code_t cp)
 {
       const char*text = cp->text;
       thr->debug_dump(cerr, text);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2571,13 +2543,13 @@ bool of_DELETE_ELEM(vthread_t thr, vvp_code_t cp)
 	    cerr << thr->get_fileline()
 	         << "Warning: skipping queue delete() with undefined index."
 	         << endl;
-	    return true;
+      return vthread_run_next(thr);
       }
       if (idx_val < 0) {
 	    cerr << thr->get_fileline()
 	         << "Warning: skipping queue delete() with negative index."
 	         << endl;
-	    return true;
+      return vthread_run_next(thr);
       }
       size_t idx = idx_val;
 
@@ -2600,7 +2572,7 @@ bool of_DELETE_ELEM(vthread_t thr, vvp_code_t cp)
 	    }
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /* %delete/obj <label>
@@ -2615,7 +2587,7 @@ bool of_DELETE_OBJ(vthread_t thr, vvp_code_t cp)
       vvp_net_ptr_t ptr (cp->net, 0);
       vvp_send_object(ptr, vvp_object_t(), thr->wt_context);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /* %delete/tail <label>, idx
@@ -2635,7 +2607,7 @@ bool of_DELETE_TAIL(vthread_t thr, vvp_code_t cp)
       unsigned idx = thr->words[cp->bit_idx[0]].w_int;
       queue->erase_tail(idx);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static bool do_disable(vthread_t thr, vthread_t match)
@@ -2761,7 +2733,7 @@ bool of_DISABLE_FORK(vthread_t thr, vvp_code_t)
 	    vthread_reap(child);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -2905,24 +2877,21 @@ bool of_DIV(vthread_t thr, vvp_code_t)
 
       unsigned long*ap = vala.subarray(0, wid);
       if (ap == 0) {
-	    vvp_vector4_t tmp(wid, BIT4_X);
-	    thr->push_vec4(tmp);
-	    return true;
+	    thr->emplace_vec4(wid, BIT4_X);
+      return vthread_run_next(thr);
       }
 
       unsigned long*bp = valb.subarray(0, wid);
       if (bp == 0) {
 	    delete[]ap;
-	    vvp_vector4_t tmp(wid, BIT4_X);
-	    thr->push_vec4(tmp);
-	    return true;
+	    thr->emplace_vec4(wid, BIT4_X);
+      return vthread_run_next(thr);
       }
 
 	// If the value fits in a single CPU word, then do it the easy way.
       if (wid <= CPU_WORD_BITS) {
 	    if (bp[0] == 0) {
-		  vvp_vector4_t tmp(wid, BIT4_X);
-		  thr->push_vec4(tmp);
+		  thr->emplace_vec4(wid, BIT4_X);
 	    } else {
 		  ap[0] /= bp[0];
 		  vala.setarray(0, wid, ap);
@@ -2930,16 +2899,15 @@ bool of_DIV(vthread_t thr, vvp_code_t)
 	    }
 	    delete[]ap;
 	    delete[]bp;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       unsigned long*result = divide_bits(ap, bp, wid);
       if (result == 0) {
 	    delete[]ap;
 	    delete[]bp;
-	    vvp_vector4_t tmp(wid, BIT4_X);
-	    thr->push_vec4(tmp);
-	    return true;
+	    thr->emplace_vec4(wid, BIT4_X);
+      return vthread_run_next(thr);
       }
 
 	// Now ap contains the remainder and result contains the
@@ -2952,7 +2920,7 @@ bool of_DIV(vthread_t thr, vvp_code_t)
       delete[]bp;
       delete[]result;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 
@@ -2982,7 +2950,7 @@ bool of_DIV_S(vthread_t thr, vvp_code_t)
       if (ap == 0) {
 	    vvp_vector4_t tmp(wid, BIT4_X);
 	    vala = tmp;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       unsigned long*bp = valb.subarray(0, wid);
@@ -2990,7 +2958,7 @@ bool of_DIV_S(vthread_t thr, vvp_code_t)
 	    delete[]ap;
 	    vvp_vector4_t tmp(wid, BIT4_X);
 	    vala = tmp;
-	    return true;
+      return vthread_run_next(thr);
       }
 
 	// Sign extend the bits in the array to fill out the array.
@@ -3021,7 +2989,7 @@ bool of_DIV_S(vthread_t thr, vvp_code_t)
 	    }
 	    delete[]ap;
 	    delete[]bp;
-	    return true;
+      return vthread_run_next(thr);
       }
 
 	// We need to the actual division to positive integers. Make
@@ -3042,7 +3010,7 @@ bool of_DIV_S(vthread_t thr, vvp_code_t)
 	    delete[]bp;
 	    vvp_vector4_t tmp(wid, BIT4_X);
 	    vala = tmp;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       if (negate_flag) {
@@ -3055,7 +3023,7 @@ bool of_DIV_S(vthread_t thr, vvp_code_t)
       delete[]ap;
       delete[]bp;
       delete[]result;
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_DIV_WR(vthread_t thr, vvp_code_t)
@@ -3064,7 +3032,7 @@ bool of_DIV_WR(vthread_t thr, vvp_code_t)
       double l = thr->pop_real();
       thr->push_real(l / r);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3077,19 +3045,19 @@ bool of_DIV_WR(vthread_t thr, vvp_code_t)
 bool of_DUP_OBJ(vthread_t thr, vvp_code_t)
 {
       thr->push_object(thr->peek_object().duplicate());
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_DUP_REAL(vthread_t thr, vvp_code_t)
 {
       thr->push_real(thr->peek_real(0));
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_DUP_VEC4(vthread_t thr, vvp_code_t)
 {
-      thr->push_vec4(thr->peek_vec4(0));
-      return true;
+      thr->push_vec4(thr->peek_vec4());
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3172,7 +3140,7 @@ bool of_EVENT(vthread_t thr, vvp_code_t cp)
       vvp_net_ptr_t ptr (cp->net, 0);
       vvp_vector4_t tmp (1, BIT4_X);
       vvp_send_vec4(ptr, tmp, thr->wt_context);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3184,7 +3152,7 @@ bool of_EVENT_NB(vthread_t thr, vvp_code_t cp)
 
       delay = thr->words[cp->bit_idx[0]].w_uint;
       schedule_propagate_event(cp->net, delay);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_EVCTL(vthread_t thr, vvp_code_t cp)
@@ -3192,13 +3160,14 @@ bool of_EVCTL(vthread_t thr, vvp_code_t cp)
       assert(thr->event == 0 && thr->ecount == 0);
       thr->event = cp->net;
       thr->ecount = thr->words[cp->bit_idx[0]].w_uint;
-      return true;
+      return vthread_run_next(thr);
 }
+
 bool of_EVCTLC(vthread_t thr, vvp_code_t)
 {
       thr->event = 0;
       thr->ecount = 0;
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_EVCTLI(vthread_t thr, vvp_code_t cp)
@@ -3206,7 +3175,7 @@ bool of_EVCTLI(vthread_t thr, vvp_code_t cp)
       assert(thr->event == 0 && thr->ecount == 0);
       thr->event = cp->net;
       thr->ecount = cp->bit_idx[0];
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_EVCTLS(vthread_t thr, vvp_code_t cp)
@@ -3216,7 +3185,7 @@ bool of_EVCTLS(vthread_t thr, vvp_code_t cp)
       int64_t val = thr->words[cp->bit_idx[0]].w_int;
       if (val < 0) val = 0;
       thr->ecount = val;
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_FLAG_GET_VEC4(vthread_t thr, vvp_code_t cp)
@@ -3224,10 +3193,9 @@ bool of_FLAG_GET_VEC4(vthread_t thr, vvp_code_t cp)
       int flag = cp->number;
       assert(flag < vthread_s::FLAGS_COUNT);
 
-      vvp_vector4_t val (1, thr->flags[flag]);
-      thr->push_vec4(val);
+      thr->emplace_vec4(thr->flags[flag]);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3238,7 +3206,7 @@ bool of_FLAG_INV(vthread_t thr, vvp_code_t cp)
       int flag1 = cp->bit_idx[0];
 
       thr->flags[flag1] = ~ thr->flags[flag1];
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3250,7 +3218,7 @@ bool of_FLAG_MOV(vthread_t thr, vvp_code_t cp)
       int flag2 = cp->bit_idx[1];
 
       thr->flags[flag1] = thr->flags[flag2];
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3262,7 +3230,7 @@ bool of_FLAG_OR(vthread_t thr, vvp_code_t cp)
       int flag2 = cp->bit_idx[1];
 
       thr->flags[flag1] = thr->flags[flag1] | thr->flags[flag2];
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_FLAG_SET_IMM(vthread_t thr, vvp_code_t cp)
@@ -3275,7 +3243,7 @@ bool of_FLAG_SET_IMM(vthread_t thr, vvp_code_t cp)
 
       static vvp_bit4_t map_bit[4] = {BIT4_0, BIT4_1, BIT4_Z, BIT4_X};
       thr->flags[flag] = map_bit[vali];
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_FLAG_SET_VEC4(vthread_t thr, vvp_code_t cp)
@@ -3287,7 +3255,7 @@ bool of_FLAG_SET_VEC4(vthread_t thr, vvp_code_t cp)
       thr->flags[flag] = val.value(0);
       thr->pop_vec4(1);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3297,7 +3265,7 @@ bool of_FLAG_SET_VEC4(vthread_t thr, vvp_code_t cp)
  * unlinked without specifically knowing the source that this
  * instruction used.
  */
-bool of_FORCE_LINK(vthread_t, vvp_code_t cp)
+bool of_FORCE_LINK(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*dst = cp->net;
       vvp_net_t*src = cp->net2;
@@ -3305,7 +3273,7 @@ bool of_FORCE_LINK(vthread_t, vvp_code_t cp)
       assert(dst->fil);
       dst->fil->force_link(dst, src);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3330,11 +3298,11 @@ bool of_FORCE_VEC4(vthread_t thr, vvp_code_t cp)
 
       assert(net->fil);
       if (value.size() != net->fil->filter_size())
-	    value = coerce_to_width(value, net->fil->filter_size());
+	    value = coerce_to_width(std::move(value), net->fil->filter_size());
 
       net->force_vec4(value, vvp_vector2_t(vvp_vector2_t::FILL1, net->fil->filter_size()));
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3351,15 +3319,15 @@ bool of_FORCE_VEC4_OFF(vthread_t thr, vvp_code_t cp)
       assert(net->fil);
 
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
 	// This is the width of the target vector.
       unsigned use_size = net->fil->filter_size();
 
       if (base >= (long)use_size)
-	    return true;
+      return vthread_run_next(thr);
       if (base < -(long)use_size)
-	    return true;
+      return vthread_run_next(thr);
 
       if ((base + wid) > use_size)
 	    wid = use_size - base;
@@ -3375,14 +3343,17 @@ bool of_FORCE_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 	// vvp_net_t::force_vec4 propagates all the bits of the
 	// forced vector value, regardless of the mask. This
 	// ensures the unforced bits retain their current value.
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
+      vvp_signal_value*sig;
+	  if (!cp->sig)
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  sig = cp->sig;
       assert(sig);
       sig->vec4_value(tmp);
 
       tmp.set_vec(base, value);
 
       net->force_vec4(tmp, mask);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3403,18 +3374,18 @@ bool of_FORCE_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
       assert(net->fil);
 
       if (thr->flags[4] == BIT4_1)
-	    return true;
+      return vthread_run_next(thr);
 
 	// This is the width of the target vector.
       unsigned use_size = net->fil->filter_size();
 
       if (base >= (long)use_size)
-	    return true;
+      return vthread_run_next(thr);
       if (base < -(long)use_size)
-	    return true;
+      return vthread_run_next(thr);
 
-      schedule_force_vector(net, base, use_size, value, delay);
-      return true;
+      schedule_force_vector(net, base, use_size, std::move(value), delay);
+      return vthread_run_next(thr);
 }
 
 bool of_FORCE_WR(vthread_t thr, vvp_code_t cp)
@@ -3424,7 +3395,7 @@ bool of_FORCE_WR(vthread_t thr, vvp_code_t cp)
 
       net->force_real(value, vvp_vector2_t(vvp_vector2_t::FILL1, 1));
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3457,7 +3428,7 @@ bool of_FORK(vthread_t thr, vvp_code_t cp)
       } else {
 	    schedule_vthread(child, 0, true);
       }
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_FREE(vthread_t thr, vvp_code_t cp)
@@ -3469,7 +3440,7 @@ bool of_FREE(vthread_t thr, vvp_code_t cp)
         /* Free the context. */
       vthread_free_context(child_context, cp->scope);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3483,7 +3454,7 @@ bool of_INV(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
       val.invert();
-      return true;
+      return vthread_run_next(thr);
 }
 
 
@@ -3505,34 +3476,34 @@ bool of_IX_ADD(vthread_t thr, vvp_code_t cp)
 {
       thr->words[cp->number].w_int += get_as_64_bit(cp->bit_idx[0],
                                                     cp->bit_idx[1]);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_IX_SUB(vthread_t thr, vvp_code_t cp)
 {
       thr->words[cp->number].w_int -= get_as_64_bit(cp->bit_idx[0],
                                                     cp->bit_idx[1]);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_IX_MUL(vthread_t thr, vvp_code_t cp)
 {
       thr->words[cp->number].w_int *= get_as_64_bit(cp->bit_idx[0],
                                                     cp->bit_idx[1]);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_IX_LOAD(vthread_t thr, vvp_code_t cp)
 {
       thr->words[cp->number].w_int = get_as_64_bit(cp->bit_idx[0],
                                                    cp->bit_idx[1]);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_IX_MOV(vthread_t thr, vvp_code_t cp)
 {
       thr->words[cp->bit_idx[0]].w_int = thr->words[cp->bit_idx[1]].w_int;
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
@@ -3540,13 +3511,17 @@ bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
       unsigned index = cp->bit_idx[0];
       vvp_net_t*net = cp->net;
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
-      if (sig == 0) {
+      vvp_signal_value*sig;
+	  if (!cp->sig) {
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      if (cp->sig == 0) {
 	    assert(net->fil);
 	    cerr << thr->get_fileline()
 	         << "%%ix/getv error: Net arg not a vector signal? "
 		 << typeid(*net->fil).name() << endl;
       }
+	  }
+	  sig = cp->sig;
       assert(sig);
 
       vvp_vector4_t vec;
@@ -3563,7 +3538,7 @@ bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
 	/* Set bit 4 as a flag if the input is unknown. */
       thr->flags[4] = known_flag ? (overflow_flag ? BIT4_X : BIT4_0) : BIT4_1;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
@@ -3571,8 +3546,10 @@ bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
       unsigned index = cp->bit_idx[0];
       vvp_net_t*net = cp->net;
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
-      if (sig == 0) {
+       vvp_signal_value*sig;
+	  if (!cp->sig) {
+		cp->sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+     if (cp->sig == 0) {
 	    assert(net->fil);
 	    cerr << thr->get_fileline()
 	         << "%%ix/getv/s error: Net arg not a vector signal? "
@@ -3580,6 +3557,8 @@ bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
 		 << ", fil=" << (net->fil? typeid(*net->fil).name() : "<>")
 		 << endl;
       }
+	  }
+	  sig = cp->sig;
       assert(sig);
 
       vvp_vector4_t vec;
@@ -3595,7 +3574,7 @@ bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
 	/* Set bit 4 as a flag if the input is unknown. */
       thr->flags[4] = known_flag? BIT4_0 : BIT4_1;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static uint64_t vec4_to_index(vthread_t thr, bool signed_flag)
@@ -3658,7 +3637,7 @@ bool of_IX_VEC4(vthread_t thr, vvp_code_t cp)
 {
       unsigned use_idx = cp->number;
       thr->words[use_idx].w_uint = vec4_to_index(thr, false);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3668,7 +3647,7 @@ bool of_IX_VEC4_S(vthread_t thr, vvp_code_t cp)
 {
       unsigned use_idx = cp->number;
       thr->words[use_idx].w_uint = vec4_to_index(thr, true);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3689,7 +3668,7 @@ bool of_JMP(vthread_t thr, vvp_code_t cp)
 	    return false;
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3709,7 +3688,7 @@ bool of_JMP0(vthread_t thr, vvp_code_t cp)
 	    return false;
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3729,7 +3708,7 @@ bool of_JMP0XZ(vthread_t thr, vvp_code_t cp)
 	    return false;
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3749,7 +3728,7 @@ bool of_JMP1(vthread_t thr, vvp_code_t cp)
 	    return false;
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3769,7 +3748,7 @@ bool of_JMP1XZ(vthread_t thr, vvp_code_t cp)
 	    return false;
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3815,7 +3794,7 @@ static bool do_join_opcode(vthread_t thr)
 
 	      // found something!
 	    do_join(thr, curp);
-	    return true;
+      return vthread_run_next(thr);
       }
 
 	// Otherwise, tell my children to awaken me when they end,
@@ -3860,7 +3839,7 @@ bool of_JOIN_DETACH(vthread_t thr, vvp_code_t cp)
 	    }
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3880,7 +3859,7 @@ bool of_LOAD_AR(vthread_t thr, vvp_code_t cp)
       }
 
       thr->push_real(word);
-      return true;
+      return vthread_run_next(thr);
 }
 
 template <typename ELEM>
@@ -3903,7 +3882,7 @@ static bool load_dar(vthread_t thr, vvp_code_t cp)
 	    dq_default(word, obj->size());
 
       vthread_push(thr, word);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3942,7 +3921,7 @@ bool of_LOAD_OBJ(vthread_t thr, vvp_code_t cp)
       vvp_object_t val = fun->get_object();
       thr->push_object(val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3965,7 +3944,7 @@ bool of_LOAD_OBJA(vthread_t thr, vvp_code_t cp)
       }
 
       thr->push_object(word);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3981,7 +3960,7 @@ bool of_LOAD_REAL(vthread_t thr, vvp_code_t cp)
 
       thr->push_real(val.value.real);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -3998,7 +3977,7 @@ bool of_LOAD_STR(vthread_t thr, vvp_code_t cp)
       const string&val = fun->get_string();
       thr->push_str(val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_LOAD_STRA(vthread_t thr, vvp_code_t cp)
@@ -4014,26 +3993,47 @@ bool of_LOAD_STRA(vthread_t thr, vvp_code_t cp)
       }
 
       thr->push_str(word);
-      return true;
+      return vthread_run_next(thr);
 }
 
 
 /*
  * %load/vec4 <net>
  */
+bool of_LOAD_VEC4_vec4(vthread_t thr, vvp_code_t cp)
+{
+	// Push a placeholder onto the stack in order to reserve the
+	// stack space. Use a reference for the stack top as a target
+	// for the load.
+	  vvp_wire_vec4 *sig;
+
+		sig = static_cast<vvp_wire_vec4*>(cp->sig);
+
+	// Extract the value from the signal and directly into the
+	// target stack position.
+//      thr->emplace_vec4(sig->vec4_value2());
+
+	  thr->push_sig(sig);
+
+      return vthread_run_next(thr);
+}
+
+
 bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
 {
 	// Push a placeholder onto the stack in order to reserve the
 	// stack space. Use a reference for the stack top as a target
 	// for the load.
-      thr->push_vec4(vvp_vector4_t());
+      thr->emplace_vec4();
       vvp_vector4_t&sig_value = thr->peek_vec4();
+	  vvp_signal_value*sig;
+
 
 	  if (!cp->sig) {
       vvp_net_t*net = cp->net;
 	// For the %load to work, the functor must actually be a
 	// signal functor. Only signals save their vector value.
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (net->fil);
+      sig = dynamic_cast<vvp_signal_value*> (net->fil);
       if (sig == 0) {
 	    cerr << thr->get_fileline()
 	         << "%load/v error: Net arg not a signal? "
@@ -4041,17 +4041,24 @@ bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
 	                        typeid(*net->fun).name())
 	         << endl;
 	    assert(sig);
-	    return true;
+      return vthread_run_next(thr);
       }
-	  cp->sig = sig;
+	    cp->sig = sig;
+	  } else {
+		sig = cp->sig;
 	  }
 
 	// Extract the value from the signal and directly into the
 	// target stack position.
-      cp->sig->vec4_value(sig_value);
+      sig->vec4_value(sig_value);
 
-      return true;
+	  if (dynamic_cast<vvp_wire_vec4*>(cp->sig))
+	  cp->opcode = of_LOAD_VEC4_vec4;
+
+      return vthread_run_next(thr);
 }
+
+
 
 /*
  * %load/vec4a <arr>, <adrx>
@@ -4066,14 +4073,12 @@ bool of_LOAD_VEC4A(vthread_t thr, vvp_code_t cp)
 	// failed, and this load should return X instead of the actual
 	// value.
       if (thr->flags[4] == BIT4_1) {
-	    vvp_vector4_t tmp (cp->array->get_word_size(), BIT4_X);
-	    thr->push_vec4(tmp);
-	    return true;
+	    thr->emplace_vec4(cp->array->get_word_size(), BIT4_X);
+      return vthread_run_next(thr);
       }
 
-      vvp_vector4_t tmp (cp->array->get_word(adr));
-      thr->push_vec4(tmp);
-      return true;
+      thr->push_vec4(cp->array->get_word(adr));
+      return vthread_run_next(thr);
 }
 
 static void do_verylong_mod(vvp_vector4_t&vala, const vvp_vector4_t&valb,
@@ -4204,7 +4209,7 @@ bool of_MAX_WR(vthread_t thr, vvp_code_t)
 	    thr->push_real(l);
       else
 	    thr->push_real(r);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_MIN_WR(vthread_t thr, vvp_code_t)
@@ -4219,7 +4224,7 @@ bool of_MIN_WR(vthread_t thr, vvp_code_t)
 	    thr->push_real(r);
       else
 	    thr->push_real(l);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_MOD(vthread_t thr, vvp_code_t)
@@ -4254,16 +4259,16 @@ bool of_MOD(vthread_t thr, vvp_code_t)
 		  lv >>= 1;
 	    }
 
-	    return true;
+      return vthread_run_next(thr);
 
       } else {
 	    do_verylong_mod(vala, valb, false, false);
-	    return true;
+      return vthread_run_next(thr);
       }
 
  x_out:
       vala = vvp_vector4_t(wid, BIT4_X);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4317,22 +4322,21 @@ bool of_MOD_S(vthread_t thr, vvp_code_t)
 	      // vala is the top of the stack, edited in place, so we
 	      // do not need to push the result.
 
-	    return true;
-
+      return vthread_run_next(thr);
       } else {
 
 	    bool left_is_neg  = vala.value(vala.size()-1) == BIT4_1;
 	    bool right_is_neg = valb.value(valb.size()-1) == BIT4_1;
 	    do_verylong_mod(vala, valb, left_is_neg, right_is_neg);
-	    return true;
+      return vthread_run_next(thr);
       }
 
  x_out:
       vala = vvp_vector4_t(wid, BIT4_X);
-      return true;
+      return vthread_run_next(thr);
  zero_out:
       vala = vvp_vector4_t(wid, BIT4_0);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4344,7 +4348,7 @@ bool of_MOD_WR(vthread_t thr, vvp_code_t)
       double l = thr->pop_real();
       thr->push_real(fmod(l,r));
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4363,7 +4367,7 @@ bool of_PAD_S(vthread_t thr, vvp_code_t cp)
       else
 	    val.resize(wid);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4376,7 +4380,7 @@ bool of_PAD_U(vthread_t thr, vvp_code_t cp)
       vvp_vector4_t&val = thr->peek_vec4();
       val.resize(wid, BIT4_0);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4400,17 +4404,17 @@ static bool of_PART_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
       bool value_ok = vector4_to_value(base4, base, signed_flag);
       if (! value_ok) {
 	    value = res;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       if (base >= (int32_t)value.size()) {
 	    value = res;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       if ((base+(int)wid) <= 0) {
 	    value = res;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       long vbase = 0;
@@ -4427,7 +4431,7 @@ static bool of_PART_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
       res .set_vec(vbase, value.subvalue(base, wid));
       value = res;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_PART_S(vthread_t thr, vvp_code_t cp)
@@ -4464,12 +4468,12 @@ static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
 
       if (use_base >= (int32_t)value.size()) {
 	    value = res;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       if ((use_base+(int32_t)wid) <= 0) {
 	    value = res;
-	    return true;
+      return vthread_run_next(thr);
       }
 
       long vbase = 0;
@@ -4486,7 +4490,7 @@ static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
       res .set_vec(vbase, value.subvalue(use_base, wid));
       value = res;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_PARTI_S(vthread_t thr, vvp_code_t cp)
@@ -4508,7 +4512,7 @@ bool of_MOV_WU(vthread_t thr, vvp_code_t cp)
       unsigned src = cp->bit_idx[1];
 
       thr->words[dst].w_uint = thr->words[src].w_uint;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4523,7 +4527,7 @@ bool of_MUL(vthread_t thr, vvp_code_t)
       vvp_vector4_t&l = thr->peek_vec4();
 
       l.mul(r);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4538,14 +4542,8 @@ bool of_MULI(vthread_t thr, vvp_code_t cp)
 
       vvp_vector4_t&l = thr->peek_vec4();
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t r (wid, BIT4_0);
-      get_immediate_rval (cp, r);
-
-      l.mul(r);
-      return true;
+      l.mul(get_immediate_rval(cp));
+      return vthread_run_next(thr);
 }
 
 bool of_MUL_WR(vthread_t thr, vvp_code_t)
@@ -4554,7 +4552,7 @@ bool of_MUL_WR(vthread_t thr, vvp_code_t)
       double l = thr->pop_real();
       thr->push_real(l * r);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_NAND(vthread_t thr, vvp_code_t)
@@ -4570,7 +4568,7 @@ bool of_NAND(vthread_t thr, vvp_code_t)
 	    vall.set_bit(idx, ~(lb&rb));
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4586,7 +4584,7 @@ bool of_NEW_COBJ(vthread_t thr, vvp_code_t cp)
 
       vvp_object_t tmp (new vvp_cobject(defn));
       thr->push_object(tmp);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_NEW_DARRAY(vthread_t thr, vvp_code_t cp)
@@ -4638,12 +4636,12 @@ bool of_NEW_DARRAY(vthread_t thr, vvp_code_t cp)
 
       thr->push_object(obj);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
-bool of_NOOP(vthread_t, vvp_code_t)
+bool of_NOOP(vthread_t thr, vvp_code_t)
 {
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4651,26 +4649,11 @@ bool of_NOOP(vthread_t, vvp_code_t)
  */
 bool of_NORR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
+	  vvp_bit4_t lb = thr->pop_vec4().or_reduce();
 
-      vvp_bit4_t lb = BIT4_1;
+      thr->emplace_vec4(~lb);
 
-      for (unsigned idx = 0 ;  idx < val.size() ;  idx += 1) {
-
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_1) {
-		  lb = BIT4_0;
-		  break;
-	    }
-
-	    if (rb != BIT4_0)
-		  lb = BIT4_X;
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
-
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4680,7 +4663,7 @@ bool of_NULL(vthread_t thr, vvp_code_t)
 {
       vvp_object_t tmp;
       thr->push_object(tmp);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4703,10 +4686,9 @@ bool of_ANDR(vthread_t thr, vvp_code_t)
 		  lb = BIT4_X;
       }
 
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
+      thr->emplace_vec4(lb);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4729,10 +4711,9 @@ bool of_NANDR(vthread_t thr, vvp_code_t)
 		  lb = BIT4_X;
       }
 
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
+      thr->emplace_vec4(lb);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4744,8 +4725,8 @@ bool of_ORR(vthread_t thr, vvp_code_t)
       vvp_bit4_t lb = val.or_reduce();
 	  thr->pop_vec4(1);
 
-      thr->emplace_vec4(1, lb);
-      return true;
+      thr->emplace_vec4(lb);
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4767,9 +4748,8 @@ bool of_XORR(vthread_t thr, vvp_code_t)
 	    }
       }
 
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
-      return true;
+      thr->emplace_vec4(lb);
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4791,9 +4771,8 @@ bool of_XNORR(vthread_t thr, vvp_code_t)
 	    }
       }
 
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
-      return true;
+      thr->emplace_vec4(lb);
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4804,7 +4783,7 @@ bool of_OR(vthread_t thr, vvp_code_t)
       vvp_vector4_t valb = thr->pop_vec4();
       vvp_vector4_t&vala = thr->peek_vec4();
       vala |= valb;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4823,7 +4802,7 @@ bool of_NOR(vthread_t thr, vvp_code_t)
 	    vall.set_bit(idx, ~(lb|rb));
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4835,7 +4814,7 @@ bool of_POP_OBJ(vthread_t thr, vvp_code_t cp)
       unsigned skip = cp->bit_idx[1];
 
       thr->pop_object(cnt, skip);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4845,7 +4824,7 @@ bool of_POP_REAL(vthread_t thr, vvp_code_t cp)
 {
       unsigned cnt = cp->number;
       thr->pop_real(cnt);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4855,7 +4834,7 @@ bool of_POP_STR(vthread_t thr, vvp_code_t cp)
 {
       unsigned cnt = cp->number;
       thr->pop_str(cnt);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4865,7 +4844,7 @@ bool of_POP_VEC4(vthread_t thr, vvp_code_t cp)
 {
       unsigned cnt = cp->number;
       thr->pop_vec4(cnt);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4885,9 +4864,8 @@ static bool of_POW_base(vthread_t thr, bool signed_flag)
 
         /* If we have an X or Z in the arguments return X. */
       if (xv2.is_NaN() || yv2.is_NaN()) {
-	    vvp_vector4_t tmp (wid, BIT4_X);
-	    thr->push_vec4(tmp);
-	    return true;
+	    thr->emplace_vec4(wid, BIT4_X);
+      return vthread_run_next(thr);
       }
 
 	// Is the exponent negative? If so, table 5-6 in IEEE1364-2005
@@ -4913,7 +4891,7 @@ static bool of_POW_base(vthread_t thr, bool signed_flag)
 	    vvp_vector4_t tmp (wid, pad);
 	    tmp.set_bit(0, lsb);
 	    thr->push_vec4(tmp);
-	    return true;
+      return vthread_run_next(thr);
       }
 
       vvp_vector2_t result = pow(xv2, yv2);
@@ -4928,7 +4906,7 @@ static bool of_POW_base(vthread_t thr, bool signed_flag)
       }
       thr->push_vec4(vala);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_POW(vthread_t thr, vvp_code_t)
@@ -4947,7 +4925,7 @@ bool of_POW_WR(vthread_t thr, vvp_code_t)
       double l = thr->pop_real();
       thr->push_real(pow(l,r));
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -4973,7 +4951,7 @@ bool of_PROP_OBJ(vthread_t thr, vvp_code_t cp)
 
       thr->push_object(val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void get_from_obj(unsigned pid, vvp_cobject*cobj, double&val)
@@ -5004,7 +4982,7 @@ static bool prop(vthread_t thr, vvp_code_t cp)
       get_from_obj(pid, cobj, val);
       vthread_push(thr, val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5049,17 +5027,17 @@ bool of_PUSHI_REAL(vthread_t thr, vvp_code_t cp)
 	// Detect +infinity
       if (exp==0x3fff && imant==0) {
 	    thr->push_real(INFINITY);
-	    return true;
+      return vthread_run_next(thr);
       }
 	// Detect -infinity
       if (exp==0x7fff && imant==0) {
 	    thr->push_real(-INFINITY);
-	    return true;
+      return vthread_run_next(thr);
       }
 	// Detect NaN
       if (exp==0x3fff) {
 	    thr->push_real(nan(""));
-	    return true;
+      return vthread_run_next(thr);
       }
 
       double sign = (exp & 0x4000)? -1.0 : 1.0;
@@ -5068,14 +5046,23 @@ bool of_PUSHI_REAL(vthread_t thr, vvp_code_t cp)
 
       mant = sign * ldexp(mant, exp - 0x1000);
       thr->push_real(mant);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_PUSHI_STR(vthread_t thr, vvp_code_t cp)
 {
       const char*text = cp->text;
       thr->push_str(filter_string(text));
-      return true;
+      return vthread_run_next(thr);
+}
+
+bool of_PUSHI_ZERO(vthread_t thr, vvp_code_t cp)
+{
+      unsigned wid  = cp->number;
+
+	  thr->emplace_vec4(wid, BIT4_0);
+
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5083,66 +5070,14 @@ bool of_PUSHI_STR(vthread_t thr, vvp_code_t cp)
  */
 bool of_PUSHI_VEC4(vthread_t thr, vvp_code_t cp)
 {
-      uint32_t vala = cp->bit_idx[0];
-      uint32_t valb = cp->bit_idx[1];
+      unsigned long vala = cp->bit_idx[0];
+      unsigned long valb = cp->bit_idx[1];
       unsigned wid  = cp->number;
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t val (wid, BIT4_0);
+//	  thr->push_vec4(*cp->imm);
+	  thr->emplace_vec4(wid, vala, valb);
 
-	// Special case: Immediate zero is super easy.
-      if (vala==0 && valb==0) {
-	    thr->push_vec4(val);
-	    return true;
-      }
-
-	// Special case: If the value is defined (no X or Z) and fits
-	// in an unsigned long, then use the setarray method to write
-	// the value all in one shot.
-      if ((valb==0) && (wid <= 8*sizeof(unsigned long))) {
-	    unsigned long tmp = vala;
-	    val.setarray(0, wid, &tmp);
-	    thr->push_vec4(val);
-	    return true;
-      }
-
-	// The %pushi/vec4 can create values bigger then 32 bits, but
-	// only if the high bits are zero. So at most we need to run
-	// through the loop below 32 times. Maybe less, if the target
-	// width is less. We don't have to do anything special on that
-	// because vala/valb bits will shift away so (vala|valb) will
-	// turn to zero at or before 32 shifts.
-
-      for (unsigned idx = 0 ; idx < wid && (vala|valb) ; idx += 1) {
-	    uint32_t ba = 0;
-	      // Convert the vala/valb bits to a ba number that can be
-	      // used to select what goes into the value.
-	    ba = (valb & 1) << 1;
-	    ba |= vala & 1;
-
-	    switch (ba) {
-		case 1:
-		  val.set_bit(idx, BIT4_1);
-		  break;
-		case 2:
-		  val.set_bit(idx, BIT4_Z);
-		  break;
-		case 3:
-		  val.set_bit(idx, BIT4_X);
-		  break;
-		default:
-		  break;
-	    }
-
-	    vala >>= 1;
-	    valb >>= 1;
-      }
-
-      thr->push_vec4(val);
-
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5180,7 +5115,7 @@ bool of_PUSHV_STR(vthread_t thr, vvp_code_t)
 
       thr->push_str(val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5195,7 +5130,7 @@ bool of_PUTC_STR_VEC4(vthread_t thr, vvp_code_t cp)
       assert(val.size() == 8);
 
       if (mux < 0)
-	    return true;
+      return vthread_run_next(thr);
 
 	/* Get the existing value of the string. If we find that the
 	   index is too big for the string, then give up. */
@@ -5205,7 +5140,7 @@ bool of_PUTC_STR_VEC4(vthread_t thr, vvp_code_t cp)
 
       string tmp = fun->get_string();
       if (tmp.size() <= (size_t)mux)
-	    return true;
+      return vthread_run_next(thr);
 
       char val_str = 0;
       for (size_t idx = 0 ; idx < 8 ; idx += 1) {
@@ -5216,12 +5151,12 @@ bool of_PUTC_STR_VEC4(vthread_t thr, vvp_code_t cp)
 	// It is a quirk of the Verilog standard that putc(..., 'h00)
 	// has no effect. Test for that case here.
       if (val_str == 0)
-	    return true;
+      return vthread_run_next(thr);
 
       tmp[mux] = val_str;
 
       vvp_send_string(vvp_net_ptr_t(cp->net, 0), tmp, thr->wt_context);
-      return true;
+      return vthread_run_next(thr);
 }
 
 template <typename ELEM, class QTYPE>
@@ -5250,7 +5185,7 @@ static bool qinsert(vthread_t thr, vvp_code_t cp, unsigned wid=0)
 	    cerr << " was not added." << endl;
       } else
 	    queue->insert(idx, value, max_size);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5290,7 +5225,7 @@ inline void push_value(vthread_t thr, string value, unsigned)
       thr->push_str(value);
 }
 
-inline void push_value(vthread_t thr, vvp_vector4_t value, unsigned wid)
+inline void push_value(vthread_t thr, const vvp_vector4_t &value, unsigned wid)
 {
       assert(wid == value.size());
       thr->push_vec4(value);
@@ -5319,7 +5254,7 @@ static bool q_pop(vthread_t thr, vvp_code_t cp,
       }
 
       push_value(thr, value, wid);
-      return true;
+      return vthread_run_next(thr);
 }
 
 template <typename ELEM>
@@ -5446,7 +5381,7 @@ bool of_RELEASE_REG(vthread_t, vvp_code_t cp)
 }
 
 /* The type is 1 for registers and 0 for everything else. */
-bool of_RELEASE_WR(vthread_t, vvp_code_t cp)
+bool of_RELEASE_WR(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*net = cp->net;
       unsigned type  = cp->bit_idx[0];
@@ -5457,22 +5392,21 @@ bool of_RELEASE_WR(vthread_t, vvp_code_t cp)
 	// Send a command to this signal to unforce itself.
       vvp_net_ptr_t ptr (net, 0);
       net->fil->release(ptr, type==0);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_REPLICATE(vthread_t thr, vvp_code_t cp)
 {
       int rept = cp->number;
       vvp_vector4_t val = thr->pop_vec4();
-      vvp_vector4_t res (val.size() * rept, BIT4_X);
+      vvp_vector4_t &res = thr->alloc_vec4(val.size() * rept, BIT4_X);
 
       for (int idx = 0 ; idx < rept ; idx += 1) {
 	    res.set_vec(idx * val.size(), val);
       }
 
-      thr->push_vec4(res);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void poke_val(vthread_t fun_thr, unsigned depth, double val)
@@ -5541,7 +5475,7 @@ static bool ret(vthread_t thr, vvp_code_t cp)
 	// Use the depth to put the value into the stack of
 	// the parent thread.
       poke_val(fun_thr, depth, val);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5581,17 +5515,17 @@ bool of_RET_VEC4(vthread_t thr, vvp_code_t cp)
 
       if (off_index!=0 && thr->flags[4] == BIT4_1) {
 	    thr->pop_vec4(1);
-	    return true;
+      return vthread_run_next(thr);
       }
 
       if (off <= -wid) {
 	    thr->pop_vec4(1);
-	    return true;
+      return vthread_run_next(thr);
       }
 
       if (off >= sig_value_size) {
 	    thr->pop_vec4(1);
-	    return true;
+      return vthread_run_next(thr);
       }
 
 	// If the index is below the vector, then only assign the high
@@ -5617,14 +5551,15 @@ bool of_RET_VEC4(vthread_t thr, vvp_code_t cp)
 	    fun_thr->parent->poke_vec4(depth, val);
 
       } else {
-	    vvp_vector4_t tmp_dst = fun_thr->parent->peek_vec4(depth);
+	    vvp_vector4_t tmp_dst;
+		tmp_dst.copy_from_(fun_thr->parent->peek_vec4(depth));
 	    assert(wid>=0 && val.size() == (unsigned)wid);
 	    tmp_dst.set_vec(off, val);
 	    fun_thr->parent->poke_vec4(depth, tmp_dst);
       }
 
       thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void push_from_parent(vthread_t thr, vthread_t fun_thr, unsigned depth, double&)
@@ -5655,7 +5590,7 @@ static bool retload(vthread_t thr, vvp_code_t cp)
 	// Use the depth to extract the values from the stack
 	// of the parent thread.
       push_from_parent(thr, fun_thr, depth, type);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5701,7 +5636,7 @@ bool of_SCOPY(vthread_t thr, vvp_code_t)
       vvp_object_t&dest = thr->peek_object();
       dest.shallow_copy(tmp);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void thread_peek(vthread_t thr, double&value)
@@ -5716,7 +5651,7 @@ static void thread_peek(vthread_t thr, string&value)
 
 static void thread_peek(vthread_t thr, vvp_vector4_t&value)
 {
-      value = thr->peek_vec4(0);
+      value = thr->peek_vec4();
 }
 
 template <typename ELEM>
@@ -5732,7 +5667,7 @@ static bool set_dar_obj(vthread_t thr, vvp_code_t cp)
       assert(darray);
 
       darray->set_word(adr, value);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5788,7 +5723,7 @@ bool of_SHIFTL(vthread_t thr, vvp_code_t cp)
 	    val.set_vec(shift, blk);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5818,8 +5753,8 @@ bool of_SHIFTR(vthread_t thr, vvp_code_t cp)
 	    val.set_vec(wid-shift, tmp);
       }
 
-      thr->push_vec4(val);
-      return true;
+      thr->emplace_vec4(std::move(val));
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5848,8 +5783,8 @@ bool of_SHIFTR_S(vthread_t thr, vvp_code_t cp)
 	    val.set_vec(wid-shift, tmp);
       }
 
-      thr->push_vec4(val);
-      return true;
+      thr->emplace_vec4(std::move(val));
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5869,8 +5804,8 @@ bool of_SPLIT_VEC4(vthread_t thr, vvp_code_t cp)
       vvp_vector4_t lsb = val.subvalue(0, lsb_wid);
       val = val.subvalue(lsb_wid, val.size()-lsb_wid);
 
-      thr->push_vec4(lsb);
-      return true;
+      thr->emplace_vec4(std::move(lsb));
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5945,7 +5880,7 @@ static bool store_dar(vthread_t thr, vvp_code_t cp)
 	         << "Warning: cannot write to an undefined " << get_darray_type(value)
 	         << "." << endl;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5982,7 +5917,7 @@ bool of_STORE_OBJ(vthread_t thr, vvp_code_t cp)
 
       vvp_send_object(ptr, val, thr->wt_context);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -5998,7 +5933,7 @@ bool of_STORE_OBJA(vthread_t thr, vvp_code_t cp)
 
       cp->array->set_word(adr, val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 
@@ -6028,7 +5963,7 @@ bool of_STORE_PROP_OBJ(vthread_t thr, vvp_code_t cp)
 
       cobj->set_object(pid, val, idx);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 static void pop_prop_val(vthread_t thr, double&val, unsigned)
@@ -6076,7 +6011,7 @@ static bool store_prop(vthread_t thr, vvp_code_t cp, unsigned wid=0)
 
       set_val(cobj, pid, val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6125,7 +6060,7 @@ static bool store_qb(vthread_t thr, vvp_code_t cp, unsigned wid=0)
       vvp_queue*queue = get_queue_object<QTYPE>(thr, net);
       assert(queue);
       queue->push_back(value, max_size);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6178,7 +6113,7 @@ static bool store_qdar(vthread_t thr, vvp_code_t cp, unsigned wid=0)
 	    cerr << " was not added." << endl;
       } else
 	    queue->set_word_max(idx, value, max_size);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6216,7 +6151,7 @@ static bool store_qf(vthread_t thr, vvp_code_t cp, unsigned wid=0)
       vvp_queue*queue = get_queue_object<QTYPE>(thr, net);
       assert(queue);
       queue->push_front(value, max_size);
-      return true;
+      return vthread_run_next(thr);
 }
 /*
  * %store/qf/r <var-label>, <max-idx>
@@ -6257,7 +6192,7 @@ static bool store_qobj(vthread_t thr, vvp_code_t cp, unsigned wid=0)
       thr->pop_object(src);
 
       queue->copy_elems(src, max_size);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_STORE_QOBJ_R(vthread_t thr, vvp_code_t cp)
@@ -6293,7 +6228,7 @@ static bool store(vthread_t thr, vvp_code_t cp)
 	/* set the value into port 0 of the destination. */
       vvp_net_ptr_t ptr (cp->net, 0);
       vvp_send(thr, ptr, val);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_STORE_REAL(vthread_t thr, vvp_code_t cp)
@@ -6312,7 +6247,7 @@ static bool storea(vthread_t thr, vvp_code_t cp)
       if (thr->flags[4] != BIT4_1)
 	    cp->array->set_word(adr, val);
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6357,9 +6292,14 @@ bool of_STORE_STRA(vthread_t thr, vvp_code_t cp)
 bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_ptr_t ptr(cp->net, 0);
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
       unsigned off_index = cp->bit_idx[0];
       int wid = cp->bit_idx[1];
+
+	  if (!cp->sig) {
+		cp->sig =  dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  }
+
+	  vvp_signal_value*sig = cp->sig;
 
       int off = off_index? thr->words[off_index].w_int : 0;
       const int sig_value_size = sig->value_size();
@@ -6380,18 +6320,11 @@ bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
 
 	// If there is a problem loading the index register, flags-4
 	// will be set to 1, and we know here to skip the actual assignment.
-      if (off_index!=0 && thr->flags[4] == BIT4_1) {
+      if ((off_index!=0 && thr->flags[4] == BIT4_1) ||
+          (off <= -wid) ||
+          (off >= sig_value_size)) {
 	    thr->pop_vec4(1);
-	    return true;
-      }
-
-      if (off <= -wid) {
-	    thr->pop_vec4(1);
-	    return true;
-      }
-      if (off >= sig_value_size) {
-	    thr->pop_vec4(1);
-	    return true;
+      return vthread_run_next(thr);
       }
 
 	// If the index is below the vector, then only assign the high
@@ -6420,7 +6353,7 @@ bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
 	    vvp_send_vec4_pv(ptr, val, off, wid, sig_value_size, thr->wt_context);
 
       thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6439,13 +6372,13 @@ bool of_STORE_VEC4A(vthread_t thr, vvp_code_t cp)
 	// Suppress action if flags-4 is true.
       if (thr->flags[4] == BIT4_1) {
 	    thr->pop_vec4(1);
-	    return true;
+      return vthread_run_next(thr);
       }
 
       cp->array->set_word(adr, off, value);
 
       thr->pop_vec4(1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6460,7 +6393,7 @@ bool of_SUB(vthread_t thr, vvp_code_t)
       vvp_vector4_t&l = thr->peek_vec4();
 
       l.sub(r);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6475,15 +6408,9 @@ bool of_SUBI(vthread_t thr, vvp_code_t cp)
 
       vvp_vector4_t&l = thr->peek_vec4();
 
-	// I expect that most of the bits of an immediate value are
-	// going to be zero, so start the result vector with all zero
-	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t r (wid, BIT4_0);
-      get_immediate_rval (cp, r);
+      l.sub(get_immediate_rval(cp));
 
-      l.sub(r);
-
-      return true;
+      return vthread_run_next(thr);
 
 }
 
@@ -6492,7 +6419,7 @@ bool of_SUB_WR(vthread_t thr, vvp_code_t)
       double r = thr->pop_real();
       double l = thr->pop_real();
       thr->push_real(l - r);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6509,11 +6436,11 @@ bool of_SUBSTR(vthread_t thr, vvp_code_t cp)
 
       if (first < 0 || last < first || last >= (int32_t)val.size()) {
 	    val = string("");
-	    return true;
+      return vthread_run_next(thr);
       }
 
       val = val.substr(first, last-first+1);
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6529,13 +6456,10 @@ bool of_SUBSTR_VEC4(vthread_t thr, vvp_code_t cp)
 
       assert(wid%8 == 0);
 
+	  vvp_vector4_t &res = thr->alloc_vec4(wid, BIT4_0);
       if (sel < 0 || sel >= (int32_t)val.size()) {
-	    vvp_vector4_t res (wid, BIT4_0);
-	    thr->push_vec4(res);
-	    return true;
+      return vthread_run_next(thr);
       }
-
-      vvp_vector4_t res (wid, BIT4_0);
 
       assert(wid==8);
       unsigned char tmp = val[sel];
@@ -6544,8 +6468,7 @@ bool of_SUBSTR_VEC4(vthread_t thr, vvp_code_t cp)
 		  res.set_bit(idx, BIT4_1);
       }
 
-      thr->push_vec4(res);
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_FILE_LINE(vthread_t thr, vvp_code_t cp)
@@ -6561,7 +6484,7 @@ bool of_FILE_LINE(vthread_t thr, vvp_code_t cp)
 	    cerr << thr->get_fileline()
 	         << vpi_get_str(_vpiDescription, handle) << endl;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6582,7 +6505,7 @@ bool of_TEST_NUL(vthread_t thr, vvp_code_t cp)
       else
 	    thr->flags[4] = BIT4_0;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_TEST_NUL_A(vthread_t thr, vvp_code_t cp)
@@ -6593,7 +6516,7 @@ bool of_TEST_NUL_A(vthread_t thr, vvp_code_t cp)
 
 	/* If the address is undefined, return true. */
       if (thr->flags[4] == BIT4_1) {
-	    return true;
+      return vthread_run_next(thr);
       }
 
       cp->array->get_word_obj(adr, word);
@@ -6602,7 +6525,7 @@ bool of_TEST_NUL_A(vthread_t thr, vvp_code_t cp)
       else
 	    thr->flags[4] = BIT4_0;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_TEST_NUL_OBJ(vthread_t thr, vvp_code_t)
@@ -6611,7 +6534,7 @@ bool of_TEST_NUL_OBJ(vthread_t thr, vvp_code_t)
 	    thr->flags[4] = BIT4_1;
       else
 	    thr->flags[4] = BIT4_0;
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6638,7 +6561,7 @@ bool of_TEST_NUL_PROP(vthread_t thr, vvp_code_t cp)
       else
 	    thr->flags[4] = BIT4_0;
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 bool of_VPI_CALL(vthread_t thr, vvp_code_t cp)
@@ -6668,8 +6591,14 @@ bool of_WAIT(vthread_t thr, vvp_code_t cp)
       thr->waiting_for_event = 1;
 
 	/* Add this thread to the list in the event. */
-      waitable_hooks_s*ep = dynamic_cast<waitable_hooks_s*> (cp->net->fun);
-      assert(ep);
+      waitable_hooks_s*ep;
+	  if (!cp->ep) {
+		  ep = dynamic_cast<waitable_hooks_s*> (cp->net->fun);
+		  assert(ep);
+		  cp->ep = ep;
+	  } else {
+		ep = cp->ep;
+	  }
       thr->wait_next = ep->add_waiting_thread(thr);
 
 	/* Return false to suspend this thread. */
@@ -6693,7 +6622,8 @@ bool of_WAIT_FORK(vthread_t thr, vvp_code_t)
 
 	/* If there are no detached children then there is nothing to
 	 * wait for. */
-      if (thr->detached_children.empty()) return true;
+      if (thr->detached_children.empty())
+      return vthread_run_next(thr);
 
 	/* Flag that this process is waiting for the detached children
 	 * to finish and suspend it. */
@@ -6718,7 +6648,7 @@ bool of_XNOR(vthread_t thr, vvp_code_t)
 	    vall.set_bit(idx, ~(lb ^ rb));
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 /*
@@ -6738,7 +6668,7 @@ bool of_XOR(vthread_t thr, vvp_code_t)
 	    vall.set_bit(idx, lb ^ rb);
       }
 
-      return true;
+      return vthread_run_next(thr);
 }
 
 
@@ -6804,7 +6734,7 @@ static bool do_exec_ufunc(vthread_t thr, vvp_code_t cp, vthread_t child)
 
       if (child->i_have_ended) {
 	    do_join(thr, child);
-            return true;
+      return vthread_run_next(thr);
       } else {
 	    thr->i_am_joining = 1;
 	    return false;
@@ -6834,7 +6764,7 @@ bool of_EXEC_UFUNC_VEC4(vthread_t thr, vvp_code_t cp)
 
 	/* Create a temporary thread and run it immediately. */
       vthread_t child = vthread_new(cp->cptr, child_scope);
-      thr->push_vec4(vvp_vector4_t(scope_func->get_func_width(), scope_func->get_func_init_val()));
+      thr->emplace_vec4(scope_func->get_func_width(), scope_func->get_func_init_val());
       child->args_vec4.push_back(0);
 
       return do_exec_ufunc(thr, cp, child);
@@ -6860,5 +6790,5 @@ bool of_REAP_UFUNC(vthread_t thr, vvp_code_t cp)
             thr->rd_context = 0;
       }
 
-      return true;
+      return vthread_run_next(thr);
 }

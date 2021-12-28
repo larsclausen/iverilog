@@ -312,9 +312,11 @@ void vvp_fun_part_var_sa::recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t&b
 {
       assert(bit.size() == wid);
 
-      vvp_vector4_t tmp = source_;
-      if (tmp.size() == 0)
+      vvp_vector4_t tmp;
+      if (source_.size() == 0)
 	    tmp = vvp_vector4_t(vwid);
+	  else
+	  tmp.copy_from_(source_);
 
       assert(tmp.size() == vwid);
       tmp.set_vec(base, bit);
@@ -393,9 +395,11 @@ void vvp_fun_part_var_aa::recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t&b
 
             assert(bit.size() == wid);
 
-            vvp_vector4_t tmp = state->source;
-            if (tmp.size() == 0)
+            vvp_vector4_t tmp;
+            if (state->source.size() == 0)
                   tmp = vvp_vector4_t(vwid);
+			else
+				tmp.copy_from_(state->source);
 
             assert(tmp.size() == vwid);
             tmp.set_vec(base, bit);

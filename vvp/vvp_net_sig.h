@@ -446,7 +446,18 @@ class vvp_wire_vec4 : public vvp_wire_base {
       unsigned value_size() const;
       vvp_bit4_t value(unsigned idx) const;
       vvp_scalar_t scalar_value(unsigned idx) const;
-      void vec4_value(vvp_vector4_t&) const;
+      void vec4_value(vvp_vector4_t&) const final;
+	vvp_vector4_t vec4_value2() const
+	{
+		  vvp_vector4_t val = bits4_;
+		  if (!test_force_mask_is_zero()) {
+		  for (unsigned idx = 0 ; idx < bits4_.size() ; idx += 1)
+			val.set_bit(idx, filtered_value_(idx));
+		  }
+		  return val;
+	}
+
+
 
         // Support for $countdrivers
       vvp_bit4_t driven_value(unsigned idx) const;

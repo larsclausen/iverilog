@@ -142,7 +142,8 @@ void ufunc_core::finish_thread_vec4_()
 {
       assert(thread_);
 
-      vvp_vector4_t val = vthread_get_vec4_stack(thread_, 0);
+      vvp_vector4_t val;
+	  val.copy_from_(vthread_get_vec4_stack(thread_, 0));
       vthread_pop_vec4(thread_, 1);
 
       propagate_vec4(val);

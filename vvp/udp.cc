@@ -927,9 +927,7 @@ vvp_udp_fun_core::~vvp_udp_fun_core()
  */
 void vvp_udp_fun_core::run_run()
 {
-      vvp_vector4_t tmp (1);
-      tmp.set_bit(0, cur_out_);
-      propagate_vec4(tmp);
+      propagate_vec4(single_bit_vector(cur_out_));
 }
 
 void vvp_udp_fun_core::recv_vec4_from_inputs(unsigned port)

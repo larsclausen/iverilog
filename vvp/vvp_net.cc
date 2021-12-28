@@ -190,10 +190,13 @@ void vvp_net_t::operator delete(void*)
 }
 
 vvp_net_t::vvp_net_t()
-: out_(vvp_net_ptr_t(0,0))
+: vvp_net_t(0, 0)
 {
-      fun = 0;
-      fil = 0;
+}
+
+vvp_net_t::vvp_net_t(vvp_net_fun_t* _fun, vvp_net_fil_t *_fil)
+: fun(_fun), fil(_fil), out_(vvp_net_ptr_t(0,0))
+{
 }
 
 void vvp_net_t::link(vvp_net_ptr_t port_to_link)
@@ -2105,6 +2108,21 @@ vvp_vector4_t& vvp_vector4_t::operator += (int64_t that)
 
       return *this;
 }
+
+bool vvp_vector4_t::operator == (const vvp_vector4_t &that)
+{
+	  if (size_ != that.size_)
+		return false;
+
+       if (size_ <= 32) {
+		return abits_val_ == that.abits_val_ && bbits_val_ == that.bbits_val_;
+	   }
+
+
+      return false;
+}
+
+
 
 ostream& operator<< (ostream&out, const vvp_vector4_t&that)
 {

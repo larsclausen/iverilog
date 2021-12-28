@@ -607,24 +607,23 @@ vvp_cmp_eeq::vvp_cmp_eeq(unsigned wid)
 {
 }
 
-void vvp_cmp_eeq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
+void vvp_cmp_eeq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bits,
                             vvp_context_t)
 {
-      dispatch_operand_(ptr, bit);
+      dispatch_operand_(ptr, bits);
 
-      vvp_vector4_t eeq (1);
-      eeq.set_bit(0, BIT4_1);
+	  vvp_bit4_t bit = BIT4_1;
 
       assert(op_a_.size() == op_b_.size());
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1)
 	    if (op_a_.value(idx) != op_b_.value(idx)) {
-		  eeq.set_bit(0, BIT4_0);
+		  bit = BIT4_0;
 		  break;
 	    }
 
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(eeq, 0);
+      net->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_cmp_nee::vvp_cmp_nee(unsigned wid)
@@ -632,24 +631,23 @@ vvp_cmp_nee::vvp_cmp_nee(unsigned wid)
 {
 }
 
-void vvp_cmp_nee::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
+void vvp_cmp_nee::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bits,
                             vvp_context_t)
 {
-      dispatch_operand_(ptr, bit);
+      dispatch_operand_(ptr, bits);
 
-      vvp_vector4_t eeq (1);
-      eeq.set_bit(0, BIT4_0);
+      vvp_bit4_t bit = BIT4_0;
 
       assert(op_a_.size() == op_b_.size());
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1)
 	    if (op_a_.value(idx) != op_b_.value(idx)) {
-		  eeq.set_bit(0, BIT4_1);
+          bit = BIT4_1;
 		  break;
 	    }
 
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(eeq, 0);
+      net->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_cmp_eq::vvp_cmp_eq(unsigned wid)
@@ -663,10 +661,10 @@ vvp_cmp_eq::vvp_cmp_eq(unsigned wid)
  * there are X/Z bits anywhere in A or B, the result is X. Finally,
  * the result is 1.
  */
-void vvp_cmp_eq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
+void vvp_cmp_eq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bits,
                            vvp_context_t)
 {
-      dispatch_operand_(ptr, bit);
+      dispatch_operand_(ptr, bits);
 
       if (op_a_.size() != op_b_.size()) {
 	    cerr << "COMPARISON size mismatch. "
@@ -674,29 +672,28 @@ void vvp_cmp_eq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    assert(0);
       }
 
-      vvp_vector4_t res (1);
-      res.set_bit(0, BIT4_1);
+      vvp_bit4_t bit = BIT4_1;
 
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1) {
 	    vvp_bit4_t a = op_a_.value(idx);
 	    vvp_bit4_t b = op_b_.value(idx);
 
 	    if (a == BIT4_X)
-		  res.set_bit(0, BIT4_X);
+		  bit = BIT4_X;
 	    else if (a == BIT4_Z)
-		  res.set_bit(0, BIT4_X);
+		  bit = BIT4_X;
 	    else if (b == BIT4_X)
-		  res.set_bit(0, BIT4_X);
+		  bit = BIT4_X;
 	    else if (b == BIT4_Z)
-		  res.set_bit(0, BIT4_X);
+		  bit = BIT4_X;
             else if (a != b) {
-		  res.set_bit(0, BIT4_0);
+		  bit = BIT4_0;
 		  break;
 	    }
       }
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(res, 0);
+      net->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_cmp_eqx::vvp_cmp_eqx(unsigned wid)
@@ -710,10 +707,10 @@ vvp_cmp_eqx::vvp_cmp_eqx(unsigned wid)
  * there are X/Z bits anywhere in A or B, the result is X. Finally,
  * the result is 1.
  */
-void vvp_cmp_eqx::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
+void vvp_cmp_eqx::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bits,
                            vvp_context_t)
 {
-      dispatch_operand_(ptr, bit);
+      dispatch_operand_(ptr, bits);
 
       if (op_a_.size() != op_b_.size()) {
 	    cerr << "COMPARISON size mismatch. "
@@ -721,8 +718,7 @@ void vvp_cmp_eqx::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    assert(0);
       }
 
-      vvp_vector4_t res (1);
-      res.set_bit(0, BIT4_1);
+      vvp_bit4_t bit = BIT4_1;
 
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1) {
 	    vvp_bit4_t a = op_a_.value(idx);
@@ -733,13 +729,13 @@ void vvp_cmp_eqx::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    if (b == BIT4_Z)
 		  continue;
 	    if (a != b) {
-		  res.set_bit(0, BIT4_0);
+		  bit = BIT4_0;
 		  break;
 	    }
       }
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(res, 0);
+      net->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_cmp_eqz::vvp_cmp_eqz(unsigned wid)
@@ -747,10 +743,10 @@ vvp_cmp_eqz::vvp_cmp_eqz(unsigned wid)
 {
 }
 
-void vvp_cmp_eqz::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
+void vvp_cmp_eqz::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bits,
                            vvp_context_t)
 {
-      dispatch_operand_(ptr, bit);
+      dispatch_operand_(ptr, bits);
 
       if (op_a_.size() != op_b_.size()) {
 	    cerr << "COMPARISON size mismatch. "
@@ -758,8 +754,7 @@ void vvp_cmp_eqz::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    assert(0);
       }
 
-      vvp_vector4_t res (1);
-      res.set_bit(0, BIT4_1);
+      vvp_bit4_t bit = BIT4_1;
 
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1) {
 	    vvp_bit4_t a = op_a_.value(idx);
@@ -768,13 +763,13 @@ void vvp_cmp_eqz::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    if (b == BIT4_Z)
 		  continue;
 	    if (a != b) {
-		  res.set_bit(0, BIT4_0);
+		  bit = BIT4_0;
 		  break;
 	    }
       }
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(res, 0);
+      net->send_vec4(single_bit_vector(bit), 0);
 }
 
 vvp_cmp_ne::vvp_cmp_ne(unsigned wid)
@@ -799,29 +794,28 @@ void vvp_cmp_ne::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    assert(op_a_.size() == op_b_.size());
       }
 
-      vvp_vector4_t res (1);
-      res.set_bit(0, BIT4_0);
+      vvp_bit4_t res = BIT4_0;
 
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1) {
 	    vvp_bit4_t a = op_a_.value(idx);
 	    vvp_bit4_t b = op_b_.value(idx);
 
 	    if (a == BIT4_X)
-		  res.set_bit(0, BIT4_X);
+		  res = BIT4_X;
 	    else if (a == BIT4_Z)
-		  res.set_bit(0, BIT4_X);
+		  res = BIT4_X;
 	    else if (b == BIT4_X)
-		  res.set_bit(0, BIT4_X);
+		  res = BIT4_X;
 	    else if (b == BIT4_Z)
-		  res.set_bit(0, BIT4_X);
+		  res = BIT4_X;
             else if (a != b) {
-		  res.set_bit(0, BIT4_1);
+		  res = BIT4_1;
 		  break;
 	    }
       }
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(res, 0);
+      net->send_vec4(single_bit_vector(res), 0);
 }
 
 
@@ -840,10 +834,7 @@ void vvp_cmp_gtge_base_::recv_vec4_base_(vvp_net_ptr_t ptr,
       vvp_bit4_t out = signed_flag_
 	    ? compare_gtge_signed(op_a_, op_b_, out_if_equal)
 	    : compare_gtge(op_a_, op_b_, out_if_equal);
-      vvp_vector4_t val (1);
-      val.set_bit(0, out);
-      ptr.ptr()->send_vec4(val, 0);
-
+      ptr.ptr()->send_vec4(single_bit_vector(out), 0);
       return;
 }
 
@@ -880,8 +871,7 @@ void vvp_cmp_weq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 {
       dispatch_operand_(ptr, bit);
 
-      vvp_vector4_t eeq (1);
-      eeq.set_bit(0, BIT4_1);
+      vvp_bit4_t eeq = BIT4_1;
 
       assert(op_a_.size() == op_b_.size());
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1) {
@@ -892,17 +882,17 @@ void vvp_cmp_weq::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    else if (b == BIT4_Z)
 		  continue;
 	    else if (a == BIT4_X)
-		  eeq.set_bit(0, BIT4_X);
+		  eeq = BIT4_X;
 	    else if (a == BIT4_Z)
-		  eeq.set_bit(0, BIT4_X);
+		  eeq = BIT4_X;
             else if (a != b) {
-		  eeq.set_bit(0, BIT4_0);
+		  eeq = BIT4_0;
 		  break;
 	    }
       }
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(eeq, 0);
+      net->send_vec4(single_bit_vector(eeq), 0);
 }
 
 vvp_cmp_wne::vvp_cmp_wne(unsigned wid)
@@ -915,8 +905,7 @@ void vvp_cmp_wne::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 {
       dispatch_operand_(ptr, bit);
 
-      vvp_vector4_t eeq (1);
-      eeq.set_bit(0, BIT4_0);
+      vvp_bit4_t eeq = BIT4_0;
 
       assert(op_a_.size() == op_b_.size());
       for (unsigned idx = 0 ;  idx < op_a_.size() ;  idx += 1) {
@@ -927,17 +916,17 @@ void vvp_cmp_wne::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
 	    else if (b == BIT4_Z)
 		  continue;
 	    else if (a == BIT4_X)
-		  eeq.set_bit(0, BIT4_X);
+		  eeq = BIT4_X;
 	    else if (a == BIT4_Z)
-		  eeq.set_bit(0, BIT4_X);
+		  eeq = BIT4_X;
             else if (a != b) {
-		  eeq.set_bit(0, BIT4_1);
+		  eeq = BIT4_1;
 		  break;
 	    }
       }
 
       vvp_net_t*net = ptr.ptr();
-      net->send_vec4(eeq, 0);
+      net->send_vec4(single_bit_vector(eeq), 0);
 }
 
 
@@ -1156,11 +1145,11 @@ void vvp_cmp_eq_real::recv_real(vvp_net_ptr_t ptr, const double bit,
 {
       dispatch_operand_(ptr, bit);
 
-      vvp_vector4_t res (1);
-      if (op_a_ == op_b_) res.set_bit(0, BIT4_1);
-      else res.set_bit(0, BIT4_0);
+      vvp_bit4_t res;
+      if (op_a_ == op_b_) res = BIT4_1;
+      else res = BIT4_0;
 
-      ptr.ptr()->send_vec4(res, 0);
+      ptr.ptr()->send_vec4(single_bit_vector(res), 0);
 }
 
 /* Real compare not equal. */
@@ -1173,11 +1162,11 @@ void vvp_cmp_ne_real::recv_real(vvp_net_ptr_t ptr, const double bit,
 {
       dispatch_operand_(ptr, bit);
 
-      vvp_vector4_t res (1);
-      if (op_a_ != op_b_) res.set_bit(0, BIT4_1);
-      else res.set_bit(0, BIT4_0);
+      vvp_bit4_t res;
+      if (op_a_ != op_b_) res = BIT4_1;
+      else res = BIT4_0;
 
-      ptr.ptr()->send_vec4(res, 0);
+      ptr.ptr()->send_vec4(single_bit_vector(res), 0);
 }
 
 /* Real compare greater than or equal. */
@@ -1190,11 +1179,11 @@ void vvp_cmp_ge_real::recv_real(vvp_net_ptr_t ptr, const double bit,
 {
       dispatch_operand_(ptr, bit);
 
-      vvp_vector4_t res (1);
-      if (op_a_ >= op_b_) res.set_bit(0, BIT4_1);
-      else res.set_bit(0, BIT4_0);
+      vvp_bit4_t res;
+      if (op_a_ >= op_b_) res = BIT4_1;
+      else res = BIT4_0;
 
-      ptr.ptr()->send_vec4(res, 0);
+      ptr.ptr()->send_vec4(single_bit_vector(res), 0);
 }
 
 /* Real compare greater than. */
@@ -1207,9 +1196,9 @@ void vvp_cmp_gt_real::recv_real(vvp_net_ptr_t ptr, const double bit,
 {
       dispatch_operand_(ptr, bit);
 
-      vvp_vector4_t res (1);
-      if (op_a_ > op_b_) res.set_bit(0, BIT4_1);
-      else res.set_bit(0, BIT4_0);
+      vvp_bit4_t res;
+      if (op_a_ > op_b_) res = BIT4_1;
+      else res = BIT4_0;
 
-      ptr.ptr()->send_vec4(res, 0);
+      ptr.ptr()->send_vec4(single_bit_vector(res), 0);
 }

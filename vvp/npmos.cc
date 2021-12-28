@@ -40,7 +40,10 @@ void vvp_fun_pmos_::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
       if (ptr.port() != 1)
 	    return;
 
-      en_ = inv_en_? ~bit : bit;
+	  if (inv_en_)
+		en_.copy_inverted_from_(bit);
+	  else
+	    en_.copy_from_(bit);
       generate_output_(ptr);
 }
 

@@ -49,13 +49,13 @@ extern void schedule_final_vthread(vthread_t thr);
  */
 extern void schedule_assign_vector(vvp_net_ptr_t ptr,
 				   unsigned base, unsigned vwid,
-				   const vvp_vector4_t&val,
+				   vvp_vector4_t&&val,
 				   vvp_time64_t  delay);
 
 extern void schedule_assign_array_word(vvp_array_t mem,
 				       unsigned word_address,
 				       unsigned off,
-				       const vvp_vector4_t&val,
+				       vvp_vector4_t&&val,
 				       vvp_time64_t delay);
 
 extern void schedule_assign_array_word(vvp_array_t mem,
@@ -68,7 +68,7 @@ extern void schedule_assign_array_word(vvp_array_t mem,
  */
 extern void schedule_force_vector(vvp_net_t*net,
 				  unsigned base, unsigned vwid,
-				  const vvp_vector4_t&val,
+				  vvp_vector4_t&&val,
 				  vvp_time64_t delay);
 
 /*
@@ -90,7 +90,7 @@ extern void schedule_propagate_event(vvp_net_t*ptr,
  * constant value (i.e. C4<...>) to the input of a functor. This
  * creates an event in the active queue.
  */
-extern void schedule_set_vector(vvp_net_ptr_t ptr, const vvp_vector4_t&val);
+extern void schedule_set_vector(vvp_net_ptr_t ptr, vvp_vector4_t&&val);
 extern void schedule_set_vector(vvp_net_ptr_t ptr, const vvp_vector8_t&val);
 extern void schedule_set_vector(vvp_net_ptr_t ptr, double val);
 
@@ -118,7 +118,7 @@ extern void schedule_init_vector(vvp_net_ptr_t ptr, double val);
  * propagates an initial value from a net output (i.e. without passing
  * through the net functor).
  */
-extern void schedule_init_propagate(vvp_net_t*net, vvp_vector4_t val);
+extern void schedule_init_propagate(vvp_net_t*net, const vvp_vector4_t &val);
 extern void schedule_init_propagate(vvp_net_t*net, double val);
 
 /*

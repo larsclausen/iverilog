@@ -30,6 +30,7 @@
 # include  <string>
 # include  <new>
 # include  <cassert>
+# include  <utility>
 
 #ifdef HAVE_IOSFWD
 # include  <iosfwd>
@@ -253,6 +254,8 @@ class vvp_vector4_t {
 
       explicit vvp_vector4_t(unsigned size, double val);
 
+      explicit vvp_vector4_t(unsigned size, unsigned long a, unsigned long b);
+
 	// Construct a vector4 from the subvalue of another
 	// vector4. The width of the result is 'wid', and the bits are
 	// pulled from 'that' to implement the Verilog part select
@@ -261,7 +264,12 @@ class vvp_vector4_t {
       explicit vvp_vector4_t(const vvp_vector4_t&that,
 			     unsigned adr, unsigned wid);
 
+      vvp_vector4_t(vvp_bit4_t bit);
       vvp_vector4_t(const vvp_vector4_t&that);
+      vvp_vector4_t(vvp_vector4_t&&that) :
+		size_(std::exchange(that.size_, 0)),
+		abits_ptr_(that.abits_ptr_),
+		bbits_ptr_(that.bbits_ptr_) {}
       vvp_vector4_t(const vvp_vector4_t&that, bool invert_flag);
       vvp_vector4_t& operator= (const vvp_vector4_t&that);
 
@@ -331,6 +339,11 @@ class vvp_vector4_t {
       vvp_vector4_t& operator |= (const vvp_vector4_t&that);
       vvp_vector4_t& operator += (int64_t);
 
+      void copy_from_(const vvp_vector4_t&that);
+      void copy_inverted_from_(const vvp_vector4_t&that);
+
+	  bool operator ==(const vvp_vector4_t&that);
+
     private:
 	// Number of vvp_bit4_t bits that can be shoved into a word.
       enum { BITS_PER_WORD = 8*sizeof(unsigned long) };
@@ -356,9 +369,7 @@ class vvp_vector4_t {
 
 	// Initialize and operator= use this private method to copy
 	// the data from that object into this object.
-      void copy_from_(const vvp_vector4_t&that);
       void copy_from_big_(const vvp_vector4_t&that);
-      void copy_inverted_from_(const vvp_vector4_t&that);
 
       void allocate_words_(unsigned long inita, unsigned long initb);
 
@@ -397,8 +408,13 @@ inline vvp_vector4_t::vvp_vector4_t(const vvp_vector4_t&that, bool invert_flag)
 	    copy_from_(that);
 }
 
-inline vvp_vector4_t::vvp_vector4_t(unsigned size__, vvp_bit4_t val)
-: size_(size__)
+inline vvp_vector4_t::vvp_vector4_t(unsigned size, unsigned long a, unsigned long b)
+: size_(size), abits_val_(a), bbits_val_(b)
+{
+}
+
+inline vvp_vector4_t::vvp_vector4_t(unsigned size, vvp_bit4_t val)
+: size_(size)
 {
 	/* note: this relies on the bit encoding for the vvp_bit4_t. */
       static const unsigned long init_atable[4] = {
@@ -412,7 +428,31 @@ inline vvp_vector4_t::vvp_vector4_t(unsigned size__, vvp_bit4_t val)
 	    WORD_Z_BBITS,
 	    WORD_X_BBITS };
 
+	  if (size_ > 32) {
       allocate_words_(init_atable[val], init_btable[val]);
+	  } else {
+      abits_val_ = init_atable[val];
+	  bbits_val_ = init_btable[val];
+	  }
+}
+
+inline vvp_vector4_t::vvp_vector4_t(vvp_bit4_t val)
+: size_(1)
+{
+	/* note: this relies on the bit encoding for the vvp_bit4_t. */
+      static const unsigned long init_atable[4] = {
+	    WORD_0_ABITS,
+	    WORD_1_ABITS,
+	    WORD_Z_ABITS,
+	    WORD_X_ABITS };
+      static const unsigned long init_btable[4] = {
+	    WORD_0_BBITS,
+	    WORD_1_BBITS,
+	    WORD_Z_BBITS,
+	    WORD_X_BBITS };
+
+      abits_val_ = init_atable[val];
+	  bbits_val_ = init_btable[val];
 }
 
 inline vvp_vector4_t::~vvp_vector4_t()
@@ -542,7 +582,7 @@ extern vvp_bit4_t compare_gtge(const vvp_vector4_t&a,
 extern vvp_bit4_t compare_gtge_signed(const vvp_vector4_t&a,
 				      const vvp_vector4_t&b,
 				      vvp_bit4_t val_if_equal);
-template <class T> extern T coerce_to_width(const T&that, unsigned width);
+template <class T> extern T coerce_to_width(T&&that, unsigned width);
 
 /*
  * These functions extract the value of the vector as a native type,
@@ -1124,13 +1164,14 @@ template <class T> std::ostream& operator << (std::ostream&out, vvp_sub_pointer_
 class vvp_net_t {
     public:
       vvp_net_t();
+	  vvp_net_t(vvp_net_fun_t* _fun, vvp_net_fil_t *_fil);
 
 #ifdef CHECK_WITH_VALGRIND
       vvp_net_t *pool;
 #endif
       vvp_net_ptr_t port[4];
-      vvp_net_fun_t*fun;
-      vvp_net_fil_t*fil;
+      vvp_net_fun_t* fun;
+      vvp_net_fil_t* fil;
 
     public:
 	// Connect the port to the output from this net.
@@ -1835,5 +1876,18 @@ inline bool vvp_net_fil_t::test_force_mask_is_zero(void) const
 #undef realloc
 #undef calloc
 #undef __ivl_alloc_H
+
+
+static inline const vvp_vector4_t &single_bit_vector(vvp_bit4_t bit)
+{
+	static const vvp_vector4_t vectors[] = {
+		vvp_vector4_t(1, BIT4_0),
+		vvp_vector4_t(1, BIT4_1),
+		vvp_vector4_t(1, BIT4_Z),
+		vvp_vector4_t(1, BIT4_X),
+	};
+
+	return vectors[(int)bit];
+}
 
 #endif /* IVL_vvp_net_H */
