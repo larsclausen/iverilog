@@ -62,6 +62,16 @@ int test_immediate_vec4_ok(ivl_expr_t re)
       return 1;
 }
 
+int vec4_is_zero(ivl_expr_t re)
+{
+     const char *bits = ivl_expr_bits(re);
+   for (unsigned int idx = 0 ; idx < ivl_expr_width(re) ; idx++) {
+	    if (bits[idx] != '0')
+		  return 0;
+      }
+	  return 1;
+}
+
 static void make_immediate_vec4_words(ivl_expr_t re, unsigned long*val0p, unsigned long*valxp, unsigned*widp)
 {
       unsigned long val0 = 0;
@@ -400,37 +410,55 @@ static void draw_binary_vec4_compare(ivl_expr_t expr)
       draw_eval_vec4(le);
       resize_vec4_wid(le, use_wid);
 
-      draw_eval_vec4(re);
-      resize_vec4_wid(re, use_wid);
+	  char *op;
+	  int flag;
 
       switch (ivl_expr_opcode(expr)) {
 	  case 'e': /* == */
-	    fprintf(vvp_out, "    %%cmp/e;\n");
-	    fprintf(vvp_out, "    %%flag_get/vec4 4;\n");
+	    op = "e";
+		flag = 4;
 	    break;
 	  case 'n': /* != */
-	    fprintf(vvp_out, "    %%cmp/ne;\n");
-	    fprintf(vvp_out, "    %%flag_get/vec4 4;\n");
+	    op = "ne";
+		flag = 4;
 	    break;
 	  case 'E': /* === */
-	    fprintf(vvp_out, "    %%cmp/e;\n");
-	    fprintf(vvp_out, "    %%flag_get/vec4 6;\n");
+	    op = "e";
+		flag = 6;
 	    break;
 	  case 'N': /* !== */
-	    fprintf(vvp_out, "    %%cmp/ne;\n");
-	    fprintf(vvp_out, "    %%flag_get/vec4 6;\n");
+	    op = "ne";
+		flag = 6;
 	    break;
 	  case 'w': /* ==? */
-	    fprintf(vvp_out, "    %%cmp/we;\n");
-	    fprintf(vvp_out, "    %%flag_get/vec4 4;\n");
+	    op = "we";
+		flag = 4;
 	    break;
 	  case 'W': /* !=? */
-	    fprintf(vvp_out, "    %%cmp/wne;\n");
-	    fprintf(vvp_out, "    %%flag_get/vec4 4;\n");
+	    op = "wne";
+		flag = 4;
 	    break;
 	  default:
 	    assert(0);
       }
+		if (test_immediate_vec4_ok(re)) {
+		    if (ivl_expr_opcode(expr) == 'n' && vec4_is_zero(re)) {
+			   fprintf(vvp_out, "    %%or/r;\n");
+			} else if (ivl_expr_opcode(expr) == 'e' && vec4_is_zero(re)) {
+			   fprintf(vvp_out, "    %%nor/r;\n");
+			} else {
+		    char op2[10];
+			sprintf(op2, "%%cmpi/%s", op);
+		    draw_immediate_vec4(re, op2);
+	    fprintf(vvp_out, "    %%flag_get/vec4 %d;\n", flag);
+		}
+		} else {
+		  draw_eval_vec4(re);
+		  resize_vec4_wid(re, use_wid);
+	       fprintf(vvp_out, "    %%cmp/%s;\n", op);
+	    fprintf(vvp_out, "    %%flag_get/vec4 %d;\n", flag);
+		}
+
 }
 
 /*
@@ -1266,8 +1294,7 @@ static void draw_unary_vec4(ivl_expr_t expr)
 	  case '-':
 	    draw_eval_vec4(sub);
 	    fprintf(vvp_out, "    %%inv;\n");
-	    fprintf(vvp_out, "    %%pushi/vec4 1, 0, %u;\n", ivl_expr_width(sub));
-	    fprintf(vvp_out, "    %%add;\n");
+	    fprintf(vvp_out, "    %%addi 1, 0, %u;\n", ivl_expr_width(sub));
 	    break;
 
 	  case 'D': /* pre-decrement (--x) */

@@ -684,23 +684,33 @@ static int show_stmt_case(ivl_statement_t net, ivl_scope_t sscope)
 		 instructions below do not completely erase the
 		 value. Do this in front of each compare. */
 	    fprintf(vvp_out, "    %%dup/vec4;\n");
+		if (!test_immediate_vec4_ok(cex))
 	    draw_eval_vec4(cex);
 
 	    switch (ivl_statement_type(net)) {
 
 		case IVL_ST_CASE:
-		  fprintf(vvp_out, "    %%cmp/u;\n");
+		if (test_immediate_vec4_ok(cex))
+		    draw_immediate_vec4(cex, "%cmpi/e");
+		  else
+		    fprintf(vvp_out, "    %%cmp/e;\n");
 		  fprintf(vvp_out, "    %%jmp/1 T_%u.%u, 6;\n",
 			  thread_count, local_base+idx);
 		  break;
 
 		case IVL_ST_CASEX:
+		if (test_immediate_vec4_ok(cex))
+		    draw_immediate_vec4(cex, "%cmpi/x");
+		  else
 		  fprintf(vvp_out, "    %%cmp/x;\n");
 		  fprintf(vvp_out, "    %%jmp/1 T_%u.%u, 4;\n",
 			  thread_count, local_base+idx);
 		  break;
 
 		case IVL_ST_CASEZ:
+		if (test_immediate_vec4_ok(cex))
+		    draw_immediate_vec4(cex, "%cmpi/z");
+		  else
 		  fprintf(vvp_out, "    %%cmp/z;\n");
 		  fprintf(vvp_out, "    %%jmp/1 T_%u.%u, 4;\n",
 			  thread_count, local_base+idx);
