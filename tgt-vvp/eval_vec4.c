@@ -1020,6 +1020,9 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    assert(valx == 0);
 
 	    draw_eval_vec4(subexpr);
+		if (val0 == 0)
+	    fprintf(vvp_out, "    %%pad/u %u;\n", wid);
+		else
 	    fprintf(vvp_out, "    %%parti/%c %u, %lu, %u;\n",
 		    sign_suff, wid, val0, base_wid);
 
