@@ -523,14 +523,18 @@ static void draw_binary_vec4_logical(ivl_expr_t expr, char op)
       ivl_expr_t le = ivl_expr_oper1(expr);
       ivl_expr_t re = ivl_expr_oper2(expr);
 
-      /* Evaluate the left expression as a conditon and skip the right expression
-       * if the left is false. */
-      int flag = draw_eval_condition(le);
-      fprintf(vvp_out, "    %%flag_get/vec4 %d;\n", flag);
+	/* Evaluate the left expression as a conditon and skip the right expression
+	 * if the left is false. */
+      vvp_flag flag = draw_eval_condition(le);
+	  if (flag.inv)
+		fprintf(vvp_out, "    %%flag_inv %d;\n", flag.flag);
+
+      fprintf(vvp_out, "    %%flag_get/vec4 %d;\n", flag.flag);
       fprintf(vvp_out, "    %%jmp/%s T_%u.%u, %d;\n", jmp_type, thread_count,
-	      label_out, flag);
-      clr_flag(flag);
-      /* Now push the right expression. Reduce to a single bit if necessary. */
+	          label_out, flag.flag);
+	 clr_flag(flag.flag);
+
+	/* Now push the right expression. Reduce to a single bit if necessary. */
       draw_eval_vec4(re);
       if (ivl_expr_width(re) > 1)
 	    fprintf(vvp_out, "    %%or/r;\n");
@@ -1177,7 +1181,15 @@ static void draw_ternary_vec4(ivl_expr_t expr)
       unsigned lab_true  = local_count++;
       unsigned lab_out   = local_count++;
 
-      int use_flag = draw_eval_condition(cond);
+	  char op_true = '0';
+	  char op_false = '1';
+
+      vvp_flag flag = draw_eval_condition(cond);
+	  if (flag.inv) {
+		  op_true = '1';
+		  op_false = '0';
+	  }
+	  int use_flag = flag.flag;
 
 	/* The condition flag is used after possibly other statements,
 	   so we need to put it into a non-common place. Allocate a
@@ -1189,20 +1201,20 @@ static void draw_ternary_vec4(ivl_expr_t expr)
 	    use_flag = tmp_flag;
       }
 
-      fprintf(vvp_out, "    %%jmp/0 T_%u.%u, %d;\n", thread_count, lab_true, use_flag);
+      fprintf(vvp_out, "    %%jmp/%c T_%u.%u, %d;\n", op_true, thread_count, lab_true, use_flag);
 
 	/* If the condition is true or xz (not false), we need the true
 	   expression. If the condition is true, then we ONLY need the
 	   true expression. */
       draw_eval_vec4(true_ex);
-      fprintf(vvp_out, "    %%jmp/1 T_%u.%u, %d;\n", thread_count, lab_out, use_flag);
+      fprintf(vvp_out, "    %%jmp/%c T_%u.%u, %d;\n", op_false, thread_count, lab_out, use_flag);
       fprintf(vvp_out, "T_%u.%u ; End of true expr.\n", thread_count, lab_true);
 
 	/* If the condition is false or xz (not true), we need the false
 	   expression. If the condition is false, then we ONLY need
 	   the false expression. */
       draw_eval_vec4(false_ex);
-      fprintf(vvp_out, "    %%jmp/0 T_%u.%u, %d;\n", thread_count, lab_out, use_flag);
+      fprintf(vvp_out, "    %%jmp/%c T_%u.%u, %d;\n", op_true, thread_count, lab_out, use_flag);
       fprintf(vvp_out, " ; End of false expr.\n");
 
 	/* Here, the condition is not true or false, it is xz. Both

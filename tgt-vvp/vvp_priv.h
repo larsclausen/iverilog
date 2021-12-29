@@ -164,6 +164,11 @@ struct vvp_nexus_data {
 };
 #define VVP_NEXUS_DATA_STR 0x0001
 
+typedef struct {
+	int flag;
+	int inv;
+} vvp_flag;
+
 
 /*
  * Given a nexus, draw a string that represents the functor output
@@ -208,7 +213,7 @@ extern void draw_eval_expr_into_integer(ivl_expr_t expr, unsigned ix);
  * result in a flag that is returned. This result may be used as an
  * operand for conditional jump instructions.
  */
-extern int draw_eval_condition(ivl_expr_t expr);
+extern vvp_flag draw_eval_condition(ivl_expr_t expr);
 
 /*
  * Return true if the signal is the return value of a function.

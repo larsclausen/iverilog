@@ -21,7 +21,7 @@
 # include  <stdlib.h>
 # include  <assert.h>
 
-static int draw_condition_fallback(ivl_expr_t expr)
+static vvp_flag draw_condition_fallback(ivl_expr_t expr)
 {
 
 	/* Evaluate the condition expression, including optionally
@@ -30,16 +30,16 @@ static int draw_condition_fallback(ivl_expr_t expr)
       draw_eval_vec4(expr);
       if (ivl_expr_width(expr) > 1) {
 	    fprintf(vvp_out, "    %%cmpi/ne 0, 0, %d;\n", ivl_expr_width(expr));
-		return 4;
+		return (vvp_flag){4, 0};
 	  }
 
       int use_flag = allocate_flag();
 		fprintf(vvp_out, "    %%flag_set/vec4 %d;\n", use_flag);
 
-      return use_flag;
+      return (vvp_flag){use_flag, 0};
 }
 
-static int draw_condition_binary_compare(ivl_expr_t expr)
+static vvp_flag draw_condition_binary_compare(ivl_expr_t expr)
 {
       ivl_expr_t le = ivl_expr_oper1(expr);
       ivl_expr_t re = ivl_expr_oper2(expr);
@@ -107,19 +107,18 @@ static int draw_condition_binary_compare(ivl_expr_t expr)
       switch (ivl_expr_opcode(expr)) {
 	  case 'n': /* != */
 	  case 'e': /* == */
-	    return 4;
-	    break;
+	    return (vvp_flag){4, 0};
 	  case 'N': /* !== */
 	  case 'E': /* === */
-	    return 6;
+	    return (vvp_flag){6, 0};
 	  default:
 	    assert(0);
-	    return -1;
+	    return (vvp_flag){-1, 0};
       }
 
 }
 
-static int draw_condition_binary_real_le(ivl_expr_t expr)
+static vvp_flag draw_condition_binary_real_le(ivl_expr_t expr)
 {
       ivl_expr_t le = ivl_expr_oper1(expr);
       ivl_expr_t re = ivl_expr_oper2(expr);
@@ -151,18 +150,18 @@ static int draw_condition_binary_real_le(ivl_expr_t expr)
 
       switch (use_opcode) {
 	  case '<':
-	    return 5;
+	    return (vvp_flag){5, 0};
 	  case 'L':
 	    fprintf(vvp_out, "    %%flag_or 5, 4;\n");
-	    return 5;
+	    return (vvp_flag){5, 0};
 	  default:
 	    assert(0);
-	    return -1;
+	    return (vvp_flag){-1, 0};
       }
 
 }
 
-static int draw_condition_binary_le(ivl_expr_t expr)
+static vvp_flag draw_condition_binary_le(ivl_expr_t expr)
 {
       ivl_expr_t le = ivl_expr_oper1(expr);
       ivl_expr_t re = ivl_expr_oper2(expr);
@@ -262,60 +261,58 @@ static int draw_condition_binary_le(ivl_expr_t expr)
       switch (use_opcode) {
 	  case '>':
 	    fprintf(vvp_out, "    %%flag_or 5, 4; GT is !LE\n");
-	    fprintf(vvp_out, "    %%flag_inv 5;\n");
-	    return 5;
+	    return (vvp_flag){5, 1};
 	  case 'G':
-	    fprintf(vvp_out, "    %%flag_inv 5; GE is !LT\n");
-	    return 5;
+	    return (vvp_flag){5, 1};
 	  case '<':
-	    return 5;
+	    return (vvp_flag){5, 0};
 	  case 'L':
 	    fprintf(vvp_out, "    %%flag_or 5, 4;\n");
-	    return 5;
+	    return (vvp_flag){5, 0};
 	  default:
 	    assert(0);
-	    return -1;
+	    return (vvp_flag){-1, 0};
       }
 }
 
-static int draw_condition_binary_lor(ivl_expr_t expr)
+static vvp_flag draw_condition_binary_lor(ivl_expr_t expr)
 {
       unsigned label_out = local_count++;
 
       ivl_expr_t le = ivl_expr_oper1(expr);
       ivl_expr_t re = ivl_expr_oper2(expr);
 
-      int lx = draw_eval_condition(le);
-      int tmp_flag = lx;
+      vvp_flag lx = draw_eval_condition(le);
+      int tmp_flag = lx.flag;
 
       /* Short circuit right hand side if necessary */
-      fprintf(vvp_out, "    %%jmp/1 T_%u.%u, %d;\n", thread_count, label_out, lx);
+      fprintf(vvp_out, "    %%jmp/1 T_%u.%u, %d;\n", thread_count, label_out, tmp_flag);
 
-      if (lx < 8) {
-	  tmp_flag = allocate_flag();
-	  fprintf(vvp_out, "    %%flag_mov %d, %d;\n", tmp_flag, lx);
+      if (lx.flag < 8) {
+          tmp_flag = allocate_flag();
+          fprintf(vvp_out, "    %%flag_mov %d, %d;\n", tmp_flag, lx.flag);
       }
 
-      int rx = draw_eval_condition(re);
+      vvp_flag rx = draw_eval_condition(re);
 
       /*
        * The flag needs to be in the same position regardless of whether the
        * right side is short-cicuited or not.
        */
-      if (lx == tmp_flag) {
-	  fprintf(vvp_out, "    %%flag_or %d, %d;\n", lx, rx);
-      } else {
-	  fprintf(vvp_out, "    %%flag_or %d, %d;\n", rx, tmp_flag);
-	  if (lx != rx)
-	      fprintf(vvp_out, "    %%flag_mov %d, %d;\n", lx, rx);
-	  clr_flag(tmp_flag);
+      if (lx.flag == tmp_flag)
+          fprintf(vvp_out, "    %%flag_or %d, %d;\n", lx.flag, rx.flag);
+      else {
+          fprintf(vvp_out, "    %%flag_or %d, %d;\n", rx.flag, tmp_flag);
+          if (lx.flag != rx.flag)
+             fprintf(vvp_out, "    %%flag_mov %d, %d;\n", lx.flag, rx.flag);
+          clr_flag(tmp_flag);
       }
+      clr_flag(rx.flag);
       fprintf(vvp_out, "T_%u.%u;\n", thread_count, label_out);
-      clr_flag(rx);
       return lx;
 }
 
-static int draw_condition_binary(ivl_expr_t expr)
+static vvp_flag draw_condition_binary(ivl_expr_t expr)
 {
       switch (ivl_expr_opcode(expr)) {
 	  case 'e': /* == */
@@ -335,7 +332,7 @@ static int draw_condition_binary(ivl_expr_t expr)
       }
 }
 
-static int draw_condition_unary(ivl_expr_t expr)
+static vvp_flag draw_condition_unary(ivl_expr_t expr)
 {
       ivl_expr_t sub = ivl_expr_oper1(expr);
 
@@ -343,12 +340,12 @@ static int draw_condition_unary(ivl_expr_t expr)
 	  case '|': /* Reduce OR */
 	    draw_eval_vec4(sub);
 	    fprintf(vvp_out, "    %%cmpi/ne 0, 0, %d;\n", ivl_expr_width(sub));
-		return 4;
+		return (vvp_flag){4, 0};
 	  case 'N': /* Reduce NOR */
 	  case '!': /* Logical NOT */
 	    draw_eval_vec4(sub);
 	    fprintf(vvp_out, "    %%cmpi/e 0, 0, %d;\n", ivl_expr_width(sub));
-	    return 4;
+	    return (vvp_flag){4, 0};
 	  default:
 	    return draw_condition_fallback(expr);
       }
@@ -356,7 +353,7 @@ static int draw_condition_unary(ivl_expr_t expr)
 
 
 
-int draw_eval_condition(ivl_expr_t expr)
+vvp_flag draw_eval_condition(ivl_expr_t expr)
 {
       switch (ivl_expr_type(expr)) {
 	  case IVL_EX_BINARY:

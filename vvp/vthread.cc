@@ -91,6 +91,74 @@ using namespace std;
  * to reap the child immediately.
  */
 
+
+ #include <array>
+#include <initializer_list>
+
+template <typename T, size_t N>
+class StaticVector
+{
+public:
+
+  using iterator       = typename std::array<T,N>::iterator;
+  using const_iterator = typename std::array<T,N>::const_iterator;
+
+  StaticVector(uint8_t n=0)  {
+	_back = _storage.data();
+  }
+
+  StaticVector(const StaticVector& other) = default;
+  StaticVector(StaticVector&& other) = default;
+
+  void push_back(const T &val){
+    *_back = val;
+	_back++;
+  }
+
+  void push_back(T &&val){
+    *_back = std::move(val);
+	_back++;
+  }
+
+
+	  template<class... Args>
+  void emplace_back(Args&&... args) {
+    new (_back) T(std::forward<Args>(args)...);
+	_back++;
+  }
+
+  void pop_back(){
+    back().~T(); // call destructor
+	_back--;
+  }
+
+  size_t size() const { return _back - _storage.data(); }
+
+  void clear(){ while(_back != _storage.data()) { pop_back(); } }
+
+  T& front() { return _storage.front(); }
+  const T& front() const { return _storage.front(); }
+
+  T& back() { return _back[-1]; }
+  const T& back() const { return _back[-1]; }
+
+  iterator begin() { return _storage.begin(); }
+  const_iterator begin() const { return _storage.begin(); }
+
+  iterator end() { return _storage.end(); }
+  const_iterator end() const { return _storage.end(); }
+
+  T& operator[](uint8_t index) { return _storage[index]; }
+  const T& operator[](uint8_t index) const { return _storage[index]; }
+
+  T& data() { return _storage.data(); }
+  const T& data() const { return _storage.data(); }
+
+private:
+  std::array<T,N> _storage;
+  T*_back;
+};
+
 struct vthread_s {
       vthread_s();
 
@@ -98,6 +166,11 @@ struct vthread_s {
 
 	/* This is the program counter. */
       vvp_code_t pc;
+
+    private:
+	  StaticVector<vvp_vector4_t, 32> stack_vec4_;
+//      vector<vvp_vector4_t>stack_vec4_;
+    public:
 	/* These hold the private thread bits. */
       enum { FLAGS_COUNT = 512, WORDS_COUNT = 16 };
       vvp_bit4_t flags[FLAGS_COUNT];
@@ -115,65 +188,35 @@ struct vthread_s {
       vector<unsigned> args_str;
       vector<unsigned> args_vec4;
 
-    private:
-      vector<vvp_vector4_t>stack_vec4_;
-	   vvp_wire_vec4 *sig_;
-    public:
       inline vvp_vector4_t pop_vec4(void)
       {
 		vvp_vector4_t val;
-	    if (sig_ && 0) {
-			val = sig_->vec4_value2();
-			sig_ = 0;
-		} else {
 	    assert(! stack_vec4_.empty());
 	    val = std::move(stack_vec4_.back());
 	    stack_vec4_.pop_back();
-		}
 	    return val;
       }
-	  inline void flush_sig() {
-		return;
-		if (sig_) {
-			stack_vec4_.emplace_back(sig_->vec4_value2());
-			sig_ = 0;
-		}
-	  }
 
       inline void push_vec4(const vvp_vector4_t&val)
       {
-	    flush_sig();
 	    stack_vec4_.push_back(val);
       }
-	  inline void push_sig(vvp_wire_vec4 *sig) {
-			stack_vec4_.emplace_back(sig->vec4_value2());
-			return;
-		if (sig_)
-        emplace_vec4(sig_->vec4_value2());
-		sig_ = sig;
-	  }
-
 
 	  template<class... Args>
       inline void emplace_vec4(Args&&... args)
       {
-	    flush_sig();
 	    stack_vec4_.emplace_back(std::forward<Args>(args)...);
       }
 
 	  template<class... Args>
       inline vvp_vector4_t&alloc_vec4(Args&&... args)
       {
-	    flush_sig();
 		stack_vec4_.emplace_back(args...);
 		return stack_vec4_.back();
       }
 
       inline const vvp_vector4_t& peek_vec4(unsigned depth)
       {
-
-	    flush_sig();
-
 	    unsigned size = stack_vec4_.size();
 	    assert(depth < size);
 	    unsigned use_index = size-1-depth;
@@ -181,23 +224,17 @@ struct vthread_s {
       }
       inline vvp_vector4_t& peek_vec4(void)
       {
-	    flush_sig();
 	    assert(!stack_vec4_.empty());
 	    return stack_vec4_.back();
       }
       inline void poke_vec4(unsigned depth, const vvp_vector4_t&val)
       {
-	    flush_sig();
 	    assert(depth < stack_vec4_.size());
 	    unsigned use_index = stack_vec4_.size()-1-depth;
 	    stack_vec4_[use_index] = val;
       }
       inline void pop_vec4(unsigned cnt)
       {
-	    if (sig_&& cnt && 0) {
-			sig_ = 0;
-			cnt--;
-		}
 	    while (cnt > 0) {
 		  stack_vec4_.pop_back();
 		  cnt -= 1;
@@ -3663,7 +3700,7 @@ bool of_JMP(vthread_t thr, vvp_code_t cp)
 	   keeps going to the next instruction. However, if there was
 	   a $stop or vpiStop, returning false here can break the
 	   simulation out of a hung loop. */
-      if (schedule_stopped()) {
+      if (0 && schedule_stopped()) {
 	    schedule_vthread(thr, 0, false);
 	    return false;
       }
@@ -3683,7 +3720,7 @@ bool of_JMP0(vthread_t thr, vvp_code_t cp)
 	   keeps going to the next instruction. However, if there was
 	   a $stop or vpiStop, returning false here can break the
 	   simulation out of a hung loop. */
-      if (schedule_stopped()) {
+      if (0 && schedule_stopped()) {
 	    schedule_vthread(thr, 0, false);
 	    return false;
       }
@@ -3703,7 +3740,7 @@ bool of_JMP0XZ(vthread_t thr, vvp_code_t cp)
 	   keeps going to the next instruction. However, if there was
 	   a $stop or vpiStop, returning false here can break the
 	   simulation out of a hung loop. */
-      if (schedule_stopped()) {
+      if (0 && schedule_stopped()) {
 	    schedule_vthread(thr, 0, false);
 	    return false;
       }
@@ -3723,7 +3760,7 @@ bool of_JMP1(vthread_t thr, vvp_code_t cp)
 	   keeps going to the next instruction. However, if there was
 	   a $stop or vpiStop, returning false here can break the
 	   simulation out of a hung loop. */
-      if (schedule_stopped()) {
+      if (0 && schedule_stopped()) {
 	    schedule_vthread(thr, 0, false);
 	    return false;
       }
@@ -3736,7 +3773,7 @@ bool of_JMP1(vthread_t thr, vvp_code_t cp)
  */
 bool of_JMP1XZ(vthread_t thr, vvp_code_t cp)
 {
-      if (thr->flags[cp->bit_idx[0]] != BIT4_0)
+      if (0 && thr->flags[cp->bit_idx[0]] != BIT4_0)
 	    thr->pc = cp->cptr;
 
 	/* Normally, this returns true so that the processor just
@@ -4011,9 +4048,7 @@ bool of_LOAD_VEC4_vec4(vthread_t thr, vvp_code_t cp)
 
 	// Extract the value from the signal and directly into the
 	// target stack position.
-//      thr->emplace_vec4(sig->vec4_value2());
-
-	  thr->push_sig(sig);
+      thr->emplace_vec4(sig->vec4_value2());
 
       return vthread_run_next(thr);
 }
@@ -6292,7 +6327,13 @@ bool of_STORE_STRA(vthread_t thr, vvp_code_t cp)
 bool of_STOREI_VEC4(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_ptr_t ptr(cp->net, 0);
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+
+	  if (!cp->sig) {
+		cp->sig =  dynamic_cast<vvp_signal_value*> (cp->net->fil);
+	  }
+
+	  vvp_signal_value*sig = cp->sig;
+
       unsigned long val = cp->bit_idx[0];
       const int wid = sig->value_size();
 

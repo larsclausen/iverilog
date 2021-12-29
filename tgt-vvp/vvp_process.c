@@ -1244,9 +1244,15 @@ static int show_stmt_condit(ivl_statement_t net, ivl_scope_t sscope)
       lab_false = local_count++;
       lab_out = local_count++;
 
-      int use_flag = draw_eval_condition(expr);
-      fprintf(vvp_out, "    %%jmp/0xz  T_%u.%u, %d;\n",
-	      thread_count, lab_false, use_flag);
+      vvp_flag flag = draw_eval_condition(expr);
+	  char op = '0';
+	  if (flag.inv)
+		op = '1';
+
+	  int use_flag = flag.flag;
+
+      fprintf(vvp_out, "    %%jmp/%cxz  T_%u.%u, %d;\n",
+	      op, thread_count, lab_false, use_flag);
       clr_flag(use_flag);
 
       if (ivl_stmt_cond_true(net))
@@ -1385,9 +1391,12 @@ static int show_stmt_do_while(ivl_statement_t net, ivl_scope_t sscope)
 	/* Draw the evaluation of the condition expression, and test
 	   the result. If the expression evaluates to true, then
 	   branch to the top label. */
-      int use_flag = draw_eval_condition(ivl_stmt_cond_expr(net));
-      fprintf(vvp_out, "    %%jmp/1 T_%u.%u, %d;\n",
-	      thread_count, top_label, use_flag);
+      vvp_flag flag = draw_eval_condition(ivl_stmt_cond_expr(net));
+	char op = flag.inv ? '0' : '1';
+		int use_flag = flag.flag;
+
+      fprintf(vvp_out, "    %%jmp/%c T_%u.%u, %d;\n",
+	      op, thread_count, top_label, use_flag);
       clr_flag(use_flag);
 
       return rc;
@@ -1774,9 +1783,12 @@ static int show_stmt_while(ivl_statement_t net, ivl_scope_t sscope)
 	/* Draw the evaluation of the condition expression, and test
 	   the result. If the expression evaluates to false, then
 	   branch to the out label. */
-      int use_flag = draw_eval_condition(ivl_stmt_cond_expr(net));
-      fprintf(vvp_out, "    %%jmp/0xz T_%u.%u, %d;\n",
-	      thread_count, out_label, use_flag);
+      vvp_flag flag = draw_eval_condition(ivl_stmt_cond_expr(net));
+	 char op = flag.inv ? '1' : '0';
+	 int use_flag = flag.flag;
+
+      fprintf(vvp_out, "    %%jmp/%cxz T_%u.%u, %d;\n",
+	      op, thread_count, out_label, use_flag);
       clr_flag(use_flag);
 
 	/* Draw the body of the loop. */
