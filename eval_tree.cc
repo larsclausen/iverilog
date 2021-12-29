@@ -1591,32 +1591,6 @@ NetEConst* NetEUReduce::eval_arguments_(const NetExpr*ex) const
       bool invert = false;
 
       switch (op_) {
-
-	  case '!': {
-		  /* Evaluate the unary logical not by first scanning
-		     the operand value for V1 and Vx bits. If we find
-		     any V1 bits we know that the value is TRUE, so
-		     the result of ! is V0. If there are no V1 bits
-		     but there are some Vx/Vz bits, the result is
-		     unknown. Otherwise, the result is V1. */
-		bool v1 = false, vx = false;
-		for (unsigned idx = 0 ;  idx < val.len() && !v1 ;  idx += 1) {
-		      switch (val.get(idx)) {
-			  case verinum::V0:
-			    break;
-			  case verinum::V1:
-			    v1 = true;
-			    break;
-			  default:
-			    vx = true;
-			    break;
-		      }
-		}
-
-		res = v1? verinum::V0 : (vx? verinum::Vx : verinum::V1);
-		break;
-	  }
-
 	  case 'A':
 		invert = true;
 		// fallthrough
@@ -1627,7 +1601,8 @@ NetEConst* NetEUReduce::eval_arguments_(const NetExpr*ex) const
 		break;
 	  }
 
-	  case 'N':
+	  case '!': /* Logical NOT */
+	  case 'N': /* Reduction NOR */
 		invert = true;
 		// fallthrough
 	  case '|': {
