@@ -23,16 +23,18 @@
 
 static int draw_condition_fallback(ivl_expr_t expr)
 {
-      int use_flag = allocate_flag();
 
 	/* Evaluate the condition expression, including optionally
 	   reducing it to a single bit. Put the result into a flag bit
 	   for use by all the tests. */
       draw_eval_vec4(expr);
-      if (ivl_expr_width(expr) > 1)
-	    fprintf(vvp_out, "    %%or/r;\n");
+      if (ivl_expr_width(expr) > 1) {
+	    fprintf(vvp_out, "    %%cmpi/ne 0, 0, %d;\n", ivl_expr_width(expr));
+		return 4;
+	  }
 
-      fprintf(vvp_out, "    %%flag_set/vec4 %d;\n", use_flag);
+      int use_flag = allocate_flag();
+		fprintf(vvp_out, "    %%flag_set/vec4 %d;\n", use_flag);
 
       return use_flag;
 }
@@ -333,11 +335,34 @@ static int draw_condition_binary(ivl_expr_t expr)
       }
 }
 
+static int draw_condition_unary(ivl_expr_t expr)
+{
+      ivl_expr_t sub = ivl_expr_oper1(expr);
+
+      switch (ivl_expr_opcode(expr)) {
+	  case '|': /* Reduce OR */
+	    draw_eval_vec4(sub);
+	    fprintf(vvp_out, "    %%cmpi/ne 0, 0, %d;\n", ivl_expr_width(sub));
+		return 4;
+	  case 'N': /* Reduce NOR */
+	  case '!': /* Logical NOT */
+	    draw_eval_vec4(sub);
+	    fprintf(vvp_out, "    %%cmpi/e 0, 0, %d;\n", ivl_expr_width(sub));
+	    return 4;
+	  default:
+	    return draw_condition_fallback(expr);
+      }
+}
+
+
+
 int draw_eval_condition(ivl_expr_t expr)
 {
       switch (ivl_expr_type(expr)) {
 	  case IVL_EX_BINARY:
 	    return draw_condition_binary(expr);
+	  case IVL_EX_UNARY:
+	    return draw_condition_unary(expr);
 	  default:
 	    return draw_condition_fallback(expr);
       }
