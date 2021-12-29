@@ -139,6 +139,9 @@ NetExpr* NetEBAdd::eval_tree()
       NetExpr*res = NetEBinary::eval_tree();
       if (res != 0) return res;
 
+    if (dynamic_cast<NetEConst*>(left_) && op_ == '+')
+	    std::swap(left_, right_);
+
 	// If the expression type is real, then do not attempt the
 	// following alternative processing.
       if (expr_type() == IVL_VT_REAL)
