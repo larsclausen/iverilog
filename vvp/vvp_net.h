@@ -253,6 +253,11 @@ class vvp_vector4_t {
       explicit vvp_vector4_t(unsigned size =0, vvp_bit4_t bits =BIT4_X);
 
       explicit vvp_vector4_t(unsigned size, double val);
+      explicit vvp_vector4_t(unsigned size, unsigned long val) {
+	    size_ = size;
+		abits_val_ = val;
+		bbits_val_ = 0;
+	  }
 
       explicit vvp_vector4_t(unsigned size, unsigned long a, unsigned long b);
 

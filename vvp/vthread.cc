@@ -6272,6 +6272,38 @@ bool of_STORE_STRA(vthread_t thr, vvp_code_t cp)
 }
 
 /*
+ * %storei/vec4 <var-label>, <imm>, <wid>
+ *
+ * <offset> is the index register that contains the base offset into
+ * the destination. If zero, the offset of 0 is used instead of index
+ * register zero. The offset value is SIGNED, and can be negative.
+ *
+ * <wid> is the actual width, an unsigned number.
+ *
+ * This function tests flag bit 4. If that flag is set, and <offset>
+ * is an actual index register (not zero) then this assumes that the
+ * calculation of the <offset> contents failed, and the store is
+ * aborted.
+ *
+ * NOTE: This instruction may loose the <wid> argument because it is
+ * not consistent with the %store/vec4/<etc> instructions which have
+ * no <wid>.
+ */
+bool of_STOREI_VEC4(vthread_t thr, vvp_code_t cp)
+{
+      vvp_net_ptr_t ptr(cp->net, 0);
+      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      unsigned long val = cp->bit_idx[0];
+      const int wid = sig->value_size();
+
+	  vvp_send_vec4(ptr, vvp_vector4_t(wid, val), thr->wt_context);
+
+      return true;
+}
+
+
+
+/*
  * %store/vec4 <var-label>, <offset>, <wid>
  *
  * <offset> is the index register that contains the base offset into

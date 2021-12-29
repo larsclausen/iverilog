@@ -490,6 +490,32 @@ static void store_vec4_to_lval(ivl_statement_t net)
       }
 }
 
+static int try_storei(ivl_statement_t net, ivl_expr_t rval)
+{
+	 if (!number_is_immediate(rval, 32, 0) ||
+	     number_is_unknown(rval))
+		return 0;
+
+	if (ivl_stmt_opcode(net) != 0)
+		return 0;
+
+	if (ivl_stmt_lvals(net) != 1)
+		return 0;
+
+	ivl_lval_t lval = ivl_stmt_lval(net, 0);
+	if (ivl_lval_part_off(lval) || ivl_lval_nest(lval) || ivl_lval_idx(lval))
+		return 0;
+
+	ivl_signal_t lsig = ivl_lval_sig(lval);
+	if (signal_is_return_value(lsig))
+		return 0;
+
+	unsigned lwid = ivl_lval_width(lval);
+	fprintf(vvp_out, "    %%storei/vec4 v%p_0, %lu, %u;\n",
+		    lsig, get_number_immediate(rval), lwid);
+	return 1;
+}
+
 static int show_stmt_assign_vector(ivl_statement_t net)
 {
       ivl_expr_t rval = ivl_stmt_rval(net);
@@ -506,6 +532,9 @@ static int show_stmt_assign_vector(ivl_statement_t net)
             slices = calloc(ivl_stmt_lvals(net), sizeof(struct vec_slice_info));
 	    get_vec_from_lval(net, slices);
       }
+
+	  if (try_storei(net, rval))
+		return 0;
 
 	/* Handle the special case that the expression is a real
 	   value. Evaluate the real expression, then convert the

@@ -309,6 +309,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%store/stra",    of_STORE_STRA,    2, {OA_ARR_PTR, OA_BIT1, OA_NONE} },
       { "%store/vec4",    of_STORE_VEC4,    3, {OA_FUNC_PTR,OA_BIT1, OA_BIT2} },
       { "%store/vec4a",   of_STORE_VEC4A,   3, {OA_ARR_PTR, OA_BIT1, OA_BIT2} },
+      { "%storei/vec4",    of_STOREI_VEC4,    3, {OA_FUNC_PTR,OA_BIT1, OA_BIT2} },
       { "%sub",    of_SUB,    0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%sub/wr", of_SUB_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%subi",   of_SUBI,   3,  {OA_IMM1,     OA_IMM2,     OA_NUMBER} },
@@ -1781,6 +1782,7 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		    sizeof(struct opcode_table_s), &opcode_compare);
       if (op == 0) {
 	    yyerror("Invalid opcode");
+	    yyerror(mnem);
 	    compile_errors += 1;
 	    return;
       }

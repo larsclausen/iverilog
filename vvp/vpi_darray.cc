@@ -147,8 +147,8 @@ void __vpiDarrayVar::put_word_value(struct __vpiArrayWord*word, p_vpi_value vp, 
       switch(vp->format) {
       case vpiScalarVal:
       {
-          vvp_vector4_t vec(1, vp->value.scalar);
-          aobj->set_word(index, vec);
+//          vvp_vector4_t vec(1, vp->value.scalar);
+//          aobj->set_word(index, vec);
       }
       break;
 
