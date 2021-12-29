@@ -1532,21 +1532,7 @@ NetExpr* NetEUnary::eval_arguments_(const NetExpr*ex) const
 	    break;
 
 	  case '~':
-	      /* Bitwise not is even simpler than logical
-	         not. Just invert all the bits of the operand and
-	         make the new value with the same dimensions. */
-	    for (unsigned idx = 0 ;  idx < val.len() ;  idx += 1)
-		  switch (val.get(idx)) {
-		      case verinum::V0:
-			val.set(idx, verinum::V1);
-			break;
-		      case verinum::V1:
-			val.set(idx, verinum::V0);
-			break;
-		      default:
-			val.set(idx, verinum::Vx);
-		  }
-
+		  val = ~val;
 	    break;
 
 	  case '!':
