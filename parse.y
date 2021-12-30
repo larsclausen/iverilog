@@ -480,7 +480,6 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       verireal* realtime;
 
       PSpecPath* specpath;
-      std::list<index_component_t> *dimensions;
 
       LexicalScope::lifetime_t lifetime;
 
