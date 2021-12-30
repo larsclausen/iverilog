@@ -283,8 +283,8 @@ bool PECallFunction::has_aa_term(Design*des, NetScope*scope) const
       return flag;
 }
 
-PEConcat::PEConcat(const list<PExpr*>&p, PExpr*r)
-: parms_(p.size()), width_modes_(SIZED, p.size()), repeat_(r)
+PEConcat::PEConcat(const list<PExpr*>&p, const index_component_t &index, PExpr*r)
+: parms_(p.size()), width_modes_(SIZED, p.size()), repeat_(r), index_(index)
 {
       int tmp_idx = 0;
       assert(parms_.size() == p.size());
@@ -299,6 +299,8 @@ PEConcat::PEConcat(const list<PExpr*>&p, PExpr*r)
 PEConcat::~PEConcat()
 {
       delete repeat_;
+	  delete index_.msb;
+	  delete index_.lsb;
 }
 
 void PEConcat::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)

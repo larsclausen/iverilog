@@ -483,6 +483,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       std::list<index_component_t> *dimensions;
 
       LexicalScope::lifetime_t lifetime;
+
+      index_component_t index;
 };
 
 %token <text>      IDENTIFIER SYSTEM_IDENTIFIER STRING TIME_LITERAL
@@ -721,6 +723,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <case_quality> unique_priority
 
 %type <genvar_iter> genvar_iteration
+
+%type <index> range_expression range_expression_opt
 
 %token K_TAND
 %nonassoc K_PLUS_EQ K_MINUS_EQ K_MUL_EQ K_DIV_EQ K_MOD_EQ K_AND_EQ K_OR_EQ
@@ -3971,22 +3975,32 @@ expr_primary
 
   /* Various kinds of concatenation expressions. */
 
-  | '{' expression_list_proper '}'
-      { PEConcat*tmp = new PEConcat(*$2);
-	FILE_NAME(tmp, @1);
-	delete $2;
-	$$ = tmp;
-      }
-  | '{' expression '{' expression_list_proper '}' '}'
-      { PExpr*rep = $2;
-	PEConcat*tmp = new PEConcat(*$4, rep);
-	FILE_NAME(tmp, @1);
-	delete $4;
-	$$ = tmp;
-      }
-  | '{' expression '{' expression_list_proper '}' error '}'
-      { PExpr*rep = $2;
-	PEConcat*tmp = new PEConcat(*$4, rep);
+  | '{' expression_list_proper '}' range_expression_opt
+      {
+		if (!gn_system_verilog() && $4.sel != index_component_t::SEL_NONE) {
+	      yyerror(@1, "error: Part select on concatanation requires SystemVerilog.");
+	      $$ = 0;
+	} else {
+		$$ = new PEConcat(*$2, $4, 0);
+		FILE_NAME($$, @1);
+		delete $2;
+	}
+
+	}
+  | '{' expression '{' expression_list_proper '}' '}' range_expression_opt
+      {
+		if (!gn_system_verilog() && $7.sel != index_component_t::SEL_NONE) {
+	      yyerror(@1, "error: Part select on concatanation requires SystemVerilog.");
+	      $$ = 0;
+	} else {
+		$$ = new PEConcat(*$4, $7, $2);
+		FILE_NAME($$, @1);
+		delete $4;
+	}
+	}
+  | '{' expression '{' expression_list_proper '}' error '}' range_expression_opt
+      { 
+	PEConcat*tmp = new PEConcat(*$4, $8, $2);
 	FILE_NAME(tmp, @1);
 	delete $4;
 	$$ = tmp;
@@ -3999,7 +4013,11 @@ expr_primary
       { // This is the empty queue syntax.
 	if (gn_system_verilog()) {
 	      std::list<PExpr*> empty_list;
-	      PEConcat*tmp = new PEConcat(empty_list);
+		  index_component_t index;
+		  index.sel = index_component_t::SEL_NONE;
+		  index.msb = 0;
+		  index.lsb = 0;
+	      PEConcat*tmp = new PEConcat(empty_list, index);
 	      FILE_NAME(tmp, @1);
 	      $$ = tmp;
 	} else {
@@ -4216,6 +4234,40 @@ switchtype
 	;
 
 
+range_expression
+ : '[' expression ']'
+ {
+	 $$.sel = index_component_t::SEL_BIT;
+	 $$.msb = $2;
+	 $$.lsb = 0;
+	}
+ | '[' expression ':' expression ']'
+	 {
+	 $$.sel = index_component_t::SEL_PART;
+	 $$.msb = $2;
+	 $$.lsb = $4;
+	 }
+   | '[' expression K_PO_POS expression ']'
+	 {
+	  $$.sel = index_component_t::SEL_IDX_UP;
+	  $$.msb = $2;
+	  $$.lsb = $4;
+	}
+    | '[' expression K_PO_NEG expression ']'
+	 { 
+	  $$.sel = index_component_t::SEL_IDX_DO;
+	  $$.msb = $2;
+	  $$.lsb = $4;
+	}
+ ;
+
+range_expression_opt
+ : { $$.sel = index_component_t::SEL_NONE;
+     $$.msb = 0;
+	 $$.lsb = 0;
+  }
+ | range_expression
+
   /* A general identifier is a hierarchical name, with the right most
      name the base of the identifier. This rule builds up a
      hierarchical name from the left to the right, forming a list of
@@ -4233,13 +4285,9 @@ hierarchy_identifier
 	  delete[]$3;
 	  $$ = tmp;
 	}
-    | hierarchy_identifier '[' expression ']'
+    | hierarchy_identifier range_expression
         { pform_name_t * tmp = $1;
-	  name_component_t&tail = tmp->back();
-	  index_component_t itmp;
-	  itmp.sel = index_component_t::SEL_BIT;
-	  itmp.msb = $3;
-	  tail.index.push_back(itmp);
+		 tmp->back().index.push_back($2);
 	  $$ = tmp;
 	}
     | hierarchy_identifier '[' '$' ']'
@@ -4253,37 +4301,7 @@ hierarchy_identifier
 	  tail.index.push_back(itmp);
 	  $$ = tmp;
 	}
-    | hierarchy_identifier '[' expression ':' expression ']'
-        { pform_name_t * tmp = $1;
-	  name_component_t&tail = tmp->back();
-	  index_component_t itmp;
-	  itmp.sel = index_component_t::SEL_PART;
-	  itmp.msb = $3;
-	  itmp.lsb = $5;
-	  tail.index.push_back(itmp);
-	  $$ = tmp;
-	}
-    | hierarchy_identifier '[' expression K_PO_POS expression ']'
-        { pform_name_t * tmp = $1;
-	  name_component_t&tail = tmp->back();
-	  index_component_t itmp;
-	  itmp.sel = index_component_t::SEL_IDX_UP;
-	  itmp.msb = $3;
-	  itmp.lsb = $5;
-	  tail.index.push_back(itmp);
-	  $$ = tmp;
-	}
-    | hierarchy_identifier '[' expression K_PO_NEG expression ']'
-        { pform_name_t * tmp = $1;
-	  name_component_t&tail = tmp->back();
-	  index_component_t itmp;
-	  itmp.sel = index_component_t::SEL_IDX_DO;
-	  itmp.msb = $3;
-	  itmp.lsb = $5;
-	  tail.index.push_back(itmp);
-	  $$ = tmp;
-	}
-    ;
+     ;
 
   /* This is a list of identifiers. The result is a list of strings,
      each one of the identifiers in the list. These are simple,
@@ -4582,7 +4600,12 @@ lpvalue
       }
 
   | '{' expression_list_proper '}'
-      { PEConcat*tmp = new PEConcat(*$2);
+      { 
+		  index_component_t index;
+		  index.sel = index_component_t::SEL_NONE;
+		  index.msb = 0;
+		  index.lsb = 0;
+	  PEConcat*tmp = new PEConcat(*$2, index);
 	FILE_NAME(tmp, @1);
 	delete $2;
 	$$ = tmp;

@@ -227,7 +227,7 @@ class PEAssignPattern : public PExpr {
 class PEConcat : public PExpr {
 
     public:
-      explicit PEConcat(const std::list<PExpr*>&p, PExpr*r =0);
+      explicit PEConcat(const std::list<PExpr*>&p, const index_component_t &index, PExpr*r =0);
       ~PEConcat();
 
       virtual void dump(std::ostream&) const;
@@ -262,8 +262,10 @@ class PEConcat : public PExpr {
       std::valarray<width_mode_t>width_modes_;
 
       PExpr*repeat_;
+	  index_component_t index_;
       NetScope*tested_scope_;
       unsigned repeat_count_;
+      unsigned concat_width_;
 };
 
 /*
@@ -459,18 +461,12 @@ class PEIdent : public PExpr {
 					 const NetScope*found_in,
 					 ivl_type_t par_type,
 				         unsigned expr_wid) const;
-      NetExpr*elaborate_expr_param_idx_up_(Design*des,
+      NetExpr*elaborate_expr_param_idx_up_do_(Design*des,
 					   NetScope*scope,
 					   const NetExpr*par,
 					   const NetScope*found_in,
 					   ivl_type_t par_type,
-                                           bool need_const) const;
-      NetExpr*elaborate_expr_param_idx_do_(Design*des,
-					   NetScope*scope,
-					   const NetExpr*par,
-					   const NetScope*found_in,
-					   ivl_type_t par_type,
-                                           bool need_const) const;
+					   bool up, bool need_const) const;
       NetExpr*elaborate_expr_net(Design*des,
 				 NetScope*scope,
 				 NetNet*net,
@@ -488,15 +484,11 @@ class PEIdent : public PExpr {
 				       NetESignal*net,
 				       NetScope*found,
 				       unsigned expr_wid) const;
-      NetExpr*elaborate_expr_net_idx_up_(Design*des,
+      NetExpr*elaborate_expr_net_idx_up_do_(Design*des,
 				         NetScope*scope,
 				         NetESignal*net,
 				         NetScope*found,
-                                         bool need_const) const;
-      NetExpr*elaborate_expr_net_idx_do_(Design*des,
-				         NetScope*scope,
-				         NetESignal*net,
-				         NetScope*found,
+						 bool up,
                                          bool need_const) const;
       NetExpr*elaborate_expr_net_bit_(Design*des,
 				      NetScope*scope,

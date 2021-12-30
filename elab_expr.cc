@@ -3494,11 +3494,11 @@ NetExpr* PECastType::elaborate_expr(Design*des, NetScope*scope,
 
 unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
 {
-      expr_width_ = 0;
+      concat_width_ = 0;
       enum {NO, MAYBE, YES} expr_is_string = MAYBE;
       for (unsigned idx = 0 ; idx < parms_.size() ; idx += 1) {
 	      // Add in the width of this sub-expression.
-	    expr_width_ += parms_[idx]->test_width(des, scope, width_modes_[idx]);
+	    concat_width_ += parms_[idx]->test_width(des, scope, width_modes_[idx]);
 
 	      // If we already know this is not a string, then move on.
 	    if (expr_is_string == NO)
@@ -3568,7 +3568,42 @@ unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
 
             tested_scope_ = scope;
       }
-      expr_width_ *= repeat_count_;
+      concat_width_ *= repeat_count_;
+		  NetExpr *net_lsb;
+		  NetEConst* net_const_lsb;
+		  NetExpr *net_msb;
+		  NetEConst* net_const_msb;
+	  switch (index_.sel) {
+		case index_component_t::SEL_NONE:
+			expr_width_ = concat_width_;
+			break;
+		case index_component_t::SEL_BIT:
+			expr_width_ = 1;
+			break;
+		case index_component_t::SEL_PART:
+			net_lsb = elab_and_eval(des, scope, index_.lsb, -1, true);
+			net_const_lsb = dynamic_cast<NetEConst*>(net_lsb);
+			net_msb = elab_and_eval(des, scope, index_.msb, -1, true);
+			net_const_msb = dynamic_cast<NetEConst*>(net_msb);
+			expr_width_ = net_const_msb->value().as_ulong() -
+			net_const_lsb->value().as_ulong() + 1;
+			delete net_lsb;
+			delete net_msb;
+			break;
+
+
+	    case index_component_t::SEL_IDX_UP:
+	    case index_component_t::SEL_IDX_DO:
+			net_lsb = elab_and_eval(des, scope, index_.lsb, -1, true);
+			net_const_lsb = dynamic_cast<NetEConst*>(net_lsb);
+			expr_width_ = net_const_lsb->value().as_ulong();
+			delete net_lsb;
+		break;
+	    case index_component_t::SEL_BIT_LAST:
+			assert(0);
+			break;
+	  }
+
       min_width_   = expr_width_;
 
       return expr_width_;
@@ -3689,6 +3724,12 @@ NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 	    return 0;
       }
 
+	  NetExpr*tmp;
+	   if (parm_cnt == 1 && repeat_count_ == 1) {
+		unsigned off = 0;
+		while (parms[off] == 0) off++;
+		tmp = parms[off];
+	   } else {
 	/* Make the empty concat expression. */
       NetEConcat*cncat = new NetEConcat(parm_cnt, repeat_count_, expr_type_);
       cncat->set_line(*this);
@@ -3708,8 +3749,34 @@ NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 	    delete cncat;
 	    return 0;
       }
+	  tmp = cncat;
+	  }
 
-      NetExpr*tmp = pad_to_width(cncat, expr_wid, signed_flag_, *this);
+	  if (index_.sel != index_component_t::SEL_NONE) {
+	  NetExpr*base;
+
+	  switch (index_.sel) {
+	  case index_component_t::SEL_BIT:
+	    base = elab_and_eval(des, scope, index_.msb, -1, NEED_CONST & flags);
+	    tmp = new NetESelect(tmp, base, 1);
+	    break;
+	  case index_component_t::SEL_PART:
+	  case index_component_t::SEL_IDX_UP:
+	    base = elab_and_eval(des, scope, index_.msb, -1, NEED_CONST & flags);
+		base = normalize_variable_base(base, expr_width_ - 1, 0, expr_width_, true, 0);
+	    tmp = new NetESelect(tmp, base, expr_width_, IVL_SEL_IDX_UP);
+	    break;
+	  case index_component_t::SEL_IDX_DO:
+	    base = elab_and_eval(des, scope, index_.msb, -1, NEED_CONST & flags);
+		base = normalize_variable_base(base, expr_width_ - 1, 0, expr_width_, false, 0);
+	    tmp = new NetESelect(tmp, base, expr_width_, IVL_SEL_IDX_DOWN);
+	    break;
+	  default:
+		break;
+	  }
+	  }
+
+      tmp = pad_to_width(tmp, expr_wid, signed_flag_, *this);
 
       concat_depth -= 1;
       return tmp;
