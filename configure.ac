@@ -132,6 +132,7 @@ CXXFLAGS="-DHAVE_DECL_BASENAME $CXXFLAGS"
 
 AC_CHECK_HEADERS(getopt.h inttypes.h libiberty.h iosfwd sys/wait.h)
 CXXFLAGS="$iverilog_temp_cxxflags"
+CXXFLAGS="$CXXFLAGS"
 
 AC_CHECK_SIZEOF(unsigned long long)
 AC_CHECK_SIZEOF(unsigned long)
@@ -236,6 +237,7 @@ case "${host}" in
 	CFLAGS="-D__USE_MINGW_ANSI_STDIO=1 $CFLAGS"
 	;;
 esac
+
 
 # Do some more operating system specific setup. We put the file64_support
 # define in a substitution instead of simply a define because there

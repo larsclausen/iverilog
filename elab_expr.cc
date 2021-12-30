@@ -3844,11 +3844,33 @@ bool PEIdent::calculate_packed_indices_(Design*des, NetScope*scope, NetNet*net,
       return evaluate_index_prefix(des, scope, prefix_indices, index);
 }
 
+bool calculate_const_part_sel_(Design*des, NetScope*scope,
+    PExpr *expr, long &sel, const char *type)
+{
+      bool defined = true;
+      NetExpr*net = elab_and_eval(des, scope, expr, -1, true);
+      NetEConst*net_c = dynamic_cast<NetEConst*>(net);
+      if (net_c == 0) {
+	    cerr << expr->get_fileline() << ": error: "
+		  "Part select expressions must be constant."
+		 << endl;
+	    cerr << expr->get_fileline() << ":      : "
+		  "This " << type << " expression violates the rule: "
+		 << *expr << endl;
+	    des->errors += 1;
+      } else {
+	    if (! net_c->value().is_defined())
+		  defined = false;
+            sel = net_c->value().as_long();
+      }
+      delete net_c;
+
+    return defined;
+}
 
 bool PEIdent::calculate_bits_(Design*des, NetScope*scope,
 			      long&msb, bool&defined) const
 {
-      defined = true;
       const name_component_t&name_tail = path_.back();
       ivl_assert(*this, !name_tail.index.empty());
 
@@ -3859,25 +3881,9 @@ bool PEIdent::calculate_bits_(Design*des, NetScope*scope,
 	/* This handles bit selects. In this case, there in one
 	   bit select expressions which must be constant. */
 
-      NetExpr*msb_ex = elab_and_eval(des, scope, index_tail.msb, -1, true);
-      NetEConst*msb_c = dynamic_cast<NetEConst*>(msb_ex);
-      if (msb_c == 0) {
-	    cerr << index_tail.msb->get_fileline() << ": error: "
-		  "Bit select expressions must be constant."
-		 << endl;
-	    cerr << index_tail.msb->get_fileline() << ":      : "
-                  "This msb expression violates the rule: "
-                 << *index_tail.msb << endl;
-	    des->errors += 1;
-              /* Attempt to recover from error. */
-            msb = 0;
-      } else {
-	    if (! msb_c->value().is_defined())
-		  defined = false;
-            msb = msb_c->value().as_long();
-      }
+      defined = calculate_const_part_sel_(des, scope, index_tail.msb, msb,
+      "msb");
 
-      delete msb_ex;
       return true;
 }
 
@@ -3889,7 +3895,6 @@ bool PEIdent::calculate_bits_(Design*des, NetScope*scope,
 bool PEIdent::calculate_parts_(Design*des, NetScope*scope,
 			       long&msb, long&lsb, bool&defined) const
 {
-      defined = true;
       const name_component_t&name_tail = path_.back();
       ivl_assert(*this, !name_tail.index.empty());
 
@@ -3897,48 +3902,21 @@ bool PEIdent::calculate_parts_(Design*des, NetScope*scope,
       ivl_assert(*this, index_tail.sel == index_component_t::SEL_PART);
       ivl_assert(*this, index_tail.msb && index_tail.lsb);
 
+      defined = true;
+
 	/* This handles part selects. In this case, there are
 	   two bit select expressions, and both must be
 	   constant. Evaluate them and pass the results back to
 	   the caller. */
-      NetExpr*lsb_ex = elab_and_eval(des, scope, index_tail.lsb, -1, true);
-      NetEConst*lsb_c = dynamic_cast<NetEConst*>(lsb_ex);
-      if (lsb_c == 0) {
-	    cerr << index_tail.lsb->get_fileline() << ": error: "
-		  "Part select expressions must be constant."
-		 << endl;
-	    cerr << index_tail.lsb->get_fileline() << ":      : "
-		  "This lsb expression violates the rule: "
-		 << *index_tail.lsb << endl;
-	    des->errors += 1;
-              /* Attempt to recover from error. */
-            lsb = 0;
-      } else {
-	    if (! lsb_c->value().is_defined())
-		  defined = false;
-            lsb = lsb_c->value().as_long();
-      }
 
-      NetExpr*msb_ex = elab_and_eval(des, scope, index_tail.msb, -1, true);
-      NetEConst*msb_c = dynamic_cast<NetEConst*>(msb_ex);
-      if (msb_c == 0) {
-	    cerr << index_tail.msb->get_fileline() << ": error: "
-		  "Part select expressions must be constant."
-		 << endl;
-	    cerr << index_tail.msb->get_fileline() << ":      : "
-                  "This msb expression violates the rule: "
-                 << *index_tail.msb << endl;
-	    des->errors += 1;
-              /* Attempt to recover from error. */
-            msb = lsb;
-      } else {
-	    if (! msb_c->value().is_defined())
-		  defined = false;
-            msb = msb_c->value().as_long();
-      }
+      lsb = 0; /* Attempt to recover from error. */
+      defined &= calculate_const_part_sel_(des, scope, index_tail.lsb, lsb,
+      "lsb");
 
-      delete msb_ex;
-      delete lsb_ex;
+      msb = lsb; /* Attempt to recover from error. */
+      defined &= calculate_const_part_sel_(des, scope, index_tail.msb, msb,
+      "msb");
+
       return true;
 }
 

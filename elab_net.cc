@@ -1107,8 +1107,20 @@ NetNet*PEIdent::elaborate_unpacked_net(Design*des, NetScope*scope) const
       perm_string method_name;
 
       symbol_search(this, des, scope, path_, sig, par, eve);
+	  if (!sig) {
+      cerr << get_fileline() << ": error: Unable to bind wire/reg/memory "
+              "`" << path_ << "' in `" << scope_path(scope) << "'" << endl;
+      des->errors += 1;
+	  }
 
-      ivl_assert(*this, sig);
+	  if (path_.back().index.size() != 0) {
+		        cerr << get_fileline() << ": sorry: part selects "
+		                "on array (" << path_
+		             << ") are not currently supported." << endl;
+		des->errors += 1;
+
+		return 0;
+	  }
 
       return sig;
 }

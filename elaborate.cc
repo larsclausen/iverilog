@@ -265,8 +265,15 @@ void PGAssign::elaborate_unpacked_array_(Design*des, NetScope*scope, NetNet*lval
       ivl_assert(*this, rval_pident);
 
       NetNet*rval_net = rval_pident->elaborate_unpacked_net(des, scope);
+	  if (!rval_net)
+		return;
 
-      ivl_assert(*this, rval_net->pin_count() == lval->pin_count());
+      if (rval_net->pin_count() != lval->pin_count()) {
+		        cerr << get_fileline() << ":error: size mismatch "
+		                "for array assignment." << endl;
+		des->errors++;
+		return;
+	}
 
       assign_unpacked_with_bufz(des, scope, this, lval, rval_net);
 }
