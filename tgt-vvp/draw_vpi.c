@@ -199,6 +199,11 @@ static int get_vpi_taskfunc_signal_arg(struct args_info *result,
 	    if (ivl_expr_value(vexpr) == IVL_VT_DARRAY)
 		  return 0;
 
+	      /* If the type is different we need to add a cast, which is done
+	       * on the fallback path. */
+	    if (ivl_expr_value(expr) != ivl_expr_value(vexpr))
+		  return 0;
+
 	      /* Part select is always unsigned. If the expression is signed
 	       * fallback. */
 	    if (ivl_expr_signed(expr))
