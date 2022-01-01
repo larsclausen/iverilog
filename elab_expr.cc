@@ -3936,9 +3936,7 @@ bool PEIdent::calculate_up_do_width_(Design*des, NetScope*scope,
 	   so we can keep going and find more errors. */
       NetExpr*wid_ex = elab_and_eval(des, scope, index_tail.lsb, -1, true);
       NetEConst*wid_c = dynamic_cast<NetEConst*>(wid_ex);
-
-      wid = wid_c ? wid_c->value().as_ulong() : 0;
-      if (wid == 0) {
+      if (!wid_c || wid_c->value().is_positive()) {
 	    cerr << index_tail.lsb->get_fileline() << ": error: "
 		  "Indexed part widths must be constant and greater than zero."
 		 << endl;
@@ -3948,6 +3946,8 @@ bool PEIdent::calculate_up_do_width_(Design*des, NetScope*scope,
 	    des->errors += 1;
 	    flag = false;
 	    wid = 1;
+      } else {
+            wid = wid_c->value().as_ulong();
       }
       delete wid_ex;
 

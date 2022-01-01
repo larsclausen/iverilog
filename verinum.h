@@ -76,6 +76,7 @@ class verinum {
       bool is_defined() const;
       bool is_zero() const;
       bool is_negative() const;
+	  bool is_positive() const { return is_defined() && !is_zero() && !is_negative(); };
 
 	// A number is "a string" if its value came directly from
 	// an ASCII description instead of a number value.
