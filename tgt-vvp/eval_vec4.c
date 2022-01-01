@@ -964,11 +964,16 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    return;
       }
 
+	  bool need_cast = ivl_expr_value(expr) == IVL_VT_BOOL;
+
       if (test_immediate_vec4_ok(base)) {
 	    unsigned long val0, valx;
 	    unsigned base_wid;
 	    make_immediate_vec4_words(base, &val0, &valx, &base_wid);
 	    assert(valx == 0);
+
+		if (number_is_immediate(base, 32, 0) && val0 + wid <= ivl_expr_width(subexpr))
+			need_cast = false;
 
 	    draw_eval_vec4(subexpr);
 	    fprintf(vvp_out, "    %%parti/%c %u, %lu, %u;\n",
@@ -980,8 +985,7 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    fprintf(vvp_out, "    %%part/%c %u;\n", sign_suff, wid);
       }
 
-      if (ivl_expr_value(subexpr) == IVL_VT_LOGIC &&
-	  ivl_expr_value(expr) == IVL_VT_BOOL)
+      if (need_cast)
 	    fprintf(vvp_out, "    %%cast2;\n");
 }
 
