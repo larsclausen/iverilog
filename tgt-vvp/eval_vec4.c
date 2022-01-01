@@ -963,11 +963,27 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    return;
       }
 
+      /* The part select can yield an undefined value if the selected part
+       * is (partially) out-of-bounds.
+       * Part select is also used to access members in a packed struct. The
+       * value stored in the struct might be undefined, but when accessed
+       * through a 2-state member it must be fully defined. So this also
+       * requires a cast. */
+      bool need_cast = ivl_expr_value(expr) == IVL_VT_BOOL;
+
       if (test_immediate_vec4_ok(base)) {
 	    unsigned long val0, valx;
 	    unsigned base_wid;
 	    make_immediate_vec4_words(base, &val0, &valx, &base_wid);
 	    assert(valx == 0);
+
+	    /* The cast can be skipped if the sub-expression is also 2-state and
+	     * part select is fully within the bounds of the of the
+	     * sub-expression */
+	    if (ivl_expr_value(subexpr) == IVL_VT_BOOL &&
+	        number_is_immediate(base, 32, 0) &&
+		val0 + wid <= ivl_expr_width(subexpr))
+		  need_cast = false;
 
 	    draw_eval_vec4(subexpr);
 	    fprintf(vvp_out, "    %%parti/%c %u, %lu, %u;\n",
@@ -978,6 +994,8 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    draw_eval_vec4(base);
 	    fprintf(vvp_out, "    %%part/%c %u;\n", sign_suff, wid);
       }
+      if (need_cast)
+	    fprintf(vvp_out, "    %%cast2;\n");
 }
 
 static void draw_select_pad_vec4(ivl_expr_t expr)
