@@ -1436,36 +1436,6 @@ unsigned PECallFunction::test_width_method_(Design*, NetScope*,
 	    }
       }
 
-      // Enumeration variable. Check for the various enumeration methods.
-      if (search_results.net && search_results.net->enumeration()) {
-	    NetNet*net = search_results.net;
-	    const netenum_t*enum_type = net->enumeration();
-
-	    if (method_name=="first" || method_name=="last"
-		|| method_name=="prev" || method_name=="next") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = enum_type->packed_width();
-		  min_width_  = expr_width_;
-		  signed_flag_= enum_type->get_signed();
-		  return expr_width_;
-	    }
-	    if (method_name=="num") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = 32;
-		  min_width_  = expr_width_;
-		  signed_flag_= true;
-		  return expr_width_;
-	    }
-	    if (method_name=="name") {
-		  expr_type_  = IVL_VT_STRING;
-		  expr_width_ = 1;
-		  min_width_  = 1;
-		  signed_flag_= false;
-		  return expr_width_;
-	    }
-	    return 0;
-      }
-
       // Class variables. In this case, the search found the class instance,
       // and the scope is the scope where the instance lives. The class method
       // in turn defines it's own scope. Use that to find the return value.
@@ -1937,176 +1907,6 @@ NetExpr* PECallFunction::elaborate_access_func_(Design*des, NetScope*scope,
       NetExpr*tmp = new NetEAccess(branch, nature);
       tmp->set_line(*this);
       return tmp;
-}
-
-/*
- * Routine to look for and build enumeration method calls.
- */
-static NetExpr* check_for_enum_methods(const LineInfo*li,
-                                       Design*des, NetScope*scope,
-                                       const netenum_t*netenum,
-                                       const pform_name_t&use_path,
-                                       perm_string method_name,
-                                       NetExpr*expr,
-                                       PExpr*parg, unsigned args)
-{
-      if (debug_elaborate) {
-	    cerr << li->get_fileline() << ": " << __func__ << ": "
-		 << "Check for method " << method_name
-		 << " of enumeration at " << netenum->get_fileline()
-		 << endl;
-	    cerr << li->get_fileline() << ": " << __func__ << ": "
-		 << "use_path=" << use_path << endl;
-	    cerr << li->get_fileline() << ": " << __func__ << ": "
-		 << "expr=" << *expr << endl;
-      }
-
-      // First, look for some special methods that can be replace with
-      // constant literals. These get properties of the enumeration type, and
-      // so can be fully evaluated at compile time.
-
-      if (method_name == "num") {
-	    // The "num()" method returns the number of elements. This is
-	    // actually a static constant, and can be replaced at compile time
-	    // with a constant value.
-	    if (args != 0) {
-		  cerr << li->get_fileline() << ": error: enumeration "
-		          "method " << use_path << ".num() does not "
-		          "take an argument." << endl;
-		  des->errors += 1;
-	    }
-	    NetEConst*tmp = make_const_val(netenum->size());
-	    tmp->set_line(*li);
-	    delete expr; // The elaborated enum variable is not needed.
-	    return tmp;
-      }
-
-      if (method_name == "first") {
-	    // The "first()" method returns the first enumeration value. This
-	    // doesn't actually care about the constant value, and instead
-	    // returns as a constant literal the first value of the enumeration.
-	    if (args != 0) {
-		  cerr << li->get_fileline() << ": error: enumeration "
-		          "method " << use_path << ".first() does not "
-		          "take an argument." << endl;
-		  des->errors += 1;
-	    }
-	    netenum_t::iterator item = netenum->first_name();
-	    NetEConstEnum*tmp = new NetEConstEnum(item->first, netenum, item->second);
-	    tmp->set_line(*li);
-	    delete expr; // The elaborated enum variable is not needed.
-	    return tmp;
-      }
-
-      if (method_name == "last") {
-	    // The "last()" method returns the first enumeration value. This
-	    // doesn't actually care about the constant value, and instead
-	    // returns as a constant literal the last value of the enumeration.
-	    if (args != 0) {
-		  cerr << li->get_fileline() << ": error: enumeration "
-		          "method " << use_path << ".last() does not "
-		          "take an argument." << endl;
-		  des->errors += 1;
-	    }
-	    netenum_t::iterator item = netenum->last_name();
-	    NetEConstEnum*tmp = new NetEConstEnum(item->first, netenum, item->second);
-	    tmp->set_line(*li);
-	    delete expr; // The elaborated enum variable is not needed.
-	    return tmp;
-      }
-
-      NetESFunc*sys_expr;
-
-	// Process the method argument if it is available.
-      NetExpr* count = 0;
-      if (args != 0 && parg) {
-	    count = elaborate_rval_expr(des, scope, &netvector_t::atom2u32,
-					parg);
-	    if (count == 0) {
-		  cerr << li->get_fileline() << ": error: unable to elaborate "
-		          "enumeration method argument " << use_path << "."
-		       << method_name << "(" << parg << ")." << endl;
-		  args = 0;
-		  des->errors += 1;
-	    } else if (NetEEvent*evt = dynamic_cast<NetEEvent*> (count)) {
-		  cerr << evt->get_fileline() << ": error: An event '"
-		       << evt->event()->name() << "' cannot be an enumeration "
-		          "method argument." << endl;
-		  args = 0;
-		  des->errors += 1;
-	    }
-      }
-
-      if (method_name == "name") {
-	    // The "name()" method returns the name of the current enumeration
-	    // value. The generated system task takes the enumeration
-	    // definition and the enumeration value. The return value is the
-	    // string name of the enumeration.
-	    if (args != 0) {
-		  cerr << li->get_fileline() << ": error: enumeration "
-		          "method " << use_path << ".name() does not "
-		          "take an argument." << endl;
-		  des->errors += 1;
-	    }
-
-	    // Generate the internal system function. Make sure the return
-	    // value is "string" type.
-	    sys_expr = new NetESFunc("$ivl_enum_method$name",
-				     &netstring_t::type_string, 2);
-	    NetENetenum* def = new NetENetenum(netenum);
-	    def->set_line(*li);
-	    sys_expr->parm(0, def);
-	    sys_expr->parm(1, expr);
-
-      } else if (method_name == "next") {
-	    // The "next()" method returns the next enumeration value.
-	    if (args > 1) {
-		  cerr << li->get_fileline() << ": error: enumeration "
-		          "method " << use_path << ".next() take at "
-		          "most one argument." << endl;
-		  des->errors += 1;
-	    }
-	    sys_expr = new NetESFunc("$ivl_enum_method$next", netenum,
-	                             2 + (args != 0));
-	    NetENetenum* def = new NetENetenum(netenum);
-	    def->set_line(*li);
-	    sys_expr->parm(0, def);
-	    sys_expr->parm(1, expr);
-	    if (args != 0) sys_expr->parm(2, count);
-
-      } else if (method_name == "prev") {
-	    // The "prev()" method returns the previous enumeration value.
-	    if (args > 1) {
-		  cerr << li->get_fileline() << ": error: enumeration "
-		          "method " << use_path << ".prev() take at "
-		          "most one argument." << endl;
-		  des->errors += 1;
-	    }
-	    sys_expr = new NetESFunc("$ivl_enum_method$prev", netenum,
-	                             2 + (args != 0));
-	    NetENetenum* def = new NetENetenum(netenum);
-	    def->set_line(*li);
-	    sys_expr->parm(0, def);
-	    sys_expr->parm(1, expr);
-	    if (args != 0) sys_expr->parm(2, count);
-
-      } else {
-	    // This is an unknown enumeration method.
-	    cerr << li->get_fileline() << ": error: Unknown enumeration "
-	            "method " << use_path << "." << method_name << "()."
-	         << endl;
-	    des->errors += 1;
-	    return expr;
-      }
-
-      sys_expr->set_line(*li);
-
-      if (debug_elaborate) {
-	    cerr << li->get_fileline() << ": " << __func__ << ": Generate "
-	         << sys_expr->name() << "(" << use_path << ")" << endl;
-      }
-
-      return sys_expr;
 }
 
 /*
@@ -3130,20 +2930,16 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 	    return 0;
       }
 
-      // Enumeration methods.
-      if (search_results.net && search_results.net->enumeration()) {
 
-	    NetNet*net = search_results.net;
-	    const netenum_t*netenum = net->enumeration();
-
+      NetNet*net = search_results.net;
+      if (net && net->callable()) {
+	    const netcallable_t *callable = net->callable();
 	    // Get the method name that we are looking for.
 	    perm_string method_name = search_results.path_tail.back().name;
 
-	    PExpr*tmp = parms_.size() ? parms_[0] : 0;
-	    return check_for_enum_methods(this, des, scope,
-					  netenum, path_,
-					  method_name, sub_expr,
-					  tmp, parms_.size());
+	    return callable->method_elaborate(this, des, scope,
+					      path_, method_name, sub_expr,
+					      expr_wid, parms_);
       }
 
       // Class methods. Generate function call to the class method.
@@ -3152,7 +2948,7 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 	    // Get the method name that we are looking for.
 	    perm_string method_name = search_results.path_tail.back().name;
 
-	    NetNet*net = search_results.net;
+//	    NetNet*net = search_results.net;
 	    const netclass_t*class_type = net->class_type();
 	    ivl_assert(*this, class_type);
 	    NetScope*method = class_type->method_from_name(method_name);
@@ -3977,23 +3773,12 @@ unsigned PEIdent::test_width_method_(Design*des, NetScope*scope, width_mode_t&)
 	    }
       }
 
-	// Look for the enumeration attributes.
-      if (const netenum_t*netenum = net->enumeration()) {
-	    if (member_name == "num") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = 32;
-		  min_width_  = 32;
-		  signed_flag_= true;
-		  return 32;
-	    }
-	    if ((member_name == "first") || (member_name == "last") ||
-	        (member_name == "next") || (member_name == "prev")) {
-		  expr_type_  = netenum->base_type();
-		  expr_width_ = netenum->packed_width();;
-		  min_width_ = expr_width_;
-		  signed_flag_ = netenum->get_signed();
-		  return expr_width_;
-	    }
+      if (const netcallable_t *callable = net->callable()) {
+	    ivl_type_t t = callable->method_get_type(des, scope, member_name);
+	    expr_type_ = t->base_type();
+	    expr_width_ = t->packed_width();
+	    min_width_ = expr_width_;
+	    signed_flag_ = t->get_signed();
       }
 
       return 0;
@@ -4852,25 +4637,18 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 						     expr_wid, flags);
 	    }
 
-	    if (sr.net->enumeration() && !sr.path_tail.empty()) {
-		  const netenum_t*netenum = sr.net->enumeration();
-		  if (debug_elaborate) {
-			cerr << get_fileline() << ": PEIdent::elaborate_expr: "
-			        "Ident " << sr.path_head
-			     << " look for enumeration method " << sr.path_tail
-			     << endl;
-		  }
-
+	  if (const netcallable_t *callable = sr.net->callable()) {
 		  NetESignal*expr = new NetESignal(sr.net);
 		  expr->set_line(*this);
 		  ivl_assert(*this, sr.path_tail.size() == 1);
 		  const name_component_t member_comp = sr.path_tail.front();
 		  ivl_assert(*this, member_comp.index.empty());
-		  return check_for_enum_methods(this, des, use_scope,
-						netenum, sr.path_head,
+		  std::vector<PExpr*> args;
+		  return callable->method_elaborate(this, des, use_scope,
+						sr.path_head,
 						member_comp.name,
-						expr, NULL, 0);
-	    }
+						expr, expr_wid, args);
+	  }
 
 	    ivl_assert(*this, sr.path_tail.empty());
 	    NetExpr*tmp = elaborate_expr_net(des, scope, sr.net, sr.scope,

@@ -82,6 +82,7 @@ class PPackage;
 class PTaskFunc;
 class data_type_t;
 struct enum_type_t;
+class netcallable_t;
 class netclass_t;
 class netdarray_t;
 class netparray_t;
@@ -660,7 +661,6 @@ struct PortInfo
     perm_string     name;
 };
 
-
 class NetNet  : public NetObj, public PortType {
 
     public:
@@ -708,6 +708,7 @@ class NetNet  : public NetObj, public PortType {
       const netdarray_t*darray_type(void) const;
       const netqueue_t*queue_type(void) const;
       const netclass_t*class_type(void) const;
+      const netcallable_t*callable(void) const;
 
 	/* Attach a discipline to the net. */
       ivl_discipline_t get_discipline() const;

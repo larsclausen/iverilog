@@ -27,9 +27,11 @@
 # include  <vector>
 # include  <map>
 
+#include "callable.h"
+
 class NetScope;
 
-class netenum_t : public LineInfo, public ivl_type_s {
+class netenum_t : public LineInfo, public ivl_type_s, public netcallable_t {
 
     public:
       explicit netenum_t(ivl_type_t base_type, size_t name_count,
@@ -68,6 +70,16 @@ class netenum_t : public LineInfo, public ivl_type_s {
 
 	// Check if two enumerations have the same definition.
       bool matches(const netenum_t*other) const;
+
+      ivl_type_t method_get_type(Design *des, NetScope *scope,
+			         const perm_string &method_name) const;
+      NetExpr* method_elaborate(const LineInfo *li,
+			        Design *des, NetScope *scope,
+			        const pform_name_t &use_path,
+			        const perm_string &method_name,
+			        NetExpr *expr,
+			        unsigned int rtn_wid,
+			        const std::vector<PExpr*> &args) const;
 
     private:
       ivl_type_t base_type_;

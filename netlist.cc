@@ -696,6 +696,11 @@ const netenum_t*NetNet::enumeration(void) const
       return dynamic_cast<const netenum_t*> (net_type_);
 }
 
+const netcallable_t*NetNet::callable(void) const
+{
+      return dynamic_cast<const netcallable_t*> (net_type_);
+}
+
 const netstruct_t*NetNet::struct_type(void) const
 {
       ivl_type_t cur_type = net_type_;
