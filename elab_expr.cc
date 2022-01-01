@@ -5099,6 +5099,8 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
       const NetEConst*par_ex = dynamic_cast<const NetEConst*> (par);
       ivl_assert(*this, par_ex);
 
+	  printf("here\n");
+
       long par_msv, par_lsv;
       if(! calculate_param_range(*this, par_type, par_msv, par_lsv,
 				 par_ex->value().len())) return 0;
@@ -5134,6 +5136,7 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
 			        "Replacing select with a constant 1'bx."
 			     << endl;
 		  }
+		  printf("%d\n", par->expr_type());
 		  NetEConst*res = make_const_default(par->expr_type(), 1);
 		  res->set_line(*this);
 		  return res;
@@ -5146,6 +5149,7 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
 	      // Select a bit from the parameter.
 	    verinum par_v = par_ex->value();
 	    verinum::V rtn = verinum::Vx;
+		printf("par_type: %d\n", par_type->base_type());
 	    if (par_type->base_type() == IVL_VT_BOOL)
 			rtn = verinum::V0;	
 

@@ -107,6 +107,8 @@ void compile_var_darray(char*label, char*name, unsigned size)
 {
       vvp_net_t*net = new vvp_net_t;
 
+	  printf("compile darray: %d\n", size);
+
       if (vpip_peek_current_scope()->is_automatic()) {
 	    vvp_fun_signal_object_aa*tmp = new vvp_fun_signal_object_aa(size);
 	    net->fil = tmp;

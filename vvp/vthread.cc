@@ -3824,6 +3824,8 @@ static bool load_dar(vthread_t thr, vvp_code_t cp)
       else
 	    dq_default(word, obj->size());
 
+	printf("%d\n", obj->size());
+
       vthread_push(thr, word);
       return true;
 }
