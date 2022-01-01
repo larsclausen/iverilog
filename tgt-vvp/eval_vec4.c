@@ -976,6 +976,10 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    draw_eval_vec4(base);
 	    fprintf(vvp_out, "    %%part/%c %u;\n", sign_suff, wid);
       }
+
+      if (ivl_expr_value(subexpr) == IVL_VT_LOGIC &&
+	  ivl_expr_value(expr) == IVL_VT_BOOL)
+	    fprintf(vvp_out, "    %%cast2;\n");
 }
 
 static void draw_select_pad_vec4(ivl_expr_t expr)
