@@ -680,7 +680,7 @@ vvp_vector4_t __vpiArray::get_word(unsigned address)
 	    assert(nets == 0);
 	    assert(vals4== 0);
 	    if (address >= vals->get_size())
-		  return vvp_vector4_t(vals_width, BIT4_X);
+		  return vvp_vector4_t(vals_width, BIT4_0);
 
 	    vvp_vector4_t val;
 	    vals->get_word(address, val);
