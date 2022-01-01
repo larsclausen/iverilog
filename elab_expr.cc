@@ -5204,21 +5204,11 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 				  par_ex->value().len())) return 0;
 
       if (! parts_defined_flag) {
-	    if (warn_ob_select) {
-		  const index_component_t&psel = path_.back().index.back();
-		  perm_string name = peek_tail_name(path_);
-		  cerr << get_fileline() << ": warning: "
-		          "Undefined part select [" << *(psel.msb) << ":"
-		       << *(psel.lsb) << "] for parameter '" << name
-		       << "'." << endl;
-		  cerr << get_fileline() << ":        : "
-		          "Replacing select with a constant 'bx." << endl;
-	    }
-
-	    verinum val(verinum::Vx, expr_wid, true);
-	    NetEConst*tmp = new NetEConst(val);
-	    tmp->set_line(*this);
-	    return tmp;
+//		NetExpr *tmp = undefined_part_select(path_.back().index.back(),
+//			false, expr_wid);
+//		tmp->set_line(*this);
+//		return tmp;
+		return 0;
       }
 
 	// Notice that the par_msv is not used in this function other
@@ -5655,6 +5645,27 @@ NetExpr* PEIdent::elaborate_expr_net_word_(Design*des, NetScope*scope,
       return res;
 }
 
+#if 0
+static NetExpr* undefined_part_select(const index_component_t&psel,
+	bool is_array, unsigned wid)
+{
+    if (warn_ob_select) {
+	  cerr << get_fileline() << ": warning: "
+	          "Undefined part select [" << *(psel.msb) << ":"
+	       << *(psel.lsb) << "] for ";
+	  if (is_array) cerr << "array word";
+	  else cerr << "vector";
+	  cerr << " '" << net->name();
+	  if (is_array) cerr << "[]";
+	  cerr << "'." << endl;
+	  cerr << get_fileline() << ":        : "
+	          "Replacing select with a constant 'bx." << endl;
+    }
+
+    return new NetEConst(verinum(verinum::Vx, wid, true));
+}
+#endif
+
 /*
  * Handle part selects of NetNet identifiers.
  */
@@ -5681,23 +5692,12 @@ NetExpr* PEIdent::elaborate_expr_net_part_(Design*des, NetScope*scope,
 	/* But wait... if the part select expressions are not fully
 	   defined, then fall back on the tested width. */
       if (!parts_defined_flag) {
-	    if (warn_ob_select) {
-		  const index_component_t&psel = path_.back().index.back();
-		  cerr << get_fileline() << ": warning: "
-		          "Undefined part select [" << *(psel.msb) << ":"
-		       << *(psel.lsb) << "] for ";
-		  if (net->word_index()) cerr << "array word";
-		  else cerr << "vector";
-		  cerr << " '" << net->name();
-		  if (net->word_index()) cerr << "[]";
-		  cerr << "'." << endl;
-		  cerr << get_fileline() << ":        : "
-		          "Replacing select with a constant 'bx." << endl;
-	    }
-
-	    NetEConst*tmp = new NetEConst(verinum(verinum::Vx, expr_wid, true));
-	    tmp->set_line(*this);
-	    return tmp;
+	  #if 0
+		NetExpr *tmp = undefined_part_select(path_.back().index.back(),
+			net->word_index(), expr_wid);
+		tmp->set_line(*this);
+		return tmp;
+		#endif
       }
       long sb_lsb, sb_msb;
       if (prefix_indices.size()+1 < net->sig()->packed_dims().size()) {
