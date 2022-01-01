@@ -259,7 +259,7 @@ class vvp_vector4_t {
 	// semantics. This means that part select beyond 'that'
 	// returns X bits.
       explicit vvp_vector4_t(const vvp_vector4_t&that,
-			     unsigned adr, unsigned wid);
+			     unsigned adr, unsigned wid, bool xz_to_0=false);
 
       vvp_vector4_t(const vvp_vector4_t&that);
       vvp_vector4_t(const vvp_vector4_t&that, bool invert_flag);
@@ -273,7 +273,7 @@ class vvp_vector4_t {
 	// Get the bit at the specified address
       vvp_bit4_t value(unsigned idx) const;
 	// Get the vector4 subvector starting at the address
-      vvp_vector4_t subvalue(unsigned idx, unsigned size) const;
+      vvp_vector4_t subvalue(unsigned idx, unsigned size, bool xz_to_0 = false) const;
 	// Get the 2-value bits for the subvector. This returns a new
 	// array of longs, or a nil pointer if an XZ bit was detected
 	// in the array.
@@ -469,9 +469,10 @@ inline vvp_bit4_t vvp_vector4_t::value(unsigned idx) const
       return (vvp_bit4_t)tmp;
 }
 
-inline vvp_vector4_t vvp_vector4_t::subvalue(unsigned adr, unsigned wid) const
+inline vvp_vector4_t vvp_vector4_t::subvalue(unsigned adr, unsigned wid, bool
+xz_to_0) const
 {
-      return vvp_vector4_t(*this, adr, wid);
+      return vvp_vector4_t(*this, adr, wid, xz_to_0);
 }
 
 inline void vvp_vector4_t::set_bit(unsigned idx, vvp_bit4_t val)

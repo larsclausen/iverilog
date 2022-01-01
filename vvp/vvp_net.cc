@@ -808,7 +808,7 @@ vvp_vector4_t::vvp_vector4_t(unsigned size__, double val)
 }
 
 vvp_vector4_t::vvp_vector4_t(const vvp_vector4_t&that,
-			    unsigned adr, unsigned wid)
+			    unsigned adr, unsigned wid, bool xz_to_0)
 {
 	// Set up and initialize the destination.
       size_ = wid;

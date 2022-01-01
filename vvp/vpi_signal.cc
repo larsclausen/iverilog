@@ -176,54 +176,8 @@ static void format_vpiOctStrVal(vvp_signal_value*sig, int base, unsigned wid,
 {
       unsigned dwid = (wid + 2) / 3;
       char *rbuf = (char *) need_result_buf(dwid+1, RBUF_VAL);
-      long end = base + (signed)wid;
-      long ssize = (signed)sig->value_size();
-      unsigned val = 0;
 
-      rbuf[dwid] = 0;
-      for (long idx = base ;  idx < end ;  idx += 1) {
-	    unsigned bit = 0;
-	    if (idx < 0 || idx >= ssize) {
-                  bit = 2; // BIT4_X
-	    } else {
-                  switch (sig->value(idx)) {
-		      case BIT4_0:
-			bit = 0;
-			break;
-		      case BIT4_1:
-			bit = 1;
-			break;
-		      case BIT4_X:
-			bit = 2;
-			break;
-		      case BIT4_Z:
-			bit = 3;
-			break;
-                  }
-	    }
-	    val |= bit << 2*((idx-base) % 3);
-
-	    if ((idx-base) % 3 == 2) {
-		dwid -= 1;
-		rbuf[dwid] = oct_digits[val];
-		val = 0;
-	    }
-      }
-
-	/* Fill in X or Z if they are the only thing in the value. */
-      switch (wid % 3) {
-	  case 1:
-	    if (val == 2) val = 42;
-	    else if (val == 3) val = 63;
-	    break;
-	  case 2:
-	    if (val == 10) val = 42;
-	    else if (val == 15) val = 63;
-	    break;
-      }
-
-      if (dwid > 0) rbuf[0] = oct_digits[val];
-
+      vpip_vec4_to_oct_str(sig->subvalue(base, wid), rbuf, dwid+1);
       vp->value.str = rbuf;
 }
 
@@ -232,58 +186,8 @@ static void format_vpiHexStrVal(vvp_signal_value*sig, int base, unsigned wid,
 {
       unsigned dwid = (wid + 3) / 4;
       char *rbuf = (char *) need_result_buf(dwid+1, RBUF_VAL);
-      long end = base + (signed)wid;
-      long ssize = (signed)sig->value_size();
-      unsigned val = 0;
 
-      rbuf[dwid] = 0;
-      for (long idx = base ;  idx < end ;  idx += 1) {
-	    unsigned bit = 0;
-	    if (idx < 0 || idx >= ssize) {
-                  bit = 2; // BIT4_X
-	    } else {
-                  switch (sig->value(idx)) {
-		      case BIT4_0:
-			bit = 0;
-			break;
-		      case BIT4_1:
-			bit = 1;
-			break;
-		      case BIT4_X:
-			bit = 2;
-			break;
-		      case BIT4_Z:
-			bit = 3;
-			break;
-                  }
-	    }
-	    val |= bit << 2*((idx-base) % 4);
-
-	    if ((idx-base) % 4 == 3) {
-		dwid -= 1;
-		rbuf[dwid] = hex_digits[val];
-		val = 0;
-	    }
-      }
-
-	/* Fill in X or Z if they are the only thing in the value. */
-      switch (wid % 4) {
-	  case 1:
-	    if (val == 2) val = 170;
-	    else if (val == 3) val = 255;
-	    break;
-	  case 2:
-	    if (val == 10) val = 170;
-	    else if (val == 15) val = 255;
-	    break;
-	  case 3:
-	    if (val == 42) val = 170;
-	    else if (val == 63) val = 255;
-	    break;
-      }
-
-      if (dwid > 0) rbuf[0] = hex_digits[val];
-
+      vpip_vec4_to_hex_str(sig->value().subvalue(base, wid), rbuf, dwid+1);
       vp->value.str = rbuf;
 }
 

@@ -708,6 +708,7 @@ struct __vpiArray : public __vpiArrayBase, public __vpiHandle {
       void set_word(unsigned idx, const vvp_object_t&val);
 
       vvp_vector4_t get_word(unsigned address);
+      vvp_vector4_t get_word(unsigned address, unsigned off, unsigned wid);
       double get_word_r(unsigned address);
       void get_word_obj(unsigned address, vvp_object_t&val);
       std::string get_word_str(unsigned address);
