@@ -5018,10 +5018,10 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
       return 0;
 }
 
-static verinum param_part_select_bits(const verinum&par_val, long wid,
+static verinum param_part_select_bits(ivl_type_t par_type, const verinum &par_val, long wid,
 				     long lsv)
 {
-      verinum result (verinum::Vx, wid, true);
+      verinum result (par_type->base_type() == IVL_VT_BOOL ? verinum::V0 : verinum::Vx, wid, true);
 
       for (long idx = 0 ; idx < wid ; idx += 1) {
 	    long off = idx + lsv;
@@ -5089,7 +5089,7 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
 			        "Replacing select with a constant 1'bx."
 			     << endl;
 		  }
-		  NetEConst*res = make_const_x(1);
+		  NetEConst*res = make_const_default(par->expr_type(), 1);
 		  res->set_line(*this);
 		  return res;
 	    }
@@ -5100,7 +5100,11 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
 
 	      // Select a bit from the parameter.
 	    verinum par_v = par_ex->value();
-	    verinum::V rtn = verinum::Vx;
+	    verinum::V rtn;
+	    if (par_type->base_type() == IVL_VT_BOOL)
+		  rtn = verinum::V0;
+	    else
+		  rtn = verinum::Vx;
 
 	      // A constant in range select.
 	    if ((sel_v >= 0) && ((unsigned long) sel_v < par_v.len())) {
@@ -5224,7 +5228,7 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 	    }
       }
 
-      verinum result = param_part_select_bits(par_ex->value(), wid, base);
+      verinum result = param_part_select_bits(par_type, par_ex->value(), wid, base);
       NetEConst*result_ex = new NetEConst(result);
       result_ex->set_line(*this);
 
@@ -5407,7 +5411,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_do_(Design*des, NetScope*scope,
                                 pwid, this, name, false);
 	    }
 
-	    verinum result = param_part_select_bits(par_ex->value(), wid,
+	    verinum result = param_part_select_bits(par_type, par_ex->value(), wid,
 						    lsv-par_base);
 	    NetEConst*result_ex = new NetEConst(result);
 	    result_ex->set_line(*this);
@@ -5638,7 +5642,7 @@ NetExpr* PEIdent::elaborate_expr_net_word_(Design*des, NetScope*scope,
       }
 
       if (canon_index == 0) {
-	    NetEConst*xxx = make_const_x(net->vector_width());
+	    NetEConst*xxx = make_const_default(net->data_type(), net->vector_width());
 	    xxx->set_line(*this);
 	    return xxx;
       }
@@ -5824,7 +5828,7 @@ NetExpr* PEIdent::elaborate_expr_net_part_(Design*des, NetScope*scope,
 	// constant X.
 
       if ((sb_lsb >= (signed) net->vector_width()) || (sb_msb < 0)) {
-	    NetEConst*tmp = make_const_x(wid);
+	    NetEConst*tmp = make_const_default(net->expr_type(), wid);
 	    tmp->set_line(*this);
 	    return tmp;
       }
@@ -6164,7 +6168,7 @@ NetExpr* PEIdent::elaborate_expr_net_bit_(Design*des, NetScope*scope,
 		  }
 
 		    // FIXME: Should I be using slice_width() here?
-		  NetEConst*tmp = make_const_x(1);
+		  NetEConst*tmp = make_const_default(net->expr_type(), 1);
 		  tmp->set_line(*this);
 		  delete mux;
 		  return tmp;
@@ -6243,7 +6247,7 @@ NetExpr* PEIdent::elaborate_expr_net_bit_(Design*des, NetScope*scope,
 			     << endl;
 		  }
 
-		  NetEConst*tmp = make_const_x(1);
+		  NetEConst*tmp = make_const_default(net->expr_type(), 1);
 		  tmp->set_line(*this);
 
 		  delete mux;
