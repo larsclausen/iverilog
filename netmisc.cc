@@ -766,6 +766,14 @@ NetEConst* make_const_0(unsigned long wid)
       return resx;
 }
 
+NetEConst* make_const_default(ivl_variable_type_t type, unsigned long wid)
+{
+	if (type == IVL_VT_LOGIC)
+		return make_const_x(wid);
+	else
+		return make_const_0(wid);
+}
+
 NetEConst* make_const_val(unsigned long value)
 {
       verinum tmp (value, integer_width);

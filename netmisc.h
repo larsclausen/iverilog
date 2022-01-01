@@ -334,6 +334,8 @@ extern NetEConst*make_const_x(unsigned long wid);
 extern NetEConst*make_const_0(unsigned long wid);
 extern NetEConst*make_const_val(unsigned long val);
 extern NetEConst*make_const_val_s(long val);
+extern NetEConst* make_const_default(ivl_variable_type_t type, unsigned long
+wid);
 
 /*
  * Make A const net
