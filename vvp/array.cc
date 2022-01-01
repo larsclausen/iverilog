@@ -1261,11 +1261,10 @@ static void array_attach_port(vvp_array_t array, vvp_fun_arrayport*fun)
       array->ports_ = fun;
       if (!array->get_scope()->is_automatic()) {
               /* propagate initial values for variable arrays */
-            if (array->vals4) {
+            if (!vpi_array_is_real(array)) {
                   vvp_vector4_t tmp(array->vals_width, BIT4_X);
                   schedule_init_propagate(fun->net_, tmp);
-            }
-            if (array->vals) {
+            } else {
                   schedule_init_propagate(fun->net_, 0.0);
             }
       }
