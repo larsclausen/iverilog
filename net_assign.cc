@@ -174,6 +174,15 @@ const ivl_type_s* NetAssign_::net_type() const
 	    return 0;
       }
 
+      if (const netstruct_t*struct_type = sig_->struct_type()) {
+	    if (member_.nil())
+		  return sig_->net_type();
+
+	    unsigned long off; // unused
+	    const struct netstruct_t::member_t *member = struct_type->packed_member(member_, off);
+	    return member->net_type;
+      }
+
       if (const netclass_t*class_type = sig_->class_type()) {
 	    if (member_.nil())
 		  return sig_->net_type();

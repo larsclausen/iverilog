@@ -1513,6 +1513,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 	      // completed, and set up for the next component.
 	    completed_path .push_back(member_comp);
 	    member_path.pop_front();
+	    lv->set_property(member_name);
 
       } while (!member_path.empty() && struct_type != 0);
 

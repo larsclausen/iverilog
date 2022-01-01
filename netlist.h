@@ -2842,7 +2842,12 @@ class NetAssign_ {
 	// Set the member or property name if the signal type is a
 	// class.
       void set_property(const perm_string&name);
-      inline perm_string get_property(void) const { return member_; }
+      inline perm_string get_property(void) const {
+	    if (sig_->class_type())
+		  return member_;
+	    else
+		  return perm_string();
+      }
 
 	// Determine if the assigned object is signed or unsigned.
 	// This is used when determining the expression type for
