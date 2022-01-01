@@ -217,11 +217,11 @@ static int get_vpi_taskfunc_signal_arg(struct args_info *result,
 		 index and we are taking a select from an array
 		 word. This would come up in expressions like
 		 "array[<word>][<part>]" where wexpr is <word> */
-	    if (wexpr && number_is_immediate(wexpr, 64, 1)
-		&& number_is_immediate(bexpr, 64, 1)) {
+	    if (wexpr && number_is_immediate(wexpr, 64, 0)
+		&& number_is_immediate(bexpr, 64, 0)) {
 		  assert(! number_is_unknown(bexpr));
 		  assert(! number_is_unknown(wexpr));
-		  snprintf(buffer, sizeof buffer, "&APV<v%p, %ld, %ld, %u>",
+		  snprintf(buffer, sizeof buffer, "&APV<v%p, %lu, %lu, %u>",
 			   ivl_expr_signal(vexpr),
 			   get_number_immediate(wexpr),
 			   get_number_immediate(bexpr),
@@ -231,7 +231,7 @@ static int get_vpi_taskfunc_signal_arg(struct args_info *result,
 		  return 0;
 
 	      /* This is a constant bit/part select. */
-	    } else if (number_is_immediate(bexpr, 64, 1)) {
+	    } else if (number_is_immediate(bexpr, 64, 0)) {
 		  assert(! number_is_unknown(bexpr));
 		  snprintf(buffer, sizeof buffer, "&PV<v%p_0, %ld, %u>",
 		           ivl_expr_signal(vexpr),
