@@ -29,20 +29,23 @@ Statement::~Statement()
 {
 }
 
-PAssign_::PAssign_(PExpr*lval__, PExpr*ex, bool is_constant)
-: event_(0), count_(0), lval_(lval__), rval_(ex), is_constant_(is_constant)
+PAssign_::PAssign_(PExpr*lval__, PExpr*ex, bool is_constant, bool is_init)
+: event_(0), count_(0), lval_(lval__), rval_(ex), is_constant_(is_constant),
+  is_init_(is_init)
 {
       delay_ = 0;
 }
 
 PAssign_::PAssign_(PExpr*lval__, PExpr*de, PExpr*ex)
-: event_(0), count_(0), lval_(lval__), rval_(ex), is_constant_(false)
+: event_(0), count_(0), lval_(lval__), rval_(ex), is_constant_(false),
+  is_init_(false)
 {
       delay_ = de;
 }
 
 PAssign_::PAssign_(PExpr*lval__, PExpr*cnt, PEventStatement*ev, PExpr*ex)
-: event_(ev), count_(cnt), lval_(lval__), rval_(ex), is_constant_(false)
+: event_(ev), count_(cnt), lval_(lval__), rval_(ex), is_constant_(false),
+  is_init_(false)
 {
       delay_ = 0;
 }
@@ -54,12 +57,12 @@ PAssign_::~PAssign_()
 }
 
 PAssign::PAssign(PExpr*lval__, PExpr*ex)
-: PAssign_(lval__, ex, false), op_(0)
+: PAssign_(lval__, ex, false, false), op_(0)
 {
 }
 
 PAssign::PAssign(PExpr*lval__, char op, PExpr*ex)
-: PAssign_(lval__, ex, false), op_(op)
+: PAssign_(lval__, ex, false, false), op_(op)
 {
 }
 
@@ -73,8 +76,8 @@ PAssign::PAssign(PExpr*lval__, PExpr*cnt, PEventStatement*d, PExpr*ex)
 {
 }
 
-PAssign::PAssign(PExpr*lval__, PExpr*ex, bool is_constant)
-: PAssign_(lval__, ex, is_constant), op_(0)
+PAssign::PAssign(PExpr*lval__, PExpr*ex, bool is_constant, bool is_init)
+: PAssign_(lval__, ex, is_constant, is_init), op_(0)
 {
 }
 
@@ -83,7 +86,7 @@ PAssign::~PAssign()
 }
 
 PAssignNB::PAssignNB(PExpr*lval__, PExpr*ex)
-: PAssign_(lval__, ex, false)
+: PAssign_(lval__, ex, false, false)
 {
 }
 

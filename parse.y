@@ -570,7 +570,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <number>  number pos_neg_number
 %type <flag>    signing unsigned_signed_opt signed_unsigned_opt
 %type <flag>    import_export
-%type <flag>    K_genvar_opt K_static_opt K_virtual_opt
+%type <flag>    K_genvar_opt K_static_opt K_virtual_opt K_const_opt
 %type <flag>    udp_reg_opt edge_operator
 %type <drive>   drive_strength drive_strength_opt dr_strength0 dr_strength1
 %type <letter>  udp_input_sym udp_output_sym
@@ -2566,24 +2566,24 @@ block_item_decl
   /* variable declarations. Note that data_type can be 0 if we are
      recovering from an error. */
 
-  : K_var variable_lifetime_opt data_type_or_implicit list_of_variable_decl_assignments ';'
-      { data_type_t*data_type = $3;
+  : K_const_opt K_var variable_lifetime_opt data_type_or_implicit list_of_variable_decl_assignments ';'
+      { data_type_t*data_type = $4;
 	if (data_type == 0) {
 	      data_type = new vector_type_t(IVL_VT_LOGIC, false, 0);
-	      FILE_NAME(data_type, @1);
+	      FILE_NAME(data_type, @2);
 	}
-	pform_make_var(@1, $4, data_type, attributes_in_context);
+	pform_make_var(@2, $5, data_type, attributes_in_context);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
-  | variable_lifetime_opt data_type list_of_variable_decl_assignments ';'
-      { if ($2) pform_make_var(@2, $3, $2, attributes_in_context);
+  | K_const_opt variable_lifetime_opt data_type list_of_variable_decl_assignments ';'
+      { if ($3) pform_make_var(@3, $4, $3, attributes_in_context, $1);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
   /* The extra `reg` is not valid (System)Verilog, this is a iverilog extension. */
-  | variable_lifetime_opt K_reg data_type list_of_variable_decl_assignments ';'
-      { if ($3) pform_make_var(@3, $4, $3, attributes_in_context);
+  | K_const_opt variable_lifetime_opt K_reg data_type list_of_variable_decl_assignments ';'
+      { if ($4) pform_make_var(@4, $5, $4, attributes_in_context, $1);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
@@ -2604,11 +2604,11 @@ block_item_decl
   /* Recover from errors that happen within variable lists. Use the
      trailing semi-colon to resync the parser. */
 
-  | K_var variable_lifetime_opt data_type_or_implicit error ';'
+  | K_const_opt K_var variable_lifetime_opt data_type_or_implicit error ';'
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
       }
-  | variable_lifetime_opt data_type error ';'
+  | K_const_opt variable_lifetime_opt data_type error ';'
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
       }
@@ -6991,6 +6991,7 @@ unique_priority
      presence is significant. This is a fairly common pattern so
      collect those rules here. */
 
+K_const_opt    : K_const     { $$ = true; } | { $$ = false; } ;
 K_genvar_opt   : K_genvar    { $$ = true; } | { $$ = false; } ;
 K_static_opt   : K_static    { $$ = true; } | { $$ = false; } ;
 K_virtual_opt  : K_virtual   { $$ = true; } | { $$ = false; } ;

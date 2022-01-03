@@ -69,6 +69,9 @@ class PWire : public PNamedItem {
       NetNet::PortType get_port_type() const;
       bool set_port_type(NetNet::PortType);
 
+      void set_const(bool is_const) { is_const_ = is_const; };
+      bool get_const() {return is_const_; };
+
       void set_signed(bool flag);
       bool get_signed() const;
 
@@ -104,6 +107,7 @@ class PWire : public PNamedItem {
       NetNet::PortType port_type_;
       ivl_variable_type_t data_type_;
       bool signed_;
+      bool is_const_;
 
 	// These members hold expressions for the bit width of the
 	// wire. If they do not exist, the wire is 1 bit wide. If they

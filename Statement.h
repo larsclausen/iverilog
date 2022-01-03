@@ -95,7 +95,7 @@ class Statement : virtual public LineInfo {
  */
 class PAssign_  : public Statement {
     public:
-      explicit PAssign_(PExpr*lval, PExpr*ex, bool is_constant);
+      explicit PAssign_(PExpr*lval, PExpr*ex, bool is_constant, bool is_init);
       explicit PAssign_(PExpr*lval, PExpr*de, PExpr*ex);
       explicit PAssign_(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
       virtual ~PAssign_() =0;
@@ -122,6 +122,7 @@ class PAssign_  : public Statement {
       PExpr* lval_;
       PExpr* rval_;
       bool is_constant_;
+      bool is_init_;
 };
 
 class PAssign  : public PAssign_ {
@@ -135,7 +136,7 @@ class PAssign  : public PAssign_ {
       explicit PAssign(PExpr*lval, char op, PExpr*ex);
       explicit PAssign(PExpr*lval, PExpr*de, PExpr*ex);
       explicit PAssign(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
-      explicit PAssign(PExpr*lval, PExpr*ex, bool is_constant);
+      explicit PAssign(PExpr*lval, PExpr*ex, bool is_constant, bool is_init);
       ~PAssign();
 
       virtual void dump(std::ostream&out, unsigned ind) const;

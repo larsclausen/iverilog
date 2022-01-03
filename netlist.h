@@ -698,6 +698,9 @@ class NetNet  : public NetObj, public PortType {
 	   signed. Otherwise, it is unsigned. */
       bool get_signed() const;
 
+      bool get_is_const() const { return is_const_; }
+      void set_const(bool is_const) { is_const_ = is_const; }
+
       bool get_scalar() const;
 
       inline const ivl_type_s* net_type(void) const { return net_type_; }
@@ -801,6 +804,8 @@ class NetNet  : public NetObj, public PortType {
       bool local_flag_: 1;
       ivl_type_t net_type_;
       ivl_discipline_t discipline_;
+
+      bool is_const_;
 
       netranges_t unpacked_dims_;
 
