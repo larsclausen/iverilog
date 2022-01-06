@@ -385,10 +385,9 @@ void netclass_t::elaborate_sig(Design*des, PClass*pclass)
 		       << "." << endl;
 	    }
 
-	    list<netrange_t> nil_list;
 	    ivl_type_t use_type = cur->second.type->elaborate_type(des, class_scope_);
 	    /* NetNet*sig = */ new NetNet(class_scope_, cur->first, NetNet::REG,
-				    nil_list, use_type);
+				    NetNet::not_an_array, use_type);
       }
 
       for (map<perm_string,PFunction*>::iterator cur = pclass->funcs.begin()
@@ -655,8 +654,7 @@ void PFunction::elaborate_sig(Design*des, NetScope*scope) const
 			if (return_type_)
 			      return_type_->pform_dump(cerr, 8);
 		  }
-		  list<netrange_t> ret_unpacked;
-		  ret_sig = new NetNet(scope, fname, NetNet::REG, ret_unpacked, ret_type);
+		  ret_sig = new NetNet(scope, fname, NetNet::REG, NetNet::not_an_array, ret_type);
 
 		  ret_sig->set_line(*this);
 		  ret_sig->port_type(NetNet::POUTPUT);
@@ -1166,7 +1164,7 @@ NetNet* PWire::elaborate_sig(Design*des, NetScope*scope) const
 	// unpacked_dimensions are empty this will just return the base type.
       type = elaborate_array_type(des, array_type_scope, *this, type, unpacked_);
 
-      list<netrange_t> unpacked_dimensions;
+      netranges_t unpacked_dimensions;
 	// If this is an unpacked array extract the base type and unpacked
 	// dimensions as these are separate properties of the NetNet.
       if (const netuarray_t *atype = dynamic_cast<const netuarray_t*>(type)) {
