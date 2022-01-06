@@ -2327,7 +2327,7 @@ static NetExpr* check_for_struct_members(const LineInfo*li,
 		    // kind of array cannot be a struct.
 		  if (!member_comp.index.empty()) {
 			  // These are the dimensions defined by the type
-			const vector<netrange_t>&mem_packed_dims = mem_vec->packed_dims();
+			const netranges_t&mem_packed_dims = mem_vec->packed_dims();
 
 			if (member_comp.index.size() > mem_packed_dims.size()) {
 			      cerr << li->get_fileline() << ": error: "
@@ -2399,7 +2399,7 @@ static NetExpr* check_for_struct_members(const LineInfo*li,
 		  ivl_assert(*li, !member_comp.index.empty());
 
 		    // These are the dimensions defined by the type
-		  const vector<netrange_t>&mem_packed_dims = array->static_dimensions();
+		  const netranges_t&mem_packed_dims = array->static_dimensions();
 
 		  if (member_comp.index.size() != mem_packed_dims.size()) {
 			cerr << li->get_fileline() << ": error: "
@@ -4536,7 +4536,7 @@ NetExpr* PEIdent::elaborate_expr_class_member_(Design*des, NetScope*scope,
       ivl_type_t tmp_type = class_type->get_prop_type(pidx);
       if (const netuarray_t*tmp_ua = dynamic_cast<const netuarray_t*>(tmp_type)) {
 
-	    const std::vector<netrange_t>&dims = tmp_ua->static_dimensions();
+	    const netranges_t&dims = tmp_ua->static_dimensions();
 
 	    if (debug_elaborate) {
 		  cerr << get_fileline() << ": PEIdent::elaborate_expr_class_member_: "
@@ -5901,7 +5901,7 @@ NetExpr* PEIdent::elaborate_expr_net_idx_up_(Design*des, NetScope*scope,
 		  long lsv = base_c->value().as_long();
 		  long rel_base = 0;
 		    // Get the signal range.
-		  const vector<netrange_t>&packed = net->sig()->packed_dims();
+		  const netranges_t&packed = net->sig()->packed_dims();
 		  if (prefix_indices.size()+1 < net->sig()->packed_dims().size()) {
 			  // Here we are selecting one or more sub-arrays.
 			  // Make this work by finding the indexed sub-arrays and
@@ -6033,7 +6033,7 @@ NetExpr* PEIdent::elaborate_expr_net_idx_do_(Design*des, NetScope*scope,
 		  long lsv = base_c->value().as_long();
 		  long rel_base = 0;
 		    // Get the signal range.
-		  const vector<netrange_t>&packed = net->sig()->packed_dims();
+		  const netranges_t&packed = net->sig()->packed_dims();
 		  if (prefix_indices.size()+1 < net->sig()->packed_dims().size()) {
 			  // Here we are selecting one or more sub-arrays.
 			  // Make this work by finding the indexed sub-arrays and
@@ -6212,7 +6212,7 @@ NetExpr* PEIdent::elaborate_expr_net_bit_(Design*des, NetScope*scope,
 
 	    long msv = msc->value().as_long();
 
-	    const vector<netrange_t>& sig_packed = net->sig()->packed_dims();
+	    const netranges_t& sig_packed = net->sig()->packed_dims();
 	    if (prefix_indices.size()+2 <= sig_packed.size()) {
 		    // Special case: this is a slice of a multi-dimensional
 		    // packed array. For example:
@@ -6312,7 +6312,7 @@ NetExpr* PEIdent::elaborate_expr_net_bit_(Design*des, NetScope*scope,
 	    return res;
       }
 
-      const vector<netrange_t>& sig_packed = net->sig()->packed_dims();
+      const netranges_t& sig_packed = net->sig()->packed_dims();
       if (prefix_indices.size()+2 <= sig_packed.size()) {
 	      // Special case: this is a slice of a multi-dimensional
 	      // packed array. For example:

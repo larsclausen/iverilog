@@ -30,24 +30,22 @@
 class netsarray_t : public netarray_t {
 
     public:
-      explicit netsarray_t(const std::vector<netrange_t>&packed,
-			   ivl_type_t etype);
+      explicit netsarray_t(const netranges_t&packed, ivl_type_t etype);
       ~netsarray_t();
 
     public:
 	// Virtual methods from the ivl_type_s type...
 
     public:
-      inline const std::vector<netrange_t>& static_dimensions() const
+      inline const netranges_t& static_dimensions() const
       { return dims_; }
 
     private:
-      std::vector<netrange_t> dims_;
+      netranges_t dims_;
 
 };
 
-inline netsarray_t::netsarray_t(const std::vector<netrange_t>&pd,
-				ivl_type_t etype)
+inline netsarray_t::netsarray_t(const netranges_t&pd, ivl_type_t etype)
 : netarray_t(etype), dims_(pd)
 {
 }
@@ -58,20 +56,18 @@ inline netsarray_t::netsarray_t(const std::vector<netrange_t>&pd,
 class netparray_t : public netsarray_t {
 
     public:
-      explicit netparray_t(const std::vector<netrange_t>&packed,
-			   ivl_type_t etype);
+      explicit netparray_t(const netranges_t&packed, ivl_type_t etype);
       ~netparray_t();
 
     public:
 	// Virtual methods from the ivl_type_s type...
       bool packed(void) const;
       long packed_width(void) const;
-      std::vector<netrange_t> slice_dimensions() const;
+      netranges_t slice_dimensions() const;
 
 };
 
-inline netparray_t::netparray_t(const std::vector<netrange_t>&pd,
-				ivl_type_t etype)
+inline netparray_t::netparray_t(const netranges_t&pd, ivl_type_t etype)
 : netsarray_t(pd, etype)
 {
 }
@@ -82,17 +78,15 @@ inline netparray_t::netparray_t(const std::vector<netrange_t>&pd,
 class netuarray_t : public netsarray_t {
 
     public:
-      explicit netuarray_t(const std::vector<netrange_t>&packed,
-			   ivl_type_t etype);
+      explicit netuarray_t(const netranges_t&packed, ivl_type_t etype);
       ~netuarray_t();
 
     public:
 	// Virtual methods from the ivl_type_s type...
-      std::vector<netrange_t> slice_dimensions() const;
+      netranges_t slice_dimensions() const;
 };
 
-inline netuarray_t::netuarray_t(const std::vector<netrange_t>&pd,
-				ivl_type_t etype)
+inline netuarray_t::netuarray_t(const netranges_t&pd, ivl_type_t etype)
 : netsarray_t(pd, etype)
 {
 }

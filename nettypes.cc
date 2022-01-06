@@ -41,9 +41,9 @@ long ivl_type_s::packed_width(void) const
       return 1;
 }
 
-vector<netrange_t> ivl_type_s::slice_dimensions() const
+netranges_t ivl_type_s::slice_dimensions() const
 {
-      return vector<netrange_t>();
+      return netranges_t();
 }
 
 ivl_variable_type_t ivl_type_s::base_type() const
@@ -83,10 +83,10 @@ ivl_variable_type_t netarray_t::base_type() const
       return element_type_->base_type();
 }
 
-unsigned long netrange_width(const vector<netrange_t>&packed)
+unsigned long netrange_width(const netranges_t&packed)
 {
       unsigned wid = 1;
-      for (vector<netrange_t>::const_iterator cur = packed.begin()
+      for (netranges_t::const_iterator cur = packed.begin()
 		 ; cur != packed.end() ; ++cur) {
 	    unsigned use_wid = cur->width();
 	    wid *= use_wid;
@@ -101,9 +101,8 @@ unsigned long netrange_width(const vector<netrange_t>&packed)
  * and width of the resulting slice. In this case, the "sb" argument
  * is an extra index of the prefix.
  */
-bool prefix_to_slice(const std::vector<netrange_t>&dims,
-		     const std::list<long>&prefix, long sb,
-		     long&loff, unsigned long&lwid)
+bool prefix_to_slice(const netranges_t&dims, const std::list<long>&prefix,
+		     long sb, long&loff, unsigned long&lwid)
 {
       assert(prefix.size() < dims.size());
 
@@ -114,7 +113,7 @@ bool prefix_to_slice(const std::vector<netrange_t>&dims,
 	// this by multiplying the widths of the dims that are NOT
 	// accounted for by the prefix or sb indices.
       size_t acc_wid = 1;
-      vector<netrange_t>::const_iterator pcur = dims.end();
+      netranges_t::const_iterator pcur = dims.end();
       for (size_t idx = prefix.size()+1 ; idx < dims.size() ; idx += 1) {
 	    -- pcur;
 	    acc_wid *= pcur->width();
