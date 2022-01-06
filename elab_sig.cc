@@ -1154,7 +1154,7 @@ NetNet* PWire::elaborate_sig(Design*des, NetScope*scope) const
 	// unpacked_dimensions are empty this will just return the base type.
       type = elaborate_array_type(des, array_type_scope, *this, type, unpacked_);
 
-      list<netrange_t> unpacked_dimensions;
+      netranges_t unpacked_dimensions;
 	// If this is an unpacked array extract the base type and unpacked
 	// dimensions as these are separate properties of the NetNet.
       if (const netuarray_t *atype = dynamic_cast<const netuarray_t*>(type)) {
