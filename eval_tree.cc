@@ -26,6 +26,7 @@
 # include  <cmath>
 
 # include  "netlist.h"
+# include  "netdarray.h"
 # include  "ivl_assert.h"
 # include  "netmisc.h"
 
@@ -2038,6 +2039,10 @@ NetEConst* NetESFunc::evaluate_dimensions_(const NetExpr*arg) const
       long res = 0;
       if (esig != 0) {
 	    const NetNet *sig = esig->sig();
+		auto t = dynamic_cast<const netdarray_t*>(sig->net_type());
+		if (t) {
+		res = 1 + t->element_type()->slice_dimensions().size();
+		} else {
 	    res = sig->packed_dimensions() + sig->unpacked_dimensions();
 	      /* Icarus does not think a string has a packed size so to
 	       * make these routines work correct add one if this is a
@@ -2047,6 +2052,7 @@ NetEConst* NetESFunc::evaluate_dimensions_(const NetExpr*arg) const
 		  res += 1;
 	    }
       }
+	  }
 	/* Return the result as an integer sized constant. */
       return new NetEConst(verinum(verinum(res), integer_width));
 }
