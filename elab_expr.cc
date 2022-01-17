@@ -3419,25 +3419,28 @@ NetExpr* PECastType::elaborate_expr(Design*des, NetScope*scope,
                                     ivl_type_t type, unsigned flags) const
 {
     const netdarray_t*darray = NULL;
-    const netvector_t*vector = NULL;
 
     // Casting array of vectors to dynamic array type
     if((darray = dynamic_cast<const netdarray_t*>(type)) &&
-            (vector = dynamic_cast<const netvector_t*>(darray->element_type()))) {
+       (darray->element_type()->packed())) {
         PExpr::width_mode_t mode = PExpr::SIZED;
         unsigned use_wid = base_->test_width(des, scope, mode);
         NetExpr*base = base_->elaborate_expr(des, scope, use_wid, NO_FLAGS);
+        long element_width = darray->element_type()->packed_width();
 
-        assert(vector->packed_width() > 0);
+        assert(element_width > 0);
         assert(base->expr_width() > 0);
 
+	// Section 6.24.3 of 1800-2012 says that there must be no truncation or
+	// padding and the expression width must be a multiple of the element
+	// width
+	if (base->expr_width() % element_width != 0) {
+	    cerr << get_fileline() << ": error: Invalid bitcast." << endl;
+	    des->errors += 1;
+	}
+
         // Find rounded up length that can fit the whole casted array of vectors
-        int len = base->expr_width() + vector->packed_width() - 1;
-        if(base->expr_width() > (unsigned)vector->packed_width()) {
-            len /= vector->packed_width();
-        } else {
-            len /= base->expr_width();
-        }
+        int len = base->expr_width() / element_width;
 
         // Number of words in the created dynamic array
         NetEConst*len_expr = new NetEConst(verinum(len));
