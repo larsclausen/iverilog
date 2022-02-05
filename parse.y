@@ -433,7 +433,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       PGBuiltin::Type gatetype;
       NetNet::PortType porttype;
       ivl_variable_type_t vartype;
-      PBlock::BL_TYPE join_keyword;
+      PBlock::BL_TYPE block_type;
 
       PWire*wire;
       std::vector<PWire*>*wires;
@@ -702,7 +702,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <statement> analog_statement
 
-%type <join_keyword> join_keyword
+%type <block_type> fork_or_begin join_or_end
 
 %type <letter> spec_polarity
 %type <perm_strings>  specify_path_identifiers
@@ -1588,13 +1588,24 @@ integer_vector_type /* IEEE1800-2005: A.2.2.1 */
   | K_bool  { $$ = IVL_VT_BOOL; } /* Icarus Verilog xtypes extension */
   ;
 
-join_keyword /* IEEE1800-2005: A.6.3 */
+  /* fork-join blocks are very similar to begin-end blocks. In fact,
+     from the parser's perspective there is no real difference. All we
+     need to do is remember that this is a parallel block so that the
+     code generator can do the right thing. */
+
+fork_or_begin /* IEEE1800-2005: A.6.3 */
+  : K_fork { $$ = PBlock::BL_PAR; }
+  | K_begin { $$ = PBlock::BL_SEQ; }
+
+join_or_end /* IEEE1800-2005: A.6.3 */
   : K_join
       { $$ = PBlock::BL_PAR; }
   | K_join_none
       { $$ = PBlock::BL_JOIN_NONE; }
   | K_join_any
       { $$ = PBlock::BL_JOIN_ANY; }
+  | K_end
+      { $$ = PBlock::BL_SEQ; }
   ;
 
 jump_statement /* IEEE1800-2005: A.6.5 */
@@ -6302,8 +6313,8 @@ statement_item /* This is roughly statement_item in the LRM */
      the declarations. The scope is popped at the end of the block. */
 
   /* In SystemVerilog an unnamed block can contain variable declarations. */
-  | K_begin label_opt
-      { PBlock*tmp = pform_push_block_scope(@1, $2, PBlock::BL_SEQ);
+  | fork_or_begin label_opt
+      { PBlock*tmp = pform_push_block_scope(@1, $2, $1);
 	current_block_stack.push(tmp);
       }
     block_item_decls_opt
@@ -6320,64 +6331,37 @@ statement_item /* This is roughly statement_item in the LRM */
 	    }
 	}
       }
-    statement_or_null_list_opt K_end label_opt
+    statement_or_null_list_opt join_or_end label_opt
       { PBlock*tmp;
 	if ($2 || $4) {
 	    pform_pop_scope();
 	    assert(! current_block_stack.empty());
 	    tmp = current_block_stack.top();
 	    current_block_stack.pop();
-	} else {
-	    tmp = new PBlock(PBlock::BL_SEQ);
-	    FILE_NAME(tmp, @1);
-	}
-	if ($6) tmp->set_statement(*$6);
-	delete $6;
-	check_end_label(@8, "block", $2, $8);
-	delete[]$2;
-	$$ = tmp;
-      }
-
-  /* fork-join blocks are very similar to begin-end blocks. In fact,
-     from the parser's perspective there is no real difference. All we
-     need to do is remember that this is a parallel block so that the
-     code generator can do the right thing. */
-
-  /* In SystemVerilog an unnamed block can contain variable declarations. */
-  | K_fork label_opt
-      { PBlock*tmp = pform_push_block_scope(@1, $2, PBlock::BL_PAR);
-	current_block_stack.push(tmp);
-      }
-    block_item_decls_opt
-      {
-        if (!$2) {
-	    if ($4) {
-		  pform_requires_sv(@4, "Variable declaration in unnamed block");
-	    } else {
-		  /* If there are no declarations in the scope then just delete it. */
-		  pform_pop_scope();
-		  assert(! current_block_stack.empty());
-		  PBlock*tmp = current_block_stack.top();
-		  current_block_stack.pop();
-		  delete tmp;
-	    }
-	}
-      }
-    statement_or_null_list_opt join_keyword label_opt
-      { PBlock*tmp;
-	if ($2 || $4) {
-	    pform_pop_scope();
-	    assert(! current_block_stack.empty());
-	    tmp = current_block_stack.top();
-	    current_block_stack.pop();
-	    tmp->set_join_type($7);
 	} else {
 	    tmp = new PBlock($7);
 	    FILE_NAME(tmp, @1);
 	}
 	if ($6) tmp->set_statement(*$6);
 	delete $6;
-	check_end_label(@8, "fork", $2, $8);
+	switch ($1) {
+        case PBlock::BL_SEQ:
+	    if ($7 != PBlock::BL_SEQ) {
+		  VLerror(@7, "Unexpected `join`, expected `end`.");
+	    } else {
+		  check_end_label(@8, "block", $2, $8);
+	    }
+	    break;
+        default:
+	    if ($7 == PBlock::BL_SEQ) {
+		  VLerror(@7, "Unexpected `end`, expected `join`.");
+	     } else {
+		  check_end_label(@8, "fork", $2, $8);
+		  if ($2 || $4)
+			tmp->set_join_type($7);
+	    }
+	    break;
+	}
 	delete[]$2;
 	$$ = tmp;
       }
@@ -6677,7 +6661,6 @@ statement_item /* This is roughly statement_item in the LRM */
 	yyerrok;
 	$$ = new PNoop;
       }
-
   ;
 
 compressed_statement
