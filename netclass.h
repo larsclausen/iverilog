@@ -69,6 +69,7 @@ class netclass_t : public ivl_type_s {
 	// If this is derived from another class, then this method
 	// returns a pointer to the super-class.
       inline const netclass_t* get_super() const { return super_; }
+      void set_super(netclass_t *super)  { super_ = super; }
 
 	// Get the number of properties in this class. Include
 	// properties in the parent class.
