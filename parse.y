@@ -4822,6 +4822,9 @@ module_parameter_port_list
     }
     parameter_assign
   | module_parameter_port_list ',' type_param parameter_assign
+  | error
+    { yyerror(@1, "Invalid parameter in parameter port list");
+    }
   ;
 
 module_item
