@@ -3626,8 +3626,8 @@ class NetForever : public NetProc {
 class NetForLoop : public NetProc {
 
     public:
-      explicit NetForLoop(NetNet*index, NetExpr*initial_expr, NetExpr*cond,
-			  NetProc*sub, NetProc*step);
+      explicit NetForLoop(NetProc*init, NetExpr*cond, NetProc*sub,
+			  NetProc*step);
       ~NetForLoop();
 
       void wrap_up();
@@ -3650,8 +3650,7 @@ class NetForLoop : public NetProc {
 		       NetBus&enables, std::vector<mask_t>&bitmasks);
 
     private:
-      NetNet*index_;
-      NetExpr*init_expr_;
+      NetProc*init_;
       NetExpr*condition_;
       NetProc*statement_;
       NetProc*step_statement_;

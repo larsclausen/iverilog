@@ -692,6 +692,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <event_statement> event_control
 %type <statement> statement statement_item statement_or_null
 %type <statement> compressed_statement
+%type <statement> variable_assignment
+%type <statement> operator_assignment
 %type <statement> loop_statement for_step jump_statement
 %type <statement> concurrent_assertion_statement
 %type <statement> deferred_immediate_assertion_statement
@@ -1420,18 +1422,24 @@ dynamic_array_new /* IEEE1800-2005: A.2.4 */
       }
   ;
 
-for_step /* IEEE1800-2005: A.6.8 */
+variable_assignment
   : lpvalue '=' expression
       { PAssign*tmp = new PAssign($1,$3);
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
-  | inc_or_dec_expression
-      { $$ = pform_compressed_assign_from_inc_dec(@1, $1); }
-  | compressed_statement
-      { $$ = $1; }
   ;
 
+operator_assignment /* IEEE1800-2017: A.6.8 */
+  : variable_assignment { $$ = $1; }
+  | compressed_statement { $$ = $1; }
+  ;
+
+for_step /* IEEE1800-2005: A.6.8 */
+  : operator_assignment
+  | inc_or_dec_expression
+      { $$ = pform_compressed_assign_from_inc_dec(@1, $1); }
+  ;
 
   /* The function declaration rule matches the function declaration
      header, then pushes the function scope. This causes the
@@ -1626,9 +1634,9 @@ lifetime_opt /* IEEE1800-2005: A.2.1.3 */
   /* Loop statements are kinds of statements. */
 
 loop_statement /* IEEE1800-2005: A.6.8 */
-  : K_for '(' lpvalue '=' expression ';' expression ';' for_step ')'
+  : K_for '(' variable_assignment ';' expression ';' for_step ')'
     statement_or_null
-      { PForStatement*tmp = new PForStatement($3, $5, $7, $9, $11);
+      { PForStatement*tmp = new PForStatement($3, $5, $7, $9);
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
@@ -1658,7 +1666,10 @@ loop_statement /* IEEE1800-2005: A.6.8 */
 	PEIdent*tmp_ident = pform_new_ident(@4, tmp_hident);
 	FILE_NAME(tmp_ident, @4);
 
-	PForStatement*tmp_for = new PForStatement(tmp_ident, $6, $8, $10, $13);
+        PAssign*tmp_assign = new PAssign(tmp_ident,$6);
+	FILE_NAME(tmp_assign, @4);
+
+	PForStatement*tmp_for = new PForStatement(tmp_assign, $8, $10, $13);
 	FILE_NAME(tmp_for, @1);
 
 	pform_pop_scope();
@@ -1722,13 +1733,13 @@ loop_statement /* IEEE1800-2005: A.6.8 */
 
   /* Error forms for loop statements. */
 
-  | K_for '(' lpvalue '=' expression ';' expression ';' error ')'
+  | K_for '(' variable_assignment ';' expression ';' error ')'
     statement_or_null
       { $$ = 0;
 	yyerror(@1, "error: Error in for loop step assignment.");
       }
 
-  | K_for '(' lpvalue '=' expression ';' error ';' for_step ')'
+  | K_for '(' variable_assignment ';' error ';' for_step ')'
     statement_or_null
       { $$ = 0;
 	yyerror(@1, "error: Error in for loop condition expression.");
@@ -6456,11 +6467,6 @@ statement_item /* This is roughly statement_item in the LRM */
 		{ yyerror(@1, "error: Malformed conditional expression.");
 		  $$ = $5;
 		}
-  /* SystemVerilog adds the compressed_statement */
-
-  | compressed_statement ';'
-      { $$ = $1; }
-
   /* increment/decrement expressions can also be statements. When used
      as statements, we can rewrite a++ as a += 1, and so on. */
 
@@ -6503,11 +6509,8 @@ statement_item /* This is roughly statement_item in the LRM */
 
   /* Various assignment statements */
 
-  | lpvalue '=' expression ';'
-      { PAssign*tmp = new PAssign($1,$3);
-	FILE_NAME(tmp, @1);
-	$$ = tmp;
-      }
+  | operator_assignment ';'
+      { $$ = $1; }
 
   | error '=' expression ';'
       { yyerror(@2, "Syntax in assignment statement l-value.");

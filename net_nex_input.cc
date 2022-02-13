@@ -512,8 +512,8 @@ NexusSet* NetForLoop::nex_input(bool rem_out, bool always_sens, bool nested_func
 {
       NexusSet*result = new NexusSet;
 
-      if (init_expr_) {
-	    NexusSet*tmp = init_expr_->nex_input(rem_out, always_sens, nested_func);
+      if (init_) {
+	    NexusSet*tmp = init_->nex_input(rem_out, always_sens, nested_func);
 	    result->add(*tmp);
 	    delete tmp;
       }
@@ -536,10 +536,14 @@ NexusSet* NetForLoop::nex_input(bool rem_out, bool always_sens, bool nested_func
 	    delete tmp;
       }
 
-      if (gn_shared_loop_index_flag) {
+      if (gn_shared_loop_index_flag && init_) {
+	    NetAssign*init_assign = dynamic_cast<NetAssign*> (init_);
 	    NexusSet*tmp = new NexusSet();
-	    for (unsigned idx = 0 ; idx < index_->pin_count() ; idx += 1)
-		tmp->add(index_->pin(idx).nexus(), 0, index_->vector_width());
+	    for (unsigned lval = 0; lval < init_assign->l_val_count(); lval++) {
+		  NetNet *index = init_assign->l_val(lval)->sig();
+		  for (unsigned idx = 0 ; idx < index->pin_count() ; idx++)
+			    tmp->add(index->pin(idx).nexus(), 0, index->vector_width());
+	    }
 
 	    result->rem(*tmp);
 	    delete tmp;

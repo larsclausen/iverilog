@@ -1453,11 +1453,20 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
 			     NexusSet&nex_map, NetBus&nex_out,
 			     NetBus&enables, vector<mask_t>&bitmasks)
 {
+      NetAssign*init_assign = dynamic_cast<NetAssign*> (init_);
+      ivl_assert(*this, init_assign);
+
+      if (init_assign->l_val_count() != 1)
+	    return false;
+
+      NetExpr*init_expr = init_assign->rval();
+      perm_string name = init_assign->l_val(0)->name();
+
       if (debug_synth2) {
 	    cerr << get_fileline() << ": NetForLoop::synth_async: "
-		 << "Index variable is " << index_->name() << endl;
+		 << "Index variable is " << name << endl;
 	    cerr << get_fileline() << ": NetForLoop::synth_async: "
-		 << "Initialization expression: " << *init_expr_ << endl;
+		 << "Initialization expression: " << *init_expr << endl;
       }
 
 	// Get the step assignment statement and break it into the
@@ -1468,6 +1477,12 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
       ivl_assert(*this, step_assign);
       NetExpr*step_expr = step_assign->rval();
 
+      if (step_assign->l_val_count() != 1)
+	    return false;
+
+      if (step_assign->l_val(0)->sig() != init_assign->l_val(0)->sig())
+	    return false;
+
 	// Tell the scope that this index value is like a genvar.
       LocalVar index_var;
       index_var.nwords = 0;
@@ -1475,9 +1490,9 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
       map<perm_string,LocalVar> index_args;
 
 	// Calculate the initial value for the index.
-      index_var.value = init_expr_->evaluate_function(*this, index_args);
+      index_var.value = init_expr->evaluate_function(*this, index_args);
       ivl_assert(*this, index_var.value);
-      index_args[index_->name()] = index_var;
+      index_args[name] = index_var;
 
       for (;;) {
 	      // Evaluate the condition expression. If it is false,
@@ -1491,13 +1506,13 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
 	    delete tmp;
 	    if (!cond_value) break;
 
-	    scope->genvar_tmp = index_->name();
+	    scope->genvar_tmp = name;
 	    rc = eval_as_long(scope->genvar_tmp_val, index_var.value);
 	    ivl_assert(*this, rc);
 
 	    if (debug_synth2) {
 		  cerr << get_fileline() << ": NetForLoop::synth_async: "
-		       << "Synthesis iteration with " << index_->name()
+		       << "Synthesis iteration with " << name
 		       << "=" << *index_var.value << endl;
 	    }
 
@@ -1546,7 +1561,7 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
 	    }
 	    delete index_var.value;
 	    index_var.value = tmp;
-	    index_args[index_->name()] = index_var;
+	    index_args[name] = index_var;
       }
 
       delete index_var.value;
