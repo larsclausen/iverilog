@@ -5325,6 +5325,11 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       init_expr->set_line(*this);
       init_expr->parm(0, array_exp);
 
+	// Make the init statement
+      NetAssign_*init_lv = new NetAssign_(idx_sig);
+      NetAssign*init = new NetAssign(init_lv, '=', init_expr);
+      init->set_line(*this);
+
 	// Make a condition expression: idx <= $high(array)
       NetESFunc*high_exp = new NetESFunc("$high", &netvector_t::atom2s32, 1);
       high_exp->set_line(*this);
@@ -5341,13 +5346,14 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       else
 	    sub = new NetBlock(NetBlock::SEQU, 0);
 
+
 	/* Make a step statement: idx += 1 */
       NetAssign_*idx_lv = new NetAssign_(idx_sig);
       NetEConst*step_val = make_const_val(1);
       NetAssign*step = new NetAssign(idx_lv, '+', step_val);
       step->set_line(*this);
 
-      NetForLoop*stmt = new NetForLoop(idx_sig, init_expr, cond_expr, sub, step);
+      NetForLoop*stmt = new NetForLoop(init, cond_expr, sub, step);
       stmt->set_line(*this);
       stmt->wrap_up();
 
@@ -5398,6 +5404,11 @@ NetProc* PForeach::elaborate_static_array_(Design*des, NetScope*scope,
 	    NetNet*idx_sig = des->find_signal(scope, idx_name);
 	    ivl_assert(*this, idx_sig);
 
+	      // Make the init statement
+	    NetAssign_*init_lv = new NetAssign_(idx_sig);
+	    NetAssign*init = new NetAssign(init_lv, low_expr);
+	    init->set_line(*this);
+
 	      // Make the condition expression <idx> <= $high(slice)
 	    NetESignal*idx_expr = new NetESignal(idx_sig);
 	    idx_expr->set_line(*this);
@@ -5411,7 +5422,7 @@ NetProc* PForeach::elaborate_static_array_(Design*des, NetScope*scope,
 	    NetAssign*step = new NetAssign(idx_lv, '+', step_val);
 	    step->set_line(*this);
 
-	    stmt = new NetForLoop(idx_sig, low_expr, cond_expr, sub, step);
+	    stmt = new NetForLoop(init, cond_expr, sub, step);
 	    stmt->set_line(*this);
 	    stmt->wrap_up();
 
@@ -5435,33 +5446,10 @@ NetProc* PForeach::elaborate_static_array_(Design*des, NetScope*scope,
  */
 NetProc* PForStatement::elaborate(Design*des, NetScope*scope) const
 {
-      NetExpr*initial_expr;
       assert(scope);
 
-      const PEIdent*id1 = dynamic_cast<const PEIdent*>(name1_);
-      assert(id1);
 
-	/* make the expression, and later the initial assignment to
-	   the condition variable. The statement in the for loop is
-	   very specifically an assignment. */
-      NetNet*sig = des->find_signal(scope, id1->path());
-      if (sig == 0) {
-	    cerr << id1->get_fileline() << ": register ``" << id1->path()
-		 << "'' unknown in " << scope_path(scope) << "." << endl;
-	    des->errors += 1;
-	    return 0;
-      }
-      assert(sig);
-
-	/* Make the r-value of the initial assignment, and size it
-	   properly. Then use it to build the assignment statement. */
-      initial_expr = elaborate_rval_expr(des, scope, sig->net_type(),
-					 expr1_);
-
-      if (debug_elaborate && initial_expr) {
-	    cerr << get_fileline() << ": debug: FOR initial assign: "
-		 << sig->name() << " = " << *initial_expr << endl;
-      }
+      NetProc*init = init_->elaborate(des, scope);
 
 	/* Elaborate the statement that is contained in the for
 	   loop. If there is an error, this will return 0 and I should
@@ -5489,8 +5477,8 @@ NetProc* PForStatement::elaborate(Design*des, NetScope*scope) const
 
 	/* Error recovery - if we failed to elaborate any of the loop
 	   expressions, give up now. */
-      if (initial_expr == 0 || ce == 0 || step == 0 || sub == 0) {
-	    delete initial_expr;
+      if (init == 0 || ce == 0 || step == 0 || sub == 0) {
+	    delete init;
 	    delete ce;
 	    delete step;
 	    delete sub;
@@ -5498,7 +5486,7 @@ NetProc* PForStatement::elaborate(Design*des, NetScope*scope) const
       }
 	/* All done, build up the loop. */
 
-      NetForLoop*loop = new NetForLoop(sig, initial_expr, ce, sub, step);
+      NetForLoop*loop = new NetForLoop(init, ce, sub, step);
       loop->set_line(*this);
       loop->wrap_up();
       return loop;

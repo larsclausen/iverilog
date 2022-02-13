@@ -1124,8 +1124,9 @@ void PForever::dump(ostream&out, unsigned ind) const
 
 void PForStatement::dump(ostream&out, unsigned ind) const
 {
-      out << setw(ind) << "" << "for (" << *name1_ << " = " << *expr1_
-	  << "; " << *cond_ << "; <for_step>)" << endl;
+      out << setw(ind) << "" << "for (";
+      init_->dump(out, 0);
+      out << *cond_ << "; <for_step>)" << endl;
       step_->dump(out, ind+6);
       if (statement_)
 	    statement_->dump(out, ind+3);

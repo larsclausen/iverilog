@@ -1372,7 +1372,8 @@ void NetForever::dump(ostream&o, unsigned ind) const
 
 void NetForLoop::dump(ostream&fd, unsigned ind) const
 {
-      fd << setw(ind) << "" << "FOR LOOP index=" << index_->name() << endl;
+      fd << setw(ind) << "" << "FOR LOOP" << endl;
+      init_->dump(fd, ind+4);
       statement_->dump(fd, ind+4);
       step_statement_->dump(fd, ind+4);
 }

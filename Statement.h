@@ -501,8 +501,8 @@ class PForever : public Statement {
 class PForStatement  : public Statement {
 
     public:
-      PForStatement(PExpr*n1, PExpr*e1, PExpr*cond,
-		    Statement*step, Statement*body);
+      PForStatement(Statement*init, PExpr*cond, Statement*step,
+                    Statement*body);
       ~PForStatement();
 
       virtual NetProc* elaborate(Design*des, NetScope*scope) const;
@@ -511,8 +511,7 @@ class PForStatement  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr* name1_;
-      PExpr* expr1_;
+      Statement*init_;
 
       PExpr*cond_;
 

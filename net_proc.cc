@@ -198,8 +198,8 @@ NetForever::~NetForever()
       delete statement_;
 }
 
-NetForLoop::NetForLoop(NetNet*ind, NetExpr*iexpr, NetExpr*cond, NetProc*sub, NetProc*step)
-: index_(ind), init_expr_(iexpr), condition_(cond), statement_(sub), step_statement_(step)
+NetForLoop::NetForLoop(NetProc*init, NetExpr*cond, NetProc*sub, NetProc*step)
+: init_(init), condition_(cond), statement_(sub), step_statement_(step)
 {
       as_block_ = NULL;
 }
@@ -209,10 +209,7 @@ void NetForLoop::wrap_up()
       NetBlock*top = new NetBlock(NetBlock::SEQU, 0);
       top->set_line(*this);
 
-      NetAssign_*lv = new NetAssign_(index_);
-      NetAssign*set_stmt = new NetAssign(lv, init_expr_);
-      set_stmt->set_line(*init_expr_);
-      top->append(set_stmt);
+      top->append(init_);
 
       NetBlock*internal_block = new NetBlock(NetBlock::SEQU, 0);
       internal_block->set_line(*this);
@@ -230,7 +227,7 @@ void NetForLoop::wrap_up()
 
 NetForLoop::~NetForLoop()
 {
-      delete init_expr_;
+      delete init_;
       delete condition_;
       delete statement_;
       delete step_statement_;

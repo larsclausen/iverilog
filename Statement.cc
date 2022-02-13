@@ -372,9 +372,9 @@ PForever::~PForever()
       delete statement_;
 }
 
-PForStatement::PForStatement(PExpr*n1, PExpr*e1, PExpr*cond,
-			     Statement*step, Statement*st)
-: name1_(n1), expr1_(e1), cond_(cond), step_(step), statement_(st)
+PForStatement::PForStatement(Statement*init, PExpr*cond, Statement*step,
+			     Statement*st)
+: init_(init), cond_(cond), step_(step), statement_(st)
 {
 }
 

@@ -3252,7 +3252,7 @@ bool NetForever::check_synth(ivl_process_type_t pr_type,
  * structure for synthesis.
  */
 static void print_for_idx_warning(const NetProc*proc, const char*check,
-                                  ivl_process_type_t pr_type, NetNet*idx)
+                                  ivl_process_type_t pr_type, const NetNet*idx)
 {
       cerr << proc->get_fileline() << ": warning: A for statement must use "
               "the index (" << idx->name() << ") in the " << check
@@ -3274,7 +3274,7 @@ static void check_for_const_synth(const NetExpr*expr, const NetProc*proc,
 static void check_for_bin_synth(const NetExpr*left,const NetExpr*right,
                                 const char*str, const char*check,
                                 const NetProc*proc,
-                                ivl_process_type_t pr_type, NetNet*index)
+                                ivl_process_type_t pr_type, const NetNet*index)
 {
       const NetESignal*lsig = dynamic_cast<const NetESignal*>(left);
       const NetESignal*rsig = dynamic_cast<const NetESignal*>(right);
@@ -3283,9 +3283,17 @@ static void check_for_bin_synth(const NetExpr*left,const NetExpr*right,
 	    check_for_const_synth(right, proc, str, pr_type);
       } else if (rsig && (rsig->sig() == index)) {
 	    check_for_const_synth(left, proc, str, pr_type);
-      } else {
+      } else if (index) {
 	    print_for_idx_warning(proc, check, pr_type, index);
       }
+}
+
+static void print_for_init_warning(const NetProc*proc,
+                                   ivl_process_type_t pr_type)
+{
+      cerr << proc->get_fileline() << ": warning: A for statement init must "
+              "be an assignment to a single variable to be synthesized "
+           << get_process_type_as_string(pr_type) << endl;
 }
 
 static void print_for_step_warning(const NetProc*proc,
@@ -3297,7 +3305,7 @@ static void print_for_step_warning(const NetProc*proc,
 }
 
 static void print_for_step_warning(const NetProc*proc,
-                                   ivl_process_type_t pr_type, NetNet*idx)
+                                   ivl_process_type_t pr_type, const NetNet*idx)
 {
       cerr << proc->get_fileline() << ": warning: A for statement step must "
               "be an assignment to the index variable ("
@@ -3306,7 +3314,7 @@ static void print_for_step_warning(const NetProc*proc,
 }
 
 static void check_for_bstep_synth(const NetExpr*expr, const NetProc*proc,
-                                  ivl_process_type_t pr_type, NetNet*index)
+                                  ivl_process_type_t pr_type, const NetNet*index)
 {
       if (const NetECast*tmp = dynamic_cast<const NetECast*>(expr)) {
 	    expr = tmp->expr();
@@ -3325,12 +3333,13 @@ static void check_for_bstep_synth(const NetExpr*expr, const NetProc*proc,
 }
 
 static void check_for_step_synth(const NetAssign*assign, const NetProc*proc,
-                                 ivl_process_type_t pr_type, NetNet*index)
+                                 ivl_process_type_t pr_type, const NetNet*index)
 {
       if (assign->l_val_count() != 1) {
 	    print_for_step_warning(proc, pr_type);
       } else if (assign->l_val(0)->sig() != index) {
-	    print_for_step_warning(proc, pr_type, index);
+	    if (index)
+		  print_for_step_warning(proc, pr_type, index);
       } else {
 	    switch (assign->assign_operator()) {
 	      case '+':
@@ -3356,14 +3365,25 @@ bool NetForLoop::check_synth(ivl_process_type_t pr_type,
                              const NetScope* scope) const
 {
       bool result = false;
+      const NetExpr *init_expr = 0;
+      const NetNet *index = 0;
+
+      if (const NetAssign*init_assign = dynamic_cast<const NetAssign*>(init_)) {
+	    if (init_assign->l_val_count() == 1)
+		  index = init_assign->l_val(0)->sig();
+	    if (!index)
+		  print_for_init_warning(this, pr_type);
+	    init_expr = init_assign->rval();
+      } else {
+	    print_for_init_warning(this, pr_type);
+      }
 
 // FIXME: What about an enum (NetEConstEnum)?
-      if (! dynamic_cast<const NetEConst*>(init_expr_)) {
+      if (! dynamic_cast<const NetEConst*>(init_expr)) {
 	    cerr << get_fileline() << ": warning: A for statement must "
 	            "have a constant initial value to be synthesized "
                  << get_process_type_as_string(pr_type) << endl;
       }
-
 // FIXME: Do the following also need to be supported in the condition?
 //        It would seem like they are hard to use to find the bounds.
 //          From NetEBinary
@@ -3372,19 +3392,19 @@ bool NetForLoop::check_synth(ivl_process_type_t pr_type,
 //            What about NetEUBits ! sig or ! (sig == constat)
 //            What about NetEUReduce &signal
       if (const NetESignal*tmp = dynamic_cast<const NetESignal*>(condition_)) {
-	    if (tmp->sig() != index_) {
-		  print_for_idx_warning(this, "condition", pr_type, index_);
+	    if (index && tmp->sig() != index) {
+		  print_for_idx_warning(this, "condition", pr_type, index);
 	    }
       } else if (const NetEBComp*cmp = dynamic_cast<const NetEBComp*>(condition_)) {
 	    check_for_bin_synth(cmp->left(), cmp->right(),
                                 "compare against a constant", "condition",
-	                        this, pr_type, index_);
-      } else {
-	    print_for_idx_warning(this, "condition", pr_type, index_);
+	                        this, pr_type, index);
+      } else if (index) {
+	    print_for_idx_warning(this, "condition", pr_type, index);
       }
 
       if (const NetAssign*tmp = dynamic_cast<const NetAssign*>(step_statement_)) {
-	    check_for_step_synth(tmp, this, pr_type, index_);
+	    check_for_step_synth(tmp, this, pr_type, index);
       } else {
 	    print_for_step_warning(this, pr_type);
       }
