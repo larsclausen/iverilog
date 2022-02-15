@@ -722,6 +722,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <genvar_iter> genvar_iteration
 
+%type <package> package_identifier_or_error
+
 %token K_TAND
 %nonassoc K_PLUS_EQ K_MINUS_EQ K_MUL_EQ K_DIV_EQ K_MOD_EQ K_AND_EQ K_OR_EQ
 %nonassoc K_XOR_EQ K_LS_EQ K_RS_EQ K_RSS_EQ K_NB_TRIGGER
@@ -1997,12 +1999,17 @@ package_import_declaration /* IEEE1800-2005 A.2.1.3 */
       { }
   ;
 
+package_identifier_or_error
+ : PACKAGE_IDENTIFIER { $$ = $1; }
+ | IDENTIFIER { $$ = 0; yyerror(@1, "error: Not a package."); }
+ | TYPE_IDENTIFIER { $$ = 0; yyerror(@1, "error: Not a package."); }
+
 package_import_item
-  : PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER
+  : package_identifier_or_error K_SCOPE_RES IDENTIFIER
       { pform_package_import(@2, $1, $3);
 	delete[]$3;
       }
-  | PACKAGE_IDENTIFIER K_SCOPE_RES '*'
+  | package_identifier_or_error K_SCOPE_RES '*'
       { pform_package_import(@2, $1, 0);
       }
   ;
