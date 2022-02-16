@@ -165,10 +165,10 @@ PNamedItem::SymbolType PBlock::symbol_type() const
       return BLOCK;
 }
 
-PCallTask::PCallTask(const pform_name_t&n, const list<PExpr*>&p)
+PCallTask::PCallTask(const pform_name_t&n, const list<named_pexpr_t>&p)
 : package_(0), path_(n), parms_(p.size())
 {
-      list<PExpr*>::const_iterator cur = p.begin();
+      list<named_pexpr_t>::const_iterator cur = p.begin();
       for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
 	    parms_[idx] = *cur;
 	    ++cur;
@@ -176,10 +176,10 @@ PCallTask::PCallTask(const pform_name_t&n, const list<PExpr*>&p)
       assert(cur == p.end());
 }
 
-PCallTask::PCallTask(PPackage*pkg, const pform_name_t&n, const list<PExpr*>&p)
+PCallTask::PCallTask(PPackage*pkg, const pform_name_t&n, const list<named_pexpr_t>&p)
 : package_(pkg), path_(n), parms_(p.size())
 {
-      list<PExpr*>::const_iterator cur = p.begin();
+      list<named_pexpr_t>::const_iterator cur = p.begin();
       for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
 	    parms_[idx] = *cur;
 	    ++cur;
@@ -187,10 +187,10 @@ PCallTask::PCallTask(PPackage*pkg, const pform_name_t&n, const list<PExpr*>&p)
       assert(cur == p.end());
 }
 
-PCallTask::PCallTask(perm_string n, const list<PExpr*>&p)
+PCallTask::PCallTask(perm_string n, const list<named_pexpr_t>&p)
 : package_(0), parms_(p.size())
 {
-      list<PExpr*>::const_iterator cur = p.begin();
+      list<named_pexpr_t>::const_iterator cur = p.begin();
       for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
 	    parms_[idx] = *cur;
 	    ++cur;
@@ -233,10 +233,10 @@ PCAssign::~PCAssign()
       delete expr_;
 }
 
-PChainConstructor::PChainConstructor(const list<PExpr*>&parms)
+PChainConstructor::PChainConstructor(const list<named_pexpr_t>&parms)
 : parms_(parms.size())
 {
-      list<PExpr*>::const_iterator cur = parms.begin();
+      list<named_pexpr_t>::const_iterator cur = parms.begin();
       for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
 	    parms_[idx] = *cur;
 	    ++cur;

@@ -194,7 +194,7 @@ template <class T> void append(vector<T>&out, const std::vector<T>&in)
 /*
  * Look at the list and pull null pointers off the end.
  */
-static void strip_tail_items(list<PExpr*>*lst)
+static void strip_tail_items(list<PExpr*>* lst)
 {
       while (! lst->empty()) {
 	    if (lst->back() != 0)
@@ -203,23 +203,33 @@ static void strip_tail_items(list<PExpr*>*lst)
       }
 }
 
+static void strip_tail_args(list<named_pexpr_t>* lst)
+{
+      while (! lst->empty()) {
+	    if (lst->back().name != 0 || lst->back().parm != 0)
+		  return;
+	    lst->pop_back();
+      }
+}
+
+
 /*
  * This is a shorthand for making a PECallFunction that takes a single
  * arg. This is used by some of the code that detects built-ins.
  */
 static PECallFunction*make_call_function(perm_string tn, PExpr*arg)
 {
-      std::vector<PExpr*> parms(1);
-      parms[0] = arg;
+      std::vector<named_pexpr_t> parms(1);
+      parms[0].parm = arg;
       PECallFunction*tmp = new PECallFunction(tn, parms);
       return tmp;
 }
 
 static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 {
-      std::vector<PExpr*> parms(2);
-      parms[0] = arg1;
-      parms[1] = arg2;
+      std::vector<named_pexpr_t> parms(2);
+      parms[0].parm = arg1;
+      parms[1].parm = arg2;
       PECallFunction*tmp = new PECallFunction(tn, parms);
       return tmp;
 }
@@ -635,6 +645,9 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <named_pexpr> attribute
 %type <named_pexprs> attribute_list attribute_instance_list attribute_list_opt
+
+%type <named_pexpr> argument
+%type <named_pexprs> list_of_arguments
 
 %type <citem>  case_item
 %type <citems> case_items
@@ -2089,7 +2102,7 @@ simple_immediate_assertion_statement /* IEEE1800-2012 A.6.10 */
   : assert_or_assume '(' expression ')' statement_or_null %prec less_than_K_else
       {
 	if (gn_supported_assertions_flag) {
-	      std::list<PExpr*>arg_list;
+	      std::list<named_pexpr_t>arg_list;
 	      PCallTask*tmp1 = new PCallTask(lex_strings.make("$error"), arg_list);
 	      FILE_NAME(tmp1, @1);
 	      PCondit*tmp2 = new PCondit($3, $5, tmp1);
@@ -3629,6 +3642,36 @@ expression_list_proper
       }
   ;
 
+argument
+ : expression
+   { named_pexpr_t*tmp = new named_pexpr_t;
+     tmp->name = perm_string();
+     tmp->parm = $1;
+     $$ = tmp;
+   }
+ |
+   { named_pexpr_t*tmp = new named_pexpr_t;
+     tmp->name = perm_string();
+     tmp->parm = 0;
+     $$ = tmp;
+   }
+ | named_expression { $$ = $1; }
+  ;
+
+list_of_arguments
+ : argument
+      { std::list<named_pexpr_t>*tmp = new std::list<named_pexpr_t>;
+	tmp->push_back(*$1);
+        delete $1;
+	$$ = tmp;
+      }
+ | list_of_arguments ',' argument
+      { $1->push_back(*$3);
+        delete $3;
+	$$ = $1;
+      }
+ ;
+
 expr_primary_or_typename
   : expr_primary
 
@@ -3743,29 +3786,29 @@ expr_primary
      function call. If a system identifier, then a system function
      call. It can also be a call to a class method (function). */
 
-  | hierarchy_identifier attribute_list_opt '(' expression_list_with_nuls ')'
-      { std::list<PExpr*>*expr_list = $4;
-	strip_tail_items(expr_list);
+  | hierarchy_identifier attribute_list_opt '(' list_of_arguments ')'
+      { std::list<named_pexpr_t>*expr_list = $4;
+	strip_tail_args(expr_list);
 	PECallFunction*tmp = pform_make_call_function(@1, *$1, *expr_list);
 	delete $1;
 	delete $2;
 	$$ = tmp;
       }
   | class_hierarchy_identifier '(' expression_list_with_nuls ')'
-      { list<PExpr*>*expr_list = $3;
+      { list<named_pexpr_t*>*expr_list = $3;
 	strip_tail_items(expr_list);
 	PECallFunction*tmp = pform_make_call_function(@1, *$1, *expr_list);
 	delete $1;
 	$$ = tmp;
       }
-  | SYSTEM_IDENTIFIER '(' expression_list_proper ')'
+  | SYSTEM_IDENTIFIER '(' list_of_arguments ')'
       { perm_string tn = lex_strings.make($1);
 	PECallFunction*tmp = new PECallFunction(tn, *$3);
 	FILE_NAME(tmp, @1);
 	delete[]$1;
 	$$ = tmp;
       }
-  | PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER '(' expression_list_proper ')'
+  | PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER '(' list_of_arguments ')'
       { perm_string use_name = lex_strings.make($3);
 	PECallFunction*tmp = new PECallFunction($1, use_name, *$5);
 	FILE_NAME(tmp, @3);
@@ -3774,7 +3817,7 @@ expr_primary
       }
   | SYSTEM_IDENTIFIER '('  ')'
       { perm_string tn = lex_strings.make($1);
-	const std::vector<PExpr*>empty;
+	const std::vector<named_pexpr_t>empty;
 	PECallFunction*tmp = new PECallFunction(tn, empty);
 	FILE_NAME(tmp, @1);
 	delete[]$1;
@@ -6595,7 +6638,7 @@ statement_item /* This is roughly statement_item in the LRM */
 	} else {
 	      yyerror(@2, "error: Constraint block can only be applied to randomize method.");
 	}
-	list<PExpr*>pt;
+	list<named_pexpr_t>pt;
 	PCallTask*tmp = new PCallTask(*$1, pt);
 	FILE_NAME(tmp, @1);
 	delete $1;
@@ -6628,7 +6671,7 @@ statement_item /* This is roughly statement_item in the LRM */
       }
   | hierarchy_identifier '(' error ')' ';'
       { yyerror(@3, "error: Syntax error in task arguments.");
-	list<PExpr*>pt;
+	list<named_pexpr_t>pt;
 	PCallTask*tmp = pform_make_call_task(@1, *$1, pt);
 	delete $1;
 	$$ = tmp;

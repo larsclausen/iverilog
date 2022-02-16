@@ -396,10 +396,10 @@ void PECallFunction::dump(ostream &out) const
       out << path_ << "(";
 
       if (! parms_.empty()) {
-	    if (parms_[0]) parms_[0]->dump(out);
+	    if (parms_[0].parm) parms_[0].parm->dump(out);
 	    for (unsigned idx = 1; idx < parms_.size(); ++idx) {
 		  out << ", ";
-		  if (parms_[idx]) parms_[idx]->dump(out);
+		  if (parms_[idx].parm) parms_[idx].parm->dump(out);
 	    }
       }
       out << ")";
@@ -906,13 +906,13 @@ void PCallTask::dump(ostream&out, unsigned ind) const
 
       if (! parms_.empty()) {
 	    out << "(";
-	    if (parms_[0])
-		  out << *parms_[0];
+	    if (parms_[0].parm)
+		  out << *parms_[0].parm;
 
 	    for (unsigned idx = 1 ;  idx < parms_.size() ;  idx += 1) {
 		  out << ", ";
-		  if (parms_[idx])
-			out << *parms_[idx];
+		  if (parms_[idx].parm)
+			out << *parms_[idx].parm;
 	    }
 	    out << ")";
       }
@@ -984,11 +984,11 @@ void PChainConstructor::dump(ostream&out, unsigned ind) const
 {
       out << setw(ind) << "" << "super.new(";
       if (parms_.size() > 0) {
-	    if (parms_[0]) out << *parms_[0];
+	    if (parms_[0].parm) out << *parms_[0].parm;
       }
       for (size_t idx = 1 ; idx < parms_.size() ; idx += 1) {
 	    out << ", ";
-	    if (parms_[idx]) out << *parms_[idx];
+	    if (parms_[idx].parm) out << *parms_[idx].parm;
       }
       out << ");" << endl;
 }

@@ -106,7 +106,7 @@ bool PECallFunction::check_call_matches_definition_(Design*des, NetScope*dscope)
 	   parameter. In other words, ``func()'' is 1 nil parameter. */
 
       unsigned parms_count = parms_.size();
-      if ((parms_count == 1) && (parms_[0] == 0))
+      if ((parms_count == 1) && (parms_[0].parm == 0))
 	    parms_count = 0;
 
       if (dscope->type() != NetScope::FUNC) {

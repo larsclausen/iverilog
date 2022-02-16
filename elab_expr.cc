@@ -1157,7 +1157,7 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
 	      // The Icarus Verilog specific $ivlh_to_unsigned() system
 	      // task takes a second argument which is the output
 	      // size. This can be an arbitrary constant function.
-	    PExpr*pexpr = parms_[1];
+	    PExpr*pexpr = parms_[1].parm;
 	    if (pexpr == 0) {
 		  cerr << get_fileline() << ": error: "
 		       << "Missing $ivlh_to_unsigned width." << endl;
@@ -1179,7 +1179,7 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
 	      // The argument width is self-determined and doesn't
 	      // affect the result width.
 	    width_mode_t arg_mode = SIZED;
-	    parms_[0]->test_width(des, scope, arg_mode);
+	    parms_[0].parm->test_width(des, scope, arg_mode);
 
 	    expr_type_  = pexpr->expr_type();
 	    expr_width_ = value;
@@ -1189,7 +1189,7 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
       }
 
       if (name=="$signed" || name=="$unsigned") {
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 	    if (expr == 0)
 		  return 0;
 
@@ -1216,7 +1216,7 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
       }
 
       if (name=="$sizeof" || name=="$bits") {
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 	    if (expr == 0)
 		  return 0;
 
@@ -1243,7 +1243,7 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
       }
 
       if (name=="$is_signed") {
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 	    if (expr == 0)
 		  return 0;
 
@@ -1685,7 +1685,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
       if (name=="$ivlh_to_unsigned") {
 	    ivl_assert(*this, parms_.size()==2);
 
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 	    ivl_assert(*this, expr);
 	    NetExpr*sub = expr->elaborate_expr(des, scope, expr->expr_width(), flags);
 	    return cast_to_width_(sub, expr_wid);
@@ -1695,7 +1695,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 	   function. Its argument will be evaluated as a self-determined
            expression. */
       if (name=="$signed" || name=="$unsigned") {
-	    if ((parms_.size() != 1) || (parms_[0] == 0)) {
+	    if ((parms_.size() != 1) || (parms_[0].parm == 0)) {
 		  cerr << get_fileline() << ": error: The " << name
 		       << " function takes exactly one(1) argument." << endl;
 		  des->errors += 1;
@@ -1713,7 +1713,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 		  cerr << get_fileline() << ": PECallFunction::elaborate_sfunc_: "
 		       << name << " expression is the argument cast to expr_wid=" << expr_wid << endl;
 	    }
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 	    NetExpr*sub = expr->elaborate_expr(des, scope, expr_width_, flags);
 
 	    return cast_to_width_(sub, expr_wid);
@@ -1724,7 +1724,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 	   sub-expression is not used, so the expression itself can be
 	   deleted. */
       if (name=="$sizeof" || name=="$bits") {
-	    if ((parms_.size() != 1) || (parms_[0] == 0)) {
+	    if ((parms_.size() != 1) || (parms_[0].parm == 0)) {
 		  cerr << get_fileline() << ": error: The " << name
 		       << " function takes exactly one(1) argument." << endl;
 		  des->errors += 1;
@@ -1735,7 +1735,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 		  cerr << get_fileline() << ": warning: $sizeof is deprecated."
 		       << " Use $bits() instead." << endl;
 
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 
 	    uint64_t use_width = 0;
 	    if (PETypename*type_expr = dynamic_cast<PETypename*>(expr)) {
@@ -1782,14 +1782,14 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 	   a single bit flag -- 1 if the expression is signed, 0
 	   otherwise. */
       if (name=="$is_signed") {
-	    if ((parms_.size() != 1) || (parms_[0] == 0)) {
+	    if ((parms_.size() != 1) || (parms_[0].parm == 0)) {
 		  cerr << get_fileline() << ": error: The " << name
 		       << " function takes exactly one(1) argument." << endl;
 		  des->errors += 1;
 		  return 0;
 	    }
 
-	    PExpr*expr = parms_[0];
+	    PExpr*expr = parms_[0].parm;
 
 	    verinum val (expr->has_sign() ? verinum::V1 : verinum::V0, 1);
 	    NetEConst*sub = new NetEConst(val);
@@ -1807,7 +1807,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 	   case ``func()'' is the same as no parameters at all. So
 	   catch that special case here. */
       unsigned nparms = parms_.size();
-      if ((nparms == 1) && (parms_[0] == 0))
+      if ((nparms == 1) && (parms_[0].parm == 0))
 	    nparms = 0;
 
       NetESFunc*fun = new NetESFunc(name, expr_type_, expr_width_, nparms, is_overridden_);
@@ -1840,7 +1840,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 	   expression if one is created. */
 
 	/* These functions can work in a constant context with a signal expression. */
-      if ((nparms == 1) && (dynamic_cast<PEIdent*>(parms_[0]))) {
+      if ((nparms == 1) && (dynamic_cast<PEIdent*>(parms_[0].parm))) {
 	    if (strcmp(name, "$dimensions") == 0) need_const = false;
 	    else if (strcmp(name, "$high") == 0) need_const = false;
 	    else if (strcmp(name, "$increment") == 0) need_const = false;
@@ -1854,7 +1854,7 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
       unsigned parm_errors = 0;
       unsigned missing_parms = 0;
       for (unsigned idx = 0 ;  idx < nparms ;  idx += 1) {
-	    PExpr*expr = parms_[idx];
+	    PExpr*expr = parms_[idx].parm;
 	    if (expr) {
 		  NetExpr*tmp = elab_sys_task_arg(des, scope, name, idx,
                                                   expr, need_const);
@@ -1893,7 +1893,7 @@ NetExpr* PECallFunction::elaborate_access_func_(Design*des, NetScope*scope,
       NetBranch*branch = 0;
 
       if (parms_.size() == 1) {
-	    PExpr*arg1 = parms_[0];
+	    PExpr*arg1 = parms_[0].parm;
 	    PEIdent*arg_ident = dynamic_cast<PEIdent*> (arg1);
 	    ivl_assert(*this, arg_ident);
 
@@ -2892,7 +2892,7 @@ unsigned PECallFunction::elaborate_arguments_(Design*des, NetScope*scope,
 	   no arguments and a function call with one empty argument,
 	   and always supplies one empty argument. Handle the no
 	   argument case here. */
-      if ((parm_count == 0) && (actual_count == 1) && (parms_[0] == 0))
+      if ((parm_count == 0) && (actual_count == 1) && (parms_[0].parm == 0))
 	    return 0;
 
       if (actual_count > parm_count) {
@@ -2905,7 +2905,7 @@ unsigned PECallFunction::elaborate_arguments_(Design*des, NetScope*scope,
 
       for (unsigned idx = 0 ; idx < parm_count ; idx += 1) {
 	    unsigned pidx = idx + parm_off;
-	    PExpr*tmp = (idx < actual_count) ? parms_[idx] : 0;
+	    PExpr*tmp = (idx < actual_count) ? parms_[idx].parm : 0;
 	    if (tmp) {
 		  parms[pidx] = elaborate_rval_expr(des, scope,
 						    def->port(pidx)->net_type(),
@@ -3139,7 +3139,7 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 	    // Get the method name that we are looking for.
 	    perm_string method_name = search_results.path_tail.back().name;
 
-	    PExpr*tmp = parms_.size() ? parms_[0] : 0;
+	    PExpr*tmp = parms_.size() ? parms_[0].parm : 0;
 	    return check_for_enum_methods(this, des, scope,
 					  netenum, path_,
 					  method_name, sub_expr,
@@ -3232,11 +3232,11 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 		  NetExpr*tmp;
 
 		  tmp = elaborate_rval_expr(des, scope, &netvector_t::atom2u32,
-					    parms_[0], false);
+					    parms_[0].parm, false);
 		  sys_expr->parm(1, tmp);
 
 		  tmp = elaborate_rval_expr(des, scope, &netvector_t::atom2u32,
-					    parms_[1], false);
+					    parms_[1].parm, false);
 		  sys_expr->parm(2, tmp);
 
 		  return sys_expr;

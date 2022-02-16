@@ -943,7 +943,7 @@ bool pform_test_type_identifier_local(perm_string name)
 
 PECallFunction* pform_make_call_function(const struct vlltype&loc,
 					 const pform_name_t&name,
-					 const list<PExpr*>&parms)
+					 const list<named_pexpr_t>&parms)
 {
       if (gn_system_verilog())
 	    check_potential_imports(loc, name.front().name, true);
@@ -955,7 +955,7 @@ PECallFunction* pform_make_call_function(const struct vlltype&loc,
 
 PCallTask* pform_make_call_task(const struct vlltype&loc,
 				const pform_name_t&name,
-				const list<PExpr*>&parms)
+				const list<named_pexpr_t>&parms)
 {
       if (gn_system_verilog())
 	    check_potential_imports(loc, name.front().name, true);
@@ -1742,7 +1742,7 @@ void pform_endgenerate(bool end_conditional)
 
 void pform_make_elab_task(const struct vlltype&li,
                           perm_string name,
-                          const list<PExpr*>&params)
+                          const list<named_pexpr_t>&params)
 {
       PCallTask*elab_task = new PCallTask(name, params);
       FILE_NAME(elab_task, li);

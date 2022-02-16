@@ -3247,8 +3247,8 @@ NetProc* PChainConstructor::elaborate(Design*des, NetScope*scope) const
 	    parms[0] = eres;
 
 	    for (size_t idx = 1 ; idx < parms.size() ; idx += 1) {
-		  if (idx <= parms_.size() && parms_[idx-1]) {
-			PExpr*tmp = parms_[idx-1];
+		  if (idx <= parms_.size() && parms_[idx-1].parm) {
+			PExpr*tmp = parms_[idx-1].parm;
 			parms[idx] = elaborate_rval_expr(des, scope,
 							 def->port(idx)->net_type(),
 							 tmp, false);
@@ -3406,7 +3406,7 @@ NetProc* PCallTask::elaborate_sys(Design*des, NetScope*scope) const
 	/* Catch the special case that the system task has no
 	   parameters. The "()" string will be parsed as a single
 	   empty parameter, when we really mean no parameters at all. */
-      if ((parm_count== 1) && (parms_[0] == 0))
+      if ((parm_count== 1) && (parms_[0].parm == 0))
 	    parm_count = 0;
 
       vector<NetExpr*>eparms (parm_count);
@@ -3414,7 +3414,7 @@ NetProc* PCallTask::elaborate_sys(Design*des, NetScope*scope) const
       perm_string name = peek_tail_name(path_);
 
       for (unsigned idx = 0 ;  idx < parm_count ;  idx += 1) {
-	    PExpr*ex = parms_[idx];
+	    PExpr*ex = parms_[idx].parm;
 	    if (ex != 0) {
 		  eparms[idx] = elab_sys_task_arg(des, scope, name, idx, ex);
 	    } else {
@@ -3557,7 +3557,7 @@ NetProc* PCallTask::elaborate_sys_task_method_(Design*des, NetScope*scope,
 	/* If there is a single NULL argument then ignore it since it is
 	 * left over from the parser and is not needed by the method. */
       unsigned nparms = parms_.size();
-      if ((nparms == 1) && (parms_[0] == 0)) nparms = 0;
+      if ((nparms == 1) && (parms_[0].parm == 0)) nparms = 0;
 
       vector<NetExpr*>argv (1 + nparms);
       argv[0] = sig;
@@ -3578,7 +3578,7 @@ NetProc* PCallTask::elaborate_sys_task_method_(Design*des, NetScope*scope,
       }
 
       for (unsigned idx = 0 ; idx < nparms ; idx += 1) {
-	    PExpr*ex = parms_[idx];
+	    PExpr*ex = parms_[idx].parm;
 	    if (ex != 0) {
 		  argv[idx+1] = elab_sys_task_arg(des, scope,
 						  method_name,
@@ -3634,31 +3634,31 @@ NetProc* PCallTask::elaborate_queue_method_(Design*des, NetScope*scope,
       vector<NetExpr*>argv (nparms+1);
       argv[0] = sig;
       if (method_name != "insert") {
-	    if ((nparms == 0) || (parms_[0] == 0)) {
+	    if ((nparms == 0) || (parms_[0].parm == 0)) {
 		  argv[1] = 0;
 		  cerr << get_fileline() << ": error: " << method_name
 		       << "() methods first argument is missing." << endl;
 		  des->errors += 1;
 	    } else
-		  argv[1] = elab_and_eval(des, scope, parms_[0], context_width,
+		  argv[1] = elab_and_eval(des, scope, parms_[0].parm, context_width,
 		                          false, false, base_type);
       } else {
-	    if ((nparms == 0) || (parms_[0] == 0)) {
+	    if ((nparms == 0) || (parms_[0].parm == 0)) {
 		  argv[1] = 0;
 		  cerr << get_fileline() << ": error: " << method_name
 		       << "() methods first argument is missing." << endl;
 		  des->errors += 1;
 	    } else
-		  argv[1] = elab_and_eval(des, scope, parms_[0], 32,
+		  argv[1] = elab_and_eval(des, scope, parms_[0].parm, 32,
 		                          false, false, IVL_VT_LOGIC);
 
-	    if ((nparms < 2) || (parms_[1] == 0)) {
+	    if ((nparms < 2) || (parms_[1].parm == 0)) {
 		  argv[2] = 0;
 		  cerr << get_fileline() << ": error: " << method_name
 		       << "() methods second argument is missing." << endl;
 		  des->errors += 1;
 	    } else
-		  argv[2] = elab_and_eval(des, scope, parms_[1], context_width,
+		  argv[2] = elab_and_eval(des, scope, parms_[1].parm, context_width,
 		                          false, false, base_type);
       }
 
@@ -4023,9 +4023,9 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 
 	    NetExpr*rv = 0;
 
-	    if (parms_idx < parms_.size() && parms_[parms_idx]) {
+	    if (parms_idx < parms_.size() && parms_[parms_idx].parm) {
 		  rv = elaborate_rval_expr(des, scope, port->net_type(),
-					   parms_ [parms_idx]);
+					   parms_[parms_idx].parm);
 		  if (NetEEvent*evt = dynamic_cast<NetEEvent*> (rv)) {
 			cerr << evt->get_fileline() << ": error: An event '"
 			     << evt->event()->name() << "' can not be a user "
@@ -4091,12 +4091,12 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 		 message. Note that the elaborate_lval method already
 		 printed a detailed message for the latter case. */
 	    NetAssign_*lv = 0;
-	    if (parms_idx < parms_.size() && parms_[parms_idx]) {
-		  lv = parms_[parms_idx]->elaborate_lval(des, scope, false, false);
+	    if (parms_idx < parms_.size() && parms_[parms_idx].parm) {
+		  lv = parms_[parms_idx].parm->elaborate_lval(des, scope, false, false);
 		  if (lv == 0) {
-			cerr << parms_[parms_idx]->get_fileline() << ": error: "
+			cerr << parms_[parms_idx].parm->get_fileline() << ": error: "
 			     << "I give up on task port " << (idx+1)
-			     << " expression: " << *parms_[parms_idx] << endl;
+			     << " expression: " << *parms_[parms_idx].parm << endl;
 		  }
 	    } else if (port->port_type() == NetNet::POUTPUT) {
 		    // Output ports were skipped earlier, so
@@ -4227,7 +4227,7 @@ bool PCallTask::elaborate_elab(Design*des, NetScope*scope) const
         /* Catch the special case that the elaboration task has no
            parameters. The "()" string will be parsed as a single
            empty parameter, when we really mean no parameters at all. */
-      if ((parm_count== 1) && (parms_[0] == 0))
+      if ((parm_count== 1) && (parms_[0].parm == 0))
             parm_count = 0;
 
       perm_string name = peek_tail_name(path_);
@@ -4253,7 +4253,7 @@ bool PCallTask::elaborate_elab(Design*des, NetScope*scope) const
 
       bool const_parms = true;
       for (unsigned idx = 0 ;  idx < parm_count ;  idx += 1) {
-            PExpr*ex = parms_[idx];
+            PExpr*ex = parms_[idx].parm;
             if (ex != 0) {
                   eparms[idx] = elab_sys_task_arg(des, scope, name, idx, ex);
 		  if (!check_parm_is_const(eparms[idx])) {

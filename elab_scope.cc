@@ -445,8 +445,10 @@ static void blend_class_constructors(PClass*pclass)
 	// If we do not have an explicit constructor chain, but there
 	// is a parent class, then create an implicit chain.
       if (chain_new==0 && pclass->type->base_type!=0) {
+	  #if 0
 	    chain_new = new PChainConstructor(pclass->type->base_args);
 	    chain_new->set_line(*pclass);
+		#endif
       }
 
 	// If there are both an implicit and explicit constructor,
