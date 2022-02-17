@@ -194,7 +194,7 @@ template <class T> void append(vector<T>&out, const std::vector<T>&in)
 /*
  * Look at the list and pull null pointers off the end.
  */
-static void strip_tail_items(list<PExpr*>*lst)
+static void strip_tail_items(vector<PExpr*>*lst)
 {
       while (! lst->empty()) {
 	    if (lst->back() != 0)
@@ -423,7 +423,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       std::list<pform_range_t>*ranges;
 
       PExpr*expr;
-      std::list<PExpr*>*exprs;
+      std::vector<PExpr*>*exprs;
 
       PEEvent*event_expr;
       std::vector<PEEvent*>*event_exprs;
@@ -462,7 +462,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
       struct {
 	    data_type_t*type;
-	    std::list<PExpr*>*exprs;
+	    std::vector<PExpr*>*exprs;
       } class_declaration_extends;
 
       struct {
@@ -996,7 +996,7 @@ class_item_qualifier_opt
 
 class_new /* IEEE1800-2005 A.2.4 */
   : K_new argument_list_parens_opt
-      { std::list<PExpr*>*expr_list = $2;
+      { std::vector<PExpr*>*expr_list = $2;
 	strip_tail_items(expr_list);
 	PENewClass*tmp = new PENewClass(*expr_list);
 	FILE_NAME(tmp, @1);
@@ -2100,7 +2100,7 @@ simple_immediate_assertion_statement /* IEEE1800-2012 A.6.10 */
   : assert_or_assume '(' expression ')' statement_or_null %prec less_than_K_else
       {
 	if (gn_supported_assertions_flag) {
-	      std::list<PExpr*>arg_list;
+	      std::vector<PExpr*>arg_list;
 	      PCallTask*tmp1 = new PCallTask(lex_strings.make("$error"), arg_list);
 	      FILE_NAME(tmp1, @1);
 	      PCondit*tmp2 = new PCondit($3, $5, tmp1);
@@ -2962,12 +2962,12 @@ defparam_assign_list
 
 delay1
 	: '#' delay_value_simple
-		{ std::list<PExpr*>*tmp = new std::list<PExpr*>;
+		{ std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($2);
 		  $$ = tmp;
 		}
 	| '#' '(' delay_value ')'
-		{ std::list<PExpr*>*tmp = new std::list<PExpr*>;
+		{ std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($3);
 		  $$ = tmp;
 		}
@@ -2975,23 +2975,23 @@ delay1
 
 delay3
 	: '#' delay_value_simple
-		{ std::list<PExpr*>*tmp = new std::list<PExpr*>;
+		{ std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($2);
 		  $$ = tmp;
 		}
 	| '#' '(' delay_value ')'
-		{ std::list<PExpr*>*tmp = new std::list<PExpr*>;
+		{ std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($3);
 		  $$ = tmp;
 		}
 	| '#' '(' delay_value ',' delay_value ')'
-		{ std::list<PExpr*>*tmp = new std::list<PExpr*>;
+		{ std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($3);
 		  tmp->push_back($5);
 		  $$ = tmp;
 		}
 	| '#' '(' delay_value ',' delay_value ',' delay_value ')'
-		{ std::list<PExpr*>*tmp = new std::list<PExpr*>;
+		{ std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($3);
 		  tmp->push_back($5);
 		  tmp->push_back($7);
@@ -3006,12 +3006,12 @@ delay3_opt
 
 delay_value_list
   : delay_value
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 	tmp->push_back($1);
 	$$ = tmp;
       }
   | delay_value_list ',' delay_value
-      { std::list<PExpr*>*tmp = $1;
+      { std::vector<PExpr*>*tmp = $1;
 	tmp->push_back($3);
 	$$ = tmp;
       }
@@ -3583,22 +3583,22 @@ expr_mintypmax
 
 expression_list_with_nuls
   : expression_list_with_nuls ',' expression
-      { std::list<PExpr*>*tmp = $1;
+      { std::vector<PExpr*>*tmp = $1;
 	if (tmp->empty()) tmp->push_back(0);
 	tmp->push_back($3);
 	$$ = tmp;
       }
   | expression
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 	tmp->push_back($1);
 	$$ = tmp;
       }
   |
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 	$$ = tmp;
       }
   | expression_list_with_nuls ','
-      { std::list<PExpr*>*tmp = $1;
+      { std::vector<PExpr*>*tmp = $1;
 	if (tmp->empty()) tmp->push_back(0);
 	tmp->push_back(0);
 	$$ = tmp;
@@ -3610,16 +3610,16 @@ expression_list_with_nuls
    * itself. When an argument list is used it might be empty. */
 argument_list_parens_opt
   : '(' expression_list_with_nuls ')' { $$ = $2; }
-  | { $$ = new std::list<PExpr*>; }
+  | { $$ = new std::vector<PExpr*>; }
 
 expression_list_proper
   : expression_list_proper ',' expression
-      { std::list<PExpr*>*tmp = $1;
+      { std::vector<PExpr*>*tmp = $1;
         tmp->push_back($3);
         $$ = tmp;
       }
   | expression
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 	tmp->push_back($1);
 	$$ = tmp;
       }
@@ -3740,7 +3740,7 @@ expr_primary
      call. It can also be a call to a class method (function). */
 
   | hierarchy_identifier attribute_list_opt '(' expression_list_with_nuls ')'
-      { std::list<PExpr*>*expr_list = $4;
+      { std::vector<PExpr*>*expr_list = $4;
 	strip_tail_items(expr_list);
 	PECallFunction*tmp = pform_make_call_function(@1, *$1, *expr_list);
 	delete $1;
@@ -3748,7 +3748,7 @@ expr_primary
 	$$ = tmp;
       }
   | class_hierarchy_identifier '(' expression_list_with_nuls ')'
-      { list<PExpr*>*expr_list = $3;
+      { std::vector<PExpr*>*expr_list = $3;
 	strip_tail_items(expr_list);
 	PECallFunction*tmp = pform_make_call_function(@1, *$1, *expr_list);
 	delete $1;
@@ -3998,7 +3998,7 @@ expr_primary
   | '{' '}'
       { // This is the empty queue syntax.
 	if (gn_system_verilog()) {
-	      std::list<PExpr*> empty_list;
+	      std::vector<PExpr*> empty_list;
 	      PEConcat*tmp = new PEConcat(empty_list);
 	      FILE_NAME(tmp, @1);
 	      $$ = tmp;
@@ -4599,7 +4599,7 @@ lpvalue
 
 cont_assign
   : lpvalue '=' expression
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 	tmp->push_back($1);
 	tmp->push_back($3);
 	$$ = tmp;
@@ -4608,8 +4608,8 @@ cont_assign
 
 cont_assign_list
   : cont_assign_list ',' cont_assign
-      { std::list<PExpr*>*tmp = $1;
-	tmp->splice(tmp->end(), *$3);
+      { std::vector<PExpr*>*tmp = $1;
+        tmp->insert(tmp->end(), $3->begin(), $3->end());
 	delete $3;
 	$$ = tmp;
       }
@@ -5494,7 +5494,7 @@ parameter_value_opt
 		  FILE_NAME(tmp, @1);
 
 		  struct parmvalue_t*lst = new struct parmvalue_t;
-		  lst->by_order = new std::list<PExpr*>;
+		  lst->by_order = new std::vector<PExpr*>;
 		  lst->by_order->push_back(tmp);
 		  lst->by_name = 0;
 		  $$ = lst;
@@ -5506,7 +5506,7 @@ parameter_value_opt
 		  FILE_NAME(tmp, @1);
 
 		  struct parmvalue_t*lst = new struct parmvalue_t;
-		  lst->by_order = new std::list<PExpr*>;
+		  lst->by_order = new std::vector<PExpr*>;
 		  lst->by_order->push_back(tmp);
 		  lst->by_name = 0;
 		  $$ = lst;
@@ -5672,24 +5672,24 @@ port_name_list
 
 port_conn_expression_list_with_nuls
   : port_conn_expression_list_with_nuls ',' attribute_list_opt expression
-      { std::list<PExpr*>*tmp = $1;
+      { std::vector<PExpr*>*tmp = $1;
 	tmp->push_back($4);
 	delete $3;
 	$$ = tmp;
       }
   | attribute_list_opt expression
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 	tmp->push_back($2);
 	delete $1;
 	$$ = tmp;
       }
   |
-      { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+      { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
         tmp->push_back(0);
 	$$ = tmp;
       }
   | port_conn_expression_list_with_nuls ','
-      { std::list<PExpr*>*tmp = $1;
+      { std::vector<PExpr*>*tmp = $1;
 	tmp->push_back(0);
 	$$ = tmp;
       }
@@ -5965,7 +5965,7 @@ specify_edge_path_decl
 	: specify_edge_path '=' '(' delay_value_list ')'
                 { $$ = pform_assign_path_delay($1, $4); }
 	| specify_edge_path '=' delay_value_simple
-                { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+                { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($3);
 		  $$ = pform_assign_path_delay($1, tmp);
 		}
@@ -6002,7 +6002,7 @@ specify_simple_path_decl
 	: specify_simple_path '=' '(' delay_value_list ')'
                 { $$ = pform_assign_path_delay($1, $4); }
 	| specify_simple_path '=' delay_value_simple
-                { std::list<PExpr*>*tmp = new std::list<PExpr*>;
+                { std::vector<PExpr*>*tmp = new std::vector<PExpr*>;
 		  tmp->push_back($3);
 		  $$ = pform_assign_path_delay($1, tmp);
 		}
@@ -6506,14 +6506,14 @@ statement_item /* This is roughly statement_item in the LRM */
 	$$ = new PNoop;
       }
   | lpvalue '=' delay1 expression ';'
-      { PExpr*del = $3->front(); $3->pop_front();
+      { PExpr*del = $3->back(); $3->pop_back();
 	assert($3->empty());
 	PAssign*tmp = new PAssign($1,del,$4);
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
   | lpvalue K_LE delay1 expression ';'
-      { PExpr*del = $3->front(); $3->pop_front();
+      { PExpr*del = $3->back(); $3->pop_back();
 	assert($3->empty());
 	PAssignNB*tmp = new PAssignNB($1,del,$4);
 	FILE_NAME(tmp, @1);
@@ -6596,7 +6596,7 @@ statement_item /* This is roughly statement_item in the LRM */
 	} else {
 	      yyerror(@2, "error: Constraint block can only be applied to randomize method.");
 	}
-	list<PExpr*>pt;
+	vector<PExpr*>pt;
 	PCallTask*tmp = new PCallTask(*$1, pt);
 	FILE_NAME(tmp, @1);
 	delete $1;
@@ -6629,7 +6629,7 @@ statement_item /* This is roughly statement_item in the LRM */
       }
   | hierarchy_identifier '(' error ')' ';'
       { yyerror(@3, "error: Syntax error in task arguments.");
-	list<PExpr*>pt;
+	vector<PExpr*>pt;
 	PCallTask*tmp = pform_make_call_task(@1, *$1, pt);
 	delete $1;
 	$$ = tmp;

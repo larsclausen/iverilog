@@ -20,7 +20,7 @@
  */
 
 # include  <string>
-# include  <list>
+# include  <vector>
 # include  <iostream>
 
 class Design;
@@ -42,7 +42,7 @@ class PDelays {
 	   this object takes ownership of the expressions, and will
 	   delete it in the destructor. */
       void set_delay(PExpr*);
-      void set_delays(const std::list<PExpr*>*del, bool delete_flag=true);
+      void set_delays(const std::vector<PExpr*>*del, bool delete_flag=true);
 
       unsigned delay_count() const;
 

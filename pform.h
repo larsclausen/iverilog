@@ -36,6 +36,7 @@
 # include  <string>
 # include  <list>
 # include  <memory>
+# include  <vector>
 # include  <cstdio>
 
 /*
@@ -90,7 +91,7 @@ extern bool pform_library_flag;
 
 
 struct parmvalue_t {
-      std::list<PExpr*>*by_order;
+      std::vector<PExpr*>*by_order;
       std::list<named_pexpr_t>*by_name;
 };
 
@@ -175,7 +176,7 @@ extern void pform_endmodule(const char*, bool inside_celldefine,
 extern void pform_start_class_declaration(const struct vlltype&loc,
 					  class_type_t*type,
 					  data_type_t*base_type,
-					  std::list<PExpr*>*base_exprs,
+					  std::vector<PExpr*>*base_exprs,
 					  LexicalScope::lifetime_t lifetime);
 extern void pform_class_property(const struct vlltype&loc,
 				 property_qualifier_t pq,
@@ -228,7 +229,7 @@ extern PEIdent* pform_new_ident(const struct vlltype&loc, const pform_name_t&nam
 extern PTrigger* pform_new_trigger(const struct vlltype&loc, PPackage*pkg,
 				   const pform_name_t&name);
 extern PNBTrigger* pform_new_nb_trigger(const struct vlltype&loc,
-				        const std::list<PExpr*>*dly,
+				        const std::vector<PExpr*>*dly,
 				        const pform_name_t&name);
 
 /*
@@ -289,7 +290,7 @@ extern void pform_start_generate_if(const struct vlltype&li, PExpr*test);
 extern void pform_start_generate_else(const struct vlltype&li);
 extern void pform_start_generate_case(const struct vlltype&lp, PExpr*test);
 extern void pform_start_generate_nblock(const struct vlltype&lp, char*name);
-extern void pform_generate_case_item(const struct vlltype&lp, std::list<PExpr*>*test);
+extern void pform_generate_case_item(const struct vlltype&lp, std::vector<PExpr*>*test);
 extern void pform_generate_block_name(char*name);
 extern void pform_endgenerate(bool end_conditional);
 
@@ -304,7 +305,7 @@ bool pform_error_in_generate(const vlltype&loc, const char *type);
 
 extern void pform_make_elab_task(const struct vlltype&li,
                                  perm_string name,
-                                 const std::list<PExpr*>&params);
+                                 const std::vector<PExpr*>&params);
 
 extern void pform_set_typedef(perm_string name, data_type_t*data_type,
 			      std::list<pform_range_t>*unp_ranges);
@@ -316,10 +317,10 @@ extern void pform_set_type_referenced(const struct vlltype&loc, const char*name)
  */
 extern PECallFunction* pform_make_call_function(const struct vlltype&loc,
 						const pform_name_t&name,
-						const std::list<PExpr*>&parms);
+						const std::vector<PExpr*>&parms);
 extern PCallTask* pform_make_call_task(const struct vlltype&loc,
 				       const pform_name_t&name,
-				       const std::list<PExpr*>&parms);
+				       const std::vector<PExpr*>&parms);
 
 extern void pform_make_foreach_declarations(const struct vlltype&loc,
 					    std::list<perm_string>*loop_vars);
@@ -340,7 +341,7 @@ extern PWire *pform_makewire(const struct vlltype&li, perm_string name,
 /* This form handles assignment declarations. */
 
 extern void pform_makewire(const struct vlltype&li,
-			   std::list<PExpr*>*delay,
+			   std::vector<PExpr*>*delay,
 			   str_pair_t str,
 			   std::list<decl_assignment_t*>*assign_list,
 			   NetNet::Type type,
@@ -421,7 +422,7 @@ extern PSpecPath*pform_make_specify_edge_path(const struct vlltype&li,
 					 std::list<perm_string>*src, char pol,
 					 bool full_flag, std::list<perm_string>*dst,
 					 PExpr*data_source_expression);
-extern PSpecPath*pform_assign_path_delay(PSpecPath*obj, std::list<PExpr*>*delays);
+extern PSpecPath*pform_assign_path_delay(PSpecPath*obj, std::vector<PExpr*>*delays);
 
 extern void pform_module_specify_path(PSpecPath*obj);
 
@@ -444,7 +445,7 @@ extern void pform_make_events(const struct vlltype&loc,
 extern void pform_makegates(const struct vlltype&loc,
 			    PGBuiltin::Type type,
 			    struct str_pair_t str,
-			    std::list<PExpr*>*delay,
+			    std::vector<PExpr*>*delay,
 			    std::vector<lgate>*gates,
 			    std::list<named_pexpr_t>*attr);
 
@@ -456,8 +457,8 @@ extern void pform_make_modgates(const struct vlltype&loc,
 
 /* Make a continuous assignment node, with optional bit- or part- select. */
 extern void pform_make_pgassign_list(const struct vlltype&loc,
-				     std::list<PExpr*>*alist,
-				     std::list<PExpr*>*del,
+				     std::vector<PExpr*>*alist,
+				     std::vector<PExpr*>*del,
 				     struct str_pair_t str);
 
 extern std::vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,

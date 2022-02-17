@@ -204,7 +204,7 @@ std::ostream& operator << (std::ostream&, const PExpr&);
 class PEAssignPattern : public PExpr {
     public:
       explicit PEAssignPattern();
-      explicit PEAssignPattern(const std::list<PExpr*>&p);
+      explicit PEAssignPattern(const std::vector<PExpr*>&p);
       ~PEAssignPattern();
 
       void dump(std::ostream&) const;
@@ -227,7 +227,7 @@ class PEAssignPattern : public PExpr {
 class PEConcat : public PExpr {
 
     public:
-      explicit PEConcat(const std::list<PExpr*>&p, PExpr*r =0);
+      explicit PEConcat(const std::vector<PExpr*>&p, PExpr*r =0);
       ~PEConcat();
 
       virtual void dump(std::ostream&) const;
@@ -559,7 +559,7 @@ class PENewClass : public PExpr {
 	// New without (or with default) constructor
       explicit PENewClass ();
 	// New with constructor arguments
-      explicit PENewClass (const std::list<PExpr*>&p);
+      explicit PENewClass (const std::vector<PExpr*>&p);
 
       ~PENewClass();
 
@@ -886,7 +886,6 @@ class PECallFunction : public PExpr {
       explicit PECallFunction(const pform_name_t&n, const std::vector<PExpr *> &parms);
 	// Call function defined in package.
       explicit PECallFunction(PPackage*pkg, perm_string n, const std::vector<PExpr *> &parms);
-      explicit PECallFunction(PPackage*pkg, perm_string n, const std::list<PExpr *> &parms);
 
 	// Used to convert a user function called as a task
       explicit PECallFunction(PPackage*pkg, const pform_name_t&n, const std::vector<PExpr *> &parms);
@@ -894,10 +893,6 @@ class PECallFunction : public PExpr {
 	// Call of system function (name is not hierarchical)
       explicit PECallFunction(perm_string n, const std::vector<PExpr *> &parms);
       explicit PECallFunction(perm_string n);
-
-	// std::list versions. Should be removed!
-      explicit PECallFunction(const pform_name_t&n, const std::list<PExpr *> &parms);
-      explicit PECallFunction(perm_string n, const std::list<PExpr *> &parms);
 
       ~PECallFunction();
 

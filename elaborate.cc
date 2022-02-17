@@ -3050,7 +3050,7 @@ NetProc* PCase::elaborate(Design*des, NetScope*scope) const
 
 	    PCase::Item*cur = (*items_)[idx];
 
-	    for (list<PExpr*>::iterator idx_expr = cur->expr.begin()
+	    for (vector<PExpr*>::iterator idx_expr = cur->expr.begin()
 		 ; idx_expr != cur->expr.end() ; ++idx_expr) {
 
 		  PExpr*cur_expr = *idx_expr;
@@ -3086,7 +3086,7 @@ NetProc* PCase::elaborate(Design*des, NetScope*scope) const
 
 		  PCase::Item*cur = (*items_)[idx];
 
-		  for (list<PExpr*>::iterator idx_expr = cur->expr.begin()
+		  for (vector<PExpr*>::iterator idx_expr = cur->expr.begin()
 		       ; idx_expr != cur->expr.end() ; ++idx_expr) {
 
 			PExpr*cur_expr = *idx_expr;
@@ -3158,7 +3158,7 @@ NetProc* PCase::elaborate(Design*des, NetScope*scope) const
 		  res->set_case(inum, 0, st);
 		  inum += 1;
 
-	    } else for (list<PExpr*>::iterator idx_expr = cur->expr.begin()
+	    } else for (vector<PExpr*>::iterator idx_expr = cur->expr.begin()
 			      ; idx_expr != cur->expr.end() ; ++idx_expr) {
 
 		    /* If there are one or more expressions, then

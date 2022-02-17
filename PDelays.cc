@@ -52,14 +52,12 @@ void PDelays::set_delay(PExpr*del)
 }
 
 
-void PDelays::set_delays(const list<PExpr*>*del, bool df)
+void PDelays::set_delays(const vector<PExpr*>*del, bool df)
 {
       assert(del);
       assert(del->size() <= 3);
 
-      list<PExpr*>::const_iterator cur = del->begin();
-      for (unsigned idx = 0 ;  cur != del->end() ;  idx += 1, ++cur)
-	    delay_[idx] = *cur;
+      std::copy(del->begin(), del->end(), delay_);
 
       delete_flag_ = df;
 }

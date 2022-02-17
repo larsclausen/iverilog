@@ -49,13 +49,13 @@ class Module;
 class PGate : public PNamedItem {
 
     public:
-      explicit PGate(perm_string name, std::list<PExpr*>*pins,
-		     const std::list<PExpr*>*del);
+      explicit PGate(perm_string name, std::vector<PExpr*>*pins,
+		     const std::vector<PExpr*>*del);
 
-      explicit PGate(perm_string name, std::list<PExpr*>*pins,
+      explicit PGate(perm_string name, std::vector<PExpr*>*pins,
 		     PExpr*del);
 
-      explicit PGate(perm_string name, std::list<PExpr*>*pins);
+      explicit PGate(perm_string name, std::vector<PExpr*>*pins);
 
       virtual ~PGate();
 
@@ -111,7 +111,7 @@ class PGate : public PNamedItem {
 
       ivl_drive_t str0_, str1_;
 
-      void set_pins_(std::list<PExpr*>*pins);
+      void set_pins_(std::vector<PExpr*>*pins);
 
     private: // not implemented
       PGate(const PGate&);
@@ -125,8 +125,8 @@ class PGate : public PNamedItem {
 class PGAssign  : public PGate {
 
     public:
-      explicit PGAssign(std::list<PExpr*>*pins);
-      explicit PGAssign(std::list<PExpr*>*pins, std::list<PExpr*>*dels);
+      explicit PGAssign(std::vector<PExpr*>*pins);
+      explicit PGAssign(std::vector<PExpr*>*pins, std::vector<PExpr*>*dels);
       ~PGAssign();
 
       void dump(std::ostream&out, unsigned ind =4) const;
@@ -158,10 +158,10 @@ class PGBuiltin  : public PGate {
 
     public:
       explicit PGBuiltin(Type t, perm_string name,
-			 std::list<PExpr*>*pins,
-			 std::list<PExpr*>*del);
+			 std::vector<PExpr*>*pins,
+			 std::vector<PExpr*>*del);
       explicit PGBuiltin(Type t, perm_string name,
-			 std::list<PExpr*>*pins,
+			 std::vector<PExpr*>*pins,
 			 PExpr*del);
       ~PGBuiltin();
 
@@ -199,7 +199,7 @@ class PGModule  : public PGate {
 	// If the binding of ports is by position, this constructor
 	// builds everything all at once.
       explicit PGModule(perm_string type, perm_string name,
-			std::list<PExpr*>*pins);
+			std::vector<PExpr*>*pins);
 
 	// If the binding of ports is by name, this constructor takes
 	// the bindings and stores them for later elaboration.
@@ -214,7 +214,7 @@ class PGModule  : public PGate {
 
 	// Parameter overrides can come as an ordered list, or a set
 	// of named expressions.
-      void set_parameters(std::list<PExpr*>*o);
+      void set_parameters(std::vector<PExpr*>*o);
       void set_parameters(named<PExpr*>*pa, unsigned npa);
 
       std::map<perm_string,PExpr*> attributes;
@@ -231,7 +231,7 @@ class PGModule  : public PGate {
     private:
       Module*bound_type_;
       perm_string type_;
-      std::list<PExpr*>*overrides_;
+      std::vector<PExpr*>*overrides_;
       named<PExpr*>*pins_;
       unsigned npins_;
 

@@ -752,7 +752,7 @@ PTrigger* pform_new_trigger(const struct vlltype&loc, PPackage*pkg,
 }
 
 PNBTrigger* pform_new_nb_trigger(const struct vlltype&loc,
-			         const list<PExpr*>*dly,
+			         const vector<PExpr*>*dly,
 			         const pform_name_t&name)
 {
       if (gn_system_verilog())
@@ -943,7 +943,7 @@ bool pform_test_type_identifier_local(perm_string name)
 
 PECallFunction* pform_make_call_function(const struct vlltype&loc,
 					 const pform_name_t&name,
-					 const list<PExpr*>&parms)
+					 const vector<PExpr*>&parms)
 {
       if (gn_system_verilog())
 	    check_potential_imports(loc, name.front().name, true);
@@ -955,7 +955,7 @@ PECallFunction* pform_make_call_function(const struct vlltype&loc,
 
 PCallTask* pform_make_call_task(const struct vlltype&loc,
 				const pform_name_t&name,
-				const list<PExpr*>&parms)
+				const vector<PExpr*>&parms)
 {
       if (gn_system_verilog())
 	    check_potential_imports(loc, name.front().name, true);
@@ -1648,7 +1648,7 @@ void pform_start_generate_nblock(const struct vlltype&li, char*name)
  * case schema can only instantiate exactly one item, so the items
  * need not have a unique number.
  */
-void pform_generate_case_item(const struct vlltype&li, list<PExpr*>*expr_list)
+void pform_generate_case_item(const struct vlltype&li, vector<PExpr*>*expr_list)
 {
       assert(pform_cur_generate);
       assert(pform_cur_generate->scheme_type == PGenerate::GS_CASE);
@@ -1669,7 +1669,7 @@ void pform_generate_case_item(const struct vlltype&li, list<PExpr*>*expr_list)
       pform_cur_generate->loop_step = 0;
 
       if (expr_list != 0) {
-	    list<PExpr*>::iterator expr_cur = expr_list->begin();
+	    vector<PExpr*>::iterator expr_cur = expr_list->begin();
 	    pform_cur_generate->item_test.resize(expr_list->size());
 	    for (unsigned idx = 0 ; idx < expr_list->size() ; idx += 1) {
 		  pform_cur_generate->item_test[idx] = *expr_cur;
@@ -1742,7 +1742,7 @@ void pform_endgenerate(bool end_conditional)
 
 void pform_make_elab_task(const struct vlltype&li,
                           perm_string name,
-                          const list<PExpr*>&params)
+                          const vector<PExpr*>&params)
 {
       PCallTask*elab_task = new PCallTask(name, params);
       FILE_NAME(elab_task, li);
@@ -2191,7 +2191,7 @@ void pform_make_events(const struct vlltype&loc, list<perm_string>*names)
  */
 static void pform_makegate(PGBuiltin::Type type,
 			   struct str_pair_t str,
-			   list<PExpr*>* delay,
+			   vector<PExpr*>* delay,
 			   const lgate&info,
 			   list<named_pexpr_t>*attr)
 {
@@ -2203,7 +2203,7 @@ static void pform_makegate(PGBuiltin::Type type,
       }
 
       if (info.parms) {
-	    for (list<PExpr*>::iterator cur = info.parms->begin()
+	    for (vector<PExpr*>::iterator cur = info.parms->begin()
 		       ; cur != info.parms->end() ; ++cur) {
 		  pform_declare_implicit_nets(*cur);
 	    }
@@ -2234,7 +2234,7 @@ static void pform_makegate(PGBuiltin::Type type,
 void pform_makegates(const struct vlltype&loc,
 		     PGBuiltin::Type type,
 		     struct str_pair_t str,
-		     list<PExpr*>*delay,
+		     std::vector<PExpr*>*delay,
 		     std::vector<lgate>*gates,
 		     list<named_pexpr_t>*attr)
 {
@@ -2275,12 +2275,12 @@ void pform_makegates(const struct vlltype&loc,
 static void pform_make_modgate(perm_string type,
 			       perm_string name,
 			       struct parmvalue_t*overrides,
-			       list<PExpr*>*wires,
+			       vector<PExpr*>*wires,
 			       list<pform_range_t>*ranges,
 			       const LineInfo&li,
 			       std::list<named_pexpr_t>*attr)
 {
-      for (list<PExpr*>::iterator idx = wires->begin()
+      for (vector<PExpr*>::iterator idx = wires->begin()
 		 ; idx != wires->end() ; ++idx) {
 	    pform_declare_implicit_nets(*idx);
       }
@@ -2412,14 +2412,14 @@ void pform_make_modgates(const struct vlltype&loc,
 		       parameter. This fixes that. */
 		  if ((cur.parms->size() == 1) && (cur.parms->front() == 0)) {
 			delete cur.parms;
-			cur.parms = new list<PExpr*>;
+			cur.parms = new vector<PExpr*>;
 		  }
 		  pform_make_modgate(type, cur_name, overrides,
 				     cur.parms, cur.ranges,
 				     cur, attr);
 
 	    } else {
-		  list<PExpr*>*wires = new list<PExpr*>;
+		  vector<PExpr*>*wires = new vector<PExpr*>;
 		  pform_make_modgate(type, cur_name, overrides,
 				     wires, cur.ranges,
 				     cur, attr);
@@ -2430,7 +2430,7 @@ void pform_make_modgates(const struct vlltype&loc,
 }
 
 static PGAssign* pform_make_pgassign(PExpr*lval, PExpr*rval,
-			      list<PExpr*>*del,
+			      vector<PExpr*>*del,
 			      struct str_pair_t str)
 {
         /* Implicit declaration of nets on the LHS of a continuous
@@ -2438,7 +2438,7 @@ static PGAssign* pform_make_pgassign(PExpr*lval, PExpr*rval,
       if (generation_flag != GN_VER1995)
             pform_declare_implicit_nets(lval);
 
-      list<PExpr*>*wires = new list<PExpr*>;
+      vector<PExpr*>*wires = new vector<PExpr*>;
       wires->push_back(lval);
       wires->push_back(rval);
 
@@ -2461,14 +2461,14 @@ static PGAssign* pform_make_pgassign(PExpr*lval, PExpr*rval,
 }
 
 void pform_make_pgassign_list(const struct vlltype&loc,
-			      list<PExpr*>*alist,
-			      list<PExpr*>*del,
+			      vector<PExpr*>*alist,
+			      vector<PExpr*>*del,
 			      struct str_pair_t str)
 {
       assert(alist->size() % 2 == 0);
-      while (! alist->empty()) {
-	    PExpr*lval = alist->front(); alist->pop_front();
-	    PExpr*rval = alist->front(); alist->pop_front();
+      for (size_t i = 0; i < alist->size(); i += 2) {
+	    PExpr*lval = (*alist)[i];
+	    PExpr*rval = (*alist)[i+1];
 	    PGAssign*tmp = pform_make_pgassign(lval, rval, del, str);
 	    FILE_NAME(tmp, loc);
       }
@@ -2731,7 +2731,7 @@ PWire *pform_makewire(const vlltype&li, perm_string name, NetNet::Type type,
 }
 
 void pform_makewire(const struct vlltype&li,
-		    std::list<PExpr*>*delay,
+		    std::vector<PExpr*>*delay,
 		    str_pair_t str,
 		    std::list<decl_assignment_t*>*assign_list,
 		    NetNet::Type type,
@@ -3229,18 +3229,14 @@ extern PSpecPath*pform_make_specify_edge_path(const struct vlltype&li,
       return tmp;
 }
 
-extern PSpecPath* pform_assign_path_delay(PSpecPath*path, list<PExpr*>*del)
+extern PSpecPath* pform_assign_path_delay(PSpecPath*path, vector<PExpr*>*del)
 {
       if (path == 0)
 	    return 0;
 
       assert(path->delays.empty());
 
-      path->delays.resize(del->size());
-      for (unsigned idx = 0 ;  idx < path->delays.size() ;  idx += 1) {
-	    path->delays[idx] = del->front();
-	    del->pop_front();
-      }
+      path->delays = *del;
 
       delete del;
 

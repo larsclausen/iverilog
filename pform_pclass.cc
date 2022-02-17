@@ -41,7 +41,7 @@ static PClass*pform_cur_class = 0;
 void pform_start_class_declaration(const struct vlltype&loc,
 				   class_type_t*type,
 				   data_type_t*base_type,
-				   list<PExpr*>*base_exprs,
+				   vector<PExpr*>*base_exprs,
 				   LexicalScope::lifetime_t lifetime)
 {
       PClass*class_scope = pform_push_class_scope(loc, type->name, lifetime);
@@ -54,10 +54,7 @@ void pform_start_class_declaration(const struct vlltype&loc,
 
       assert(type->base_args.empty());
       if (base_exprs) {
-	    for (list<PExpr*>::iterator cur = base_exprs->begin()
-		       ; cur != base_exprs->end() ; ++ cur) {
-		  type->base_args.push_back(*cur);
-	    }
+	    type->base_args = *base_exprs;
 	    delete base_exprs;
       }
 }

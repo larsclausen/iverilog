@@ -293,7 +293,7 @@ void class_type_t::pform_dump(ostream&out, unsigned indent) const
       if (base_type) out << " extends <type>";
       if (! base_args.empty()) {
 	    out << " (";
-	    for (list<PExpr*>::const_iterator cur = base_args.begin()
+	    for (vector<PExpr*>::const_iterator cur = base_args.begin()
 		       ; cur != base_args.end() ; ++cur) {
 		  const PExpr*curp = *cur;
 		  if (cur != base_args.begin())
@@ -785,7 +785,7 @@ void PGModule::dump(ostream&out, unsigned ind) const
 	    assert(parms_ == 0);
             out << "#(";
 
-	    list<PExpr*>::const_iterator idx = overrides_->begin();
+	    vector<PExpr*>::const_iterator idx = overrides_->begin();
 
 	    if (*idx == 0)
 		  out << "<nil>";
@@ -957,7 +957,7 @@ void PCase::dump(ostream&out, unsigned ind) const
 		  out << setw(ind+2) << "" << "default:";
 
 	    } else {
-		  list<PExpr*>::iterator idx_exp = cur->expr.begin();
+		  vector<PExpr*>::iterator idx_exp = cur->expr.begin();
 		  out << setw(ind+2) << "";
 		  (*idx_exp)->dump(out);
 

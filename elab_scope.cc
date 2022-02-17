@@ -1526,7 +1526,7 @@ void PGModule::elaborate_scope_mod_instances_(Design*des, Module*mod, NetScope*s
 		  assert(parms_ == 0);
 		  list<perm_string>::const_iterator cur
 			= mod->param_names.begin();
-		  list<PExpr*>::const_iterator jdx = overrides_->begin();
+		  vector<PExpr*>::const_iterator jdx = overrides_->begin();
 		  for (;;) {
 			if (jdx == overrides_->end())
 			      break;

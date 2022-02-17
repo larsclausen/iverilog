@@ -214,9 +214,9 @@ class PBlock  : public PScope, public Statement, public PNamedItem {
 class PCallTask  : public Statement {
 
     public:
-      explicit PCallTask(PPackage*pkg, const pform_name_t&n, const std::list<PExpr*>&parms);
-      explicit PCallTask(const pform_name_t&n, const std::list<PExpr*>&parms);
-      explicit PCallTask(perm_string n, const std::list<PExpr*>&parms);
+      explicit PCallTask(PPackage*pkg, const pform_name_t&n, const std::vector<PExpr*>&parms);
+      explicit PCallTask(const pform_name_t&n, const std::vector<PExpr*>&parms);
+      explicit PCallTask(perm_string n, const std::vector<PExpr*>&parms);
       ~PCallTask();
 
       const pform_name_t& path() const;
@@ -262,7 +262,7 @@ class PCase  : public Statement {
 
     public:
       struct Item {
-	    std::list<PExpr*>expr;
+	    std::vector<PExpr*>expr;
 	    Statement*stat;
       };
 
@@ -307,7 +307,7 @@ class PCAssign  : public Statement {
  */
 class PChainConstructor : public Statement {
     public:
-      explicit PChainConstructor(const std::list<PExpr*>&parms);
+      explicit PChainConstructor(const std::vector<PExpr*>&parms);
       ~PChainConstructor();
 
       virtual NetProc* elaborate(Design*des, NetScope*scope) const;

@@ -80,7 +80,7 @@ struct lgate : public LineInfo {
       explicit lgate() : parms(0), parms_by_name(0), ranges(0) { }
 
       std::string name;
-      std::list<PExpr*>*parms;
+      std::vector<PExpr*>*parms;
       std::list<named_pexpr_t>*parms_by_name;
 
       std::list<pform_range_t>*ranges;
@@ -344,7 +344,7 @@ struct class_type_t : public data_type_t {
 	// hierarchy. If there are arguments to the base class, then
 	// put them in the base_args vector.
       data_type_t*base_type;
-      std::list<PExpr*>base_args;
+      std::vector<PExpr*>base_args;
 
 	// This is a map of the properties. Map the name to the type.
       struct prop_info_t : public LineInfo {

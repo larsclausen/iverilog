@@ -26,21 +26,14 @@
 
 using namespace std;
 
-void PGate::set_pins_(list<PExpr*>*pins)
+void PGate::set_pins_(vector<PExpr*>*pins)
 {
       assert(pins);
-      assert(pins->size() == pins_.size());
-
-      for (size_t idx = 0 ; idx < pins_.size() ; idx += 1) {
-	    pins_[idx] = pins->front();
-	    pins->pop_front();
-      }
-
-      assert(pins->empty());
+      pins_ = *pins;
       delete pins;
 }
 
-PGate::PGate(perm_string name, list<PExpr*>*pins, const list<PExpr*>*del)
+PGate::PGate(perm_string name, vector<PExpr*>*pins, const vector<PExpr*>*del)
 : name_(name), pins_(pins? pins->size() : 0), ranges_(0)
 {
       if (pins) set_pins_(pins);
@@ -49,7 +42,7 @@ PGate::PGate(perm_string name, list<PExpr*>*pins, const list<PExpr*>*del)
       str1_ = IVL_DR_STRONG;
 }
 
-PGate::PGate(perm_string name, list<PExpr*>*pins, PExpr*del)
+PGate::PGate(perm_string name, vector<PExpr*>*pins, PExpr*del)
 : name_(name), pins_(pins? pins->size() : 0), ranges_(0)
 {
       if (pins) set_pins_(pins);
@@ -58,7 +51,7 @@ PGate::PGate(perm_string name, list<PExpr*>*pins, PExpr*del)
       str1_ = IVL_DR_STRONG;
 }
 
-PGate::PGate(perm_string name, list<PExpr*>*pins)
+PGate::PGate(perm_string name, vector<PExpr*>*pins)
 : name_(name), pins_(pins? pins->size() : 0), ranges_(0)
 {
       if (pins) set_pins_(pins);
@@ -130,13 +123,13 @@ PNamedItem::SymbolType PGate::symbol_type() const
       return INSTANCE;
 }
 
-PGAssign::PGAssign(list<PExpr*>*pins)
+PGAssign::PGAssign(vector<PExpr*>*pins)
 : PGate(perm_string(), pins)
 {
       assert(pin_count() == 2);
 }
 
-PGAssign::PGAssign(list<PExpr*>*pins, list<PExpr*>*dels)
+PGAssign::PGAssign(vector<PExpr*>*pins, vector<PExpr*>*dels)
 : PGate(perm_string(), pins, dels)
 {
       assert(pin_count() == 2);
@@ -147,14 +140,14 @@ PGAssign::~PGAssign()
 }
 
 PGBuiltin::PGBuiltin(Type t, perm_string name,
-		     list<PExpr*>*pins,
-		     list<PExpr*>*del)
+		     vector<PExpr*>*pins,
+		     vector<PExpr*>*del)
 : PGate(name, pins, del), type_(t)
 {
 }
 
 PGBuiltin::PGBuiltin(Type t, perm_string name,
-		     list<PExpr*>*pins,
+		     vector<PExpr*>*pins,
 		     PExpr*del)
 : PGate(name, pins, del), type_(t)
 {
@@ -263,7 +256,7 @@ const char* PGBuiltin::gate_name() const
       return "<unknown>";
 }
 
-PGModule::PGModule(perm_string type, perm_string name, list<PExpr*>*pins)
+PGModule::PGModule(perm_string type, perm_string name, vector<PExpr*>*pins)
 : PGate(name, pins), bound_type_(0), type_(type), overrides_(0), pins_(0),
   npins_(0), parms_(0), nparms_(0)
 {
@@ -286,7 +279,7 @@ PGModule::~PGModule()
 {
 }
 
-void PGModule::set_parameters(list<PExpr*>*o)
+void PGModule::set_parameters(vector<PExpr*>*o)
 {
       assert(overrides_ == 0);
       overrides_ = o;
