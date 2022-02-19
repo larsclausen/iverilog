@@ -137,3 +137,6 @@ sv_queue_nest1		normal			ivltests
 sv_queue_nest2		normal			ivltests
 sv_queue_nest3		normal			ivltests
 sv_queue_nest4		normal			ivltests
+type_param1		normal			ivltests
+type_param2		normal			ivltests
+type_param3		normal			ivltests

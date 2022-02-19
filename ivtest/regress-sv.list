@@ -703,6 +703,8 @@ test_inc_dec		normal,-g2009		ivltests
 test_tliteral		normal,-g2009		ivltests
 timeliteral		normal,-g2009		ivltests
 two_state_display	normal,-g2005-sv	ivltests gold=two_state_display.gold
+type_param4		normal,-g2005-sv	ivltests
+type_param5		normal,-g2005-sv	ivltests
 ubyte_test		normal,-g2005-sv	ivltests
 uint_test		normal,-g2005-sv	ivltests
 ulongint_test		normal,-g2005-sv	ivltests
