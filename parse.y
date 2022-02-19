@@ -2397,20 +2397,14 @@ tf_port_list /* IEEE1800-2005: A.2.7 */
 
 tf_port_item_list
   : tf_port_item_list ',' tf_port_item
-      { std::vector<pform_tf_port_t>*tmp;
-	if ($1 && $3) {
-	      size_t s1 = $1->size();
-	      tmp = $1;
-	      tmp->resize(tmp->size()+$3->size());
-	      for (size_t idx = 0 ; idx < $3->size() ; idx += 1)
-		    tmp->at(s1+idx) = $3->at(idx);
+      { if ($1 && $3) {
+	      $1->insert($1->end(), $3->begin(), $3->end());
 	      delete $3;
 	} else if ($1) {
-	      tmp = $1;
+	      $$ = $1;
 	} else {
-	      tmp = $3;
+	      $$ = $3;
 	}
-	$$ = tmp;
       }
 
   | tf_port_item
@@ -4040,13 +4034,9 @@ tf_item_list /* IEEE1800-2017: A.2.7 */
       { $$ = $1; }
   | tf_item_list tf_item_declaration
       { if ($1 && $2) {
-	      std::vector<pform_tf_port_t>*tmp = $1;
-	      size_t s1 = tmp->size();
-	      tmp->resize(s1 + $2->size());
-	      for (size_t idx = 0 ; idx < $2->size() ; idx += 1)
-		    tmp->at(s1+idx) = $2->at(idx);
+	      $1->insert($1->end(), $2->begin(), $2->end());
 	      delete $2;
-	      $$ = tmp;
+	      $$ = $1;
 	} else if ($1) {
 	      $$ = $1;
 	} else {
@@ -6895,12 +6885,8 @@ udp_port_decls
   : udp_port_decl
       { $$ = $1; }
   | udp_port_decls udp_port_decl
-      { std::vector<PWire*>*tmp = $1;
-	size_t s1 = $1->size();
-	tmp->resize(s1+$2->size());
-	for (size_t idx = 0 ; idx < $2->size() ; idx += 1)
-	      tmp->at(s1+idx) = $2->at(idx);
-	$$ = tmp;
+      { $1->insert($1->end(), $2->begin(), $2->end());
+	$$ = $1;
 	delete $2;
       }
   ;
