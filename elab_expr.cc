@@ -3580,6 +3580,8 @@ static int concat_depth = 0;
 NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 				  ivl_type_t ntype, unsigned flags) const
 {
+      bool need_const = NEED_CONST & flags;
+
       switch (ntype->base_type()) {
 	  case IVL_VT_QUEUE:
 // FIXME: Does a DARRAY support a zero size?
@@ -3598,7 +3600,11 @@ NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 		  ivl_type_t elem_type = array_type->element_type();
 		  vector<NetExpr*> elem_exprs (parms_.size());
 		  for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
-			NetExpr*tmp = parms_[idx]->elaborate_expr(des, scope, elem_type, flags);
+			NetExpr*tmp = elab_and_eval(des, scope, parms_[idx],
+						    -1, need_const, false,
+						    elem_type->base_type());
+			tmp = cast_to_width(tmp, elem_type->packed_width(),
+					    parms_[idx]->has_sign(), *this);
 			elem_exprs[idx] = tmp;
 		  }
 
