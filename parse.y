@@ -783,6 +783,12 @@ assignment_pattern /* IEEE1800-2005: A.6.7.1 */
 	delete $2;
 	$$ = tmp;
       }
+  | K_LP expression '{' expression_list_proper '}' '}'
+      { PEAssignPattern*tmp = new PEAssignPattern(*$4, $2);
+	FILE_NAME(tmp, @1);
+	delete $2;
+	$$ = tmp;
+      }
   | K_LP '}'
       { PEAssignPattern*tmp = new PEAssignPattern;
 	FILE_NAME(tmp, @1);
@@ -5378,9 +5384,9 @@ parameter_assign_list
   ;
 
 parameter_assign
-  : IDENTIFIER initializer_opt parameter_value_ranges_opt
+  : IDENTIFIER dimensions_opt initializer_opt parameter_value_ranges_opt
       { pform_set_parameter(@1, lex_strings.make($1), param_is_local,
-			    param_data_type, $2, $3);
+			    param_data_type, $3, $4);
 	delete[]$1;
       }
   ;

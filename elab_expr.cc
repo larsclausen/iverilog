@@ -3582,6 +3582,12 @@ NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 {
       bool need_const = NEED_CONST & flags;
 
+      if (repeat_) {
+	    cerr << get_fileline() << ": error: "
+		 << "Replication is not allowed for unpacked array concatanation."
+		 << endl;
+      }
+
       switch (ntype->base_type()) {
 	  case IVL_VT_QUEUE:
 // FIXME: Does a DARRAY support a zero size?

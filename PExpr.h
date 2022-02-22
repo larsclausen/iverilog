@@ -204,7 +204,7 @@ std::ostream& operator << (std::ostream&, const PExpr&);
 class PEAssignPattern : public PExpr {
     public:
       explicit PEAssignPattern();
-      explicit PEAssignPattern(const std::list<PExpr*>&p);
+      explicit PEAssignPattern(const std::list<PExpr*>&p, PExpr *r = 0);
       ~PEAssignPattern();
 
       void dump(std::ostream&) const;
@@ -222,6 +222,7 @@ class PEAssignPattern : public PExpr {
 
     private:
       std::vector<PExpr*>parms_;
+      PExpr* repeat_;
 };
 
 class PEConcat : public PExpr {
