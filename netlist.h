@@ -2078,6 +2078,13 @@ class NetExpr  : public LineInfo {
       void expr_width(unsigned wid) { width_ = wid; }
       void cast_signed_base_(bool flag) { signed_flag_ = flag; }
 
+      NetNet* synth_output_signal(NetScope *scope,
+			          ivl_variable_type_t type,
+				  int width,
+				  bool has_sign = false) const;
+
+      NetNet* synth_output_signal(NetScope *scope) const;
+
     private:
       ivl_type_t net_type_;
       unsigned width_;

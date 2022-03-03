@@ -25,6 +25,7 @@
 # include  "netparray.h"
 # include  "netvector.h"
 # include  "netmisc.h"
+# include  "netscalar.h"
 # include  "PExpr.h"
 # include  "pform_types.h"
 # include  "compiler.h"
@@ -126,8 +127,8 @@ NetNet* cast_to_real(Design*des, NetScope*scope, NetNet*src)
       if (src->data_type() == IVL_VT_REAL)
 	    return src;
 
-      netvector_t*tmp_vec = new netvector_t(IVL_VT_REAL);
-      NetNet*tmp = new NetNet(scope, scope->local_symbol(), NetNet::WIRE, tmp_vec);
+      NetNet*tmp = new NetNet(scope, scope->local_symbol(), NetNet::WIRE,
+			      &netreal_t::type_real);
       tmp->set_line(*src);
       tmp->local_flag(true);
 
