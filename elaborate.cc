@@ -2334,11 +2334,14 @@ NetAssign_* PAssign_::elaborate_lval(Design*des, NetScope*scope) const
 NetExpr* PAssign_::elaborate_rval_(Design*des, NetScope*scope,
 				   ivl_type_t net_type) const
 {
+      bool need_const;
       ivl_assert(*this, rval_);
 
-      NetExpr*rv = elab_and_eval(des, scope, rval_, net_type, is_constant_);
+	  need_const = is_constant_;
 
-      if (!is_constant_ || !rv) return rv;
+      NetExpr*rv = elab_and_eval(des, scope, rval_, net_type, need_const);
+
+      if (!need_const || !rv) return rv;
 
       cerr << get_fileline() << ": error: "
             "The RHS expression must be constant." << endl;
@@ -2355,16 +2358,19 @@ NetExpr* PAssign_::elaborate_rval_(Design*des, NetScope*scope,
 				   unsigned lv_width,
 				   bool force_unsigned) const
 {
+      bool need_const;
       ivl_assert(*this, rval_);
+
+      need_const = is_constant_ | is_init_;
 
 	// Don't have a good value for the lv_net_type argument to
 	// elaborate_rval_expr, so punt and pass nil. In the future we
 	// should look into fixing calls to this method to pass a
 	// net_type instead of the separate lv_width/lv_type values.
       NetExpr*rv = elaborate_rval_expr(des, scope, lv_net_type, lv_type, lv_width,
-				       rval(), is_constant_, force_unsigned);
+				       rval(), need_const, force_unsigned);
 
-      if (!is_constant_ || !rv) return rv;
+      if (!need_const || !rv) return rv;
 
       if (dynamic_cast<NetEConst*>(rv)) return rv;
       if (dynamic_cast<NetECReal*>(rv)) return rv;
