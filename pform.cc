@@ -490,7 +490,7 @@ static PPackage*find_potential_import(const struct vlltype&loc, LexicalScope*sco
 		= search_pkg->local_symbols.find(name);
 	    if (cur_sym != search_pkg->local_symbols.end()) {
 		  if (found_pkg && make_explicit) {
-			cerr << loc.get_fileline() << ": error: "
+			cerr << loc << ": error: "
 				"Ambiguous use of '" << name << "'. "
 				"It is exported by both '"
 			      << found_pkg->pscope_name()
@@ -583,7 +583,7 @@ void pform_set_scope_timescale(const struct vlltype&loc)
       if (warn_timescale && used_global_timescale
 	  && (strcmp(pform_timescale_file, loc.text) != 0)) {
 
-	    cerr << loc.get_fileline() << ": warning: "
+	    cerr << loc << ": warning: "
 		 << "timescale for " << scope->pscope_name()
 		 << " inherited from another file." << endl;
 	    cerr << pform_timescale_file << ":" << pform_timescale_line
@@ -1003,7 +1003,7 @@ PForeach* pform_make_foreach(const struct vlltype&loc,
       delete[]name;
 
       if (loop_vars==0 || loop_vars->empty()) {
-	    cerr << loc.get_fileline() << ": error: "
+	    cerr << loc << ": error: "
 		 << "No loop variables at all in foreach index." << endl;
 	    error_count += 1;
       }
@@ -3165,7 +3165,7 @@ void pform_make_let(const struct vlltype&loc,
 {
       LexicalScope*scope =  pform_peek_scope();
 
-      cerr << loc.get_fileline() << ": sorry: let declarations ("
+      cerr << loc << ": sorry: let declarations ("
            << name << ") are not currently supported." << endl;
       error_count += 1;
 
