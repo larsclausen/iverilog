@@ -671,7 +671,8 @@ void PFunction::elaborate_sig(Design*des, NetScope*scope) const
 
       vector<NetNet*>ports;
       vector<NetExpr*>pdef;
-      elaborate_sig_ports_(des, scope, ports, pdef);
+      vector<perm_string>port_names;
+      elaborate_sig_ports_(des, scope, ports, pdef, port_names);
 
       NetFuncDef*def = new NetFuncDef(scope, ret_sig, ports, pdef);
 
@@ -705,7 +706,8 @@ void PTask::elaborate_sig(Design*des, NetScope*scope) const
 
       vector<NetNet*>ports;
       vector<NetExpr*>pdefs;
-      elaborate_sig_ports_(des, scope, ports, pdefs);
+      vector<perm_string>port_names;
+      elaborate_sig_ports_(des, scope, ports, pdefs, port_names);
       NetTaskDef*def = new NetTaskDef(scope, ports, pdefs);
       scope->set_task_def(def);
 
@@ -715,11 +717,14 @@ void PTask::elaborate_sig(Design*des, NetScope*scope) const
 }
 
 void PTaskFunc::elaborate_sig_ports_(Design*des, NetScope*scope,
-				     vector<NetNet*>&ports, vector<NetExpr*>&pdefs) const
+				     vector<NetNet*>&ports,
+				     vector<NetExpr*>&pdefs,
+				     vector<perm_string>&port_names) const
 {
       if (ports_ == 0) {
 	    ports.clear();
 	    pdefs.clear();
+	    port_names.clear();
 
 	      /* Make sure the function has at least one input
 		 port. If it fails this test, print an error
@@ -738,6 +743,7 @@ void PTaskFunc::elaborate_sig_ports_(Design*des, NetScope*scope,
 
       ports.resize(ports_->size());
       pdefs.resize(ports_->size());
+      port_names.resize(ports_->size());
 
       for (size_t idx = 0 ; idx < ports_->size() ; idx += 1) {
 
@@ -800,6 +806,7 @@ void PTaskFunc::elaborate_sig_ports_(Design*des, NetScope*scope,
 	    }
 
 	    ports[idx] = tmp;
+	    port_names[idx] = port_name;
 	    pdefs[idx] = tmp_def;
 	    if (scope->type()==NetScope::FUNC && tmp->port_type()!=NetNet::PINPUT) {
 		  cerr << tmp->get_fileline() << ": error: "

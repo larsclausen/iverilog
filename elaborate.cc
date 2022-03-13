@@ -4023,6 +4023,15 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 
 	    NetExpr*rv = 0;
 
+	    for(int j = 0; j < parms_.size(); j++) {
+		  if (parms_[j].name.nil())
+			continue;
+		  if (parms_[j].name != port->name())
+			continue;
+		  parms_idx = j;
+		  break;
+	    }
+
 	    if (parms_idx < parms_.size() && parms_[parms_idx].parm) {
 		  rv = elaborate_rval_expr(des, scope, port->net_type(),
 					   parms_[parms_idx].parm);
