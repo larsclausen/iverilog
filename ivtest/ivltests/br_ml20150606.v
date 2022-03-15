@@ -1,5 +1,6 @@
-module dut(input [3:0] DataI, output [3:0] DataO);
-
+module dut(DataI, DataO);
+input [3:0] DataI;
+output [3:0] DataO;
 wire [3:0] DataI;
 reg  [3:0] DataO;
 
