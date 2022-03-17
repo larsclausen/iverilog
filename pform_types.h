@@ -155,8 +155,6 @@ class data_type_t : public PNamedItem {
 
       virtual SymbolType symbol_type() const;
 
-      perm_string name;
-
     private:
 	// Elaborate the type to an ivl_type_s type.
       virtual ivl_type_t elaborate_type_raw(Design*des, NetScope*scope) const;
@@ -166,9 +164,23 @@ class data_type_t : public PNamedItem {
       std::map<Definitions*,ivl_type_t> cache_type_elaborate_;
 };
 
+struct typedef_t : public PNamedItem {
+      explicit typedef_t(perm_string n) : name(n) { };
+
+      ivl_type_t elaborate_type(Design*des, NetScope*scope);
+
+      bool set_data_type(data_type_t *t);
+      const data_type_t *get_data_type() const { return data_type.get(); }
+
+protected:
+      std::unique_ptr<data_type_t> data_type;
+public:
+      perm_string name;
+};
+
 struct typeref_t : public data_type_t {
-      explicit typeref_t(data_type_t *t) : scope(0), type(t) {}
-      explicit typeref_t(PScope *s, data_type_t *t) : scope(s), type(t) {}
+      explicit typeref_t(typedef_t *t) : scope(0), type(t) {}
+      explicit typeref_t(PScope *s, typedef_t *t) : scope(s), type(t) {}
 
       ivl_type_t elaborate_type_raw(Design*des, NetScope*scope) const;
       NetScope *find_scope(Design* des, NetScope *scope) const;
@@ -177,7 +189,7 @@ struct typeref_t : public data_type_t {
 
 private:
       PScope *scope;
-      data_type_t *type;
+      typedef_t *type;
 };
 
 struct void_type_t : public data_type_t {
@@ -328,7 +340,7 @@ struct string_type_t : public data_type_t {
 
 struct class_type_t : public data_type_t {
 
-      inline explicit class_type_t(perm_string n) { name = n; }
+      inline explicit class_type_t(perm_string n) : name(n) { }
 
       void pform_dump(std::ostream&out, unsigned indent) const;
       void pform_dump_init(std::ostream&out, unsigned indent) const;
@@ -360,6 +372,8 @@ struct class_type_t : public data_type_t {
       std::vector<Statement*> initialize_static;
 
       ivl_type_t elaborate_type_raw(Design*, NetScope*) const;
+
+      perm_string name;
 
       virtual SymbolType symbol_type() const;
 };

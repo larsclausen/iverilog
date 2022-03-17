@@ -944,10 +944,10 @@ class NetScope : public Definitions, public Attrib {
       void add_imports(const std::map<perm_string,PPackage*>*imports);
       NetScope*find_import(const Design*des, perm_string name);
 
-      void add_typedefs(const std::map<perm_string,data_type_t*>*typedefs);
+      void add_typedefs(const std::map<perm_string,typedef_t*>*typedefs);
 
         /* Search the scope hierarchy for the scope where 'type' was defined. */
-      NetScope*find_typedef_scope(const Design*des, data_type_t*type);
+      NetScope*find_typedef_scope(const Design*des, const typedef_t*type);
 
 	/* Routine to search for the enumeration given a name. It basically
 	 * does what enumeration_for_name() does but searched the hierarchy. */
@@ -1276,7 +1276,7 @@ class NetScope : public Definitions, public Attrib {
 
       const std::map<perm_string,PPackage*>*imports_;
 
-      std::map<perm_string,data_type_t*>typedefs_;
+      std::map<perm_string,typedef_t*>typedefs_;
 
       NetEvent *events_;
 

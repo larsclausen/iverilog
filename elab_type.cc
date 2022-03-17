@@ -43,7 +43,6 @@ ivl_type_t data_type_t::elaborate_type(Design*des, NetScope*scope)
 {
       scope = find_scope(des, scope);
 
-      ivl_assert(*this, scope);
       Definitions*use_definitions = scope;
 
       map<Definitions*,ivl_type_t>::iterator pos = cache_type_elaborate_.lower_bound(use_definitions);
@@ -171,13 +170,8 @@ ivl_type_t parray_type_t::elaborate_type_raw(Design*des, NetScope*scope) const
       ivl_type_t etype = base_type->elaborate_type(des, scope);
       if (!etype->packed()) {
 		cerr << this->get_fileline() << " error: Packed array ";
-		if (!name.nil())
-		      cerr << "`" << name << "` ";
 		cerr << "base-type `";
-		if (base_type->name.nil())
-		      cerr << *base_type;
-		else
-		      cerr << base_type->name;
+		cerr << *base_type;
 		cerr << "` is not packed." << endl;
 		des->errors++;
       }
@@ -384,4 +378,30 @@ NetScope *typeref_t::find_scope(Design *des, NetScope *s) const
 	    return des->find_package(scope->pscope_name());
 
       return s;
+}
+
+ivl_type_t typedef_t::elaborate_type(Design *des, NetScope *scope)
+{
+      if (!data_type.get()) {
+	    cerr << get_fileline() << ": error: Undefined type `" << name << "`."
+		 << endl;
+	    des->errors++;
+
+	    // Try to recover
+	    return new netvector_t(IVL_VT_LOGIC);
+      }
+
+        // Search upwards from where the type was referenced
+      scope = scope->find_typedef_scope(des, this);
+      if (!scope) {
+	    cerr << get_fileline() << ": sorry: "
+	         << "Can not find the scope type defintion `" << name << "`."
+		 << endl;
+	    des->errors++;
+
+	    // Try to recover
+	    return new netvector_t(IVL_VT_LOGIC);
+      }
+
+      return data_type->elaborate_type(des, scope);
 }
