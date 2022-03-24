@@ -31,6 +31,10 @@
 # include  <iostream>
 #endif
 
+#if __cplusplus < 201103L
+#define unique_ptr auto_ptr
+#endif
+
 class PExpr;
 class Design;
 class netdarray_t;
@@ -119,7 +123,7 @@ class PWire : public PNamedItem {
 
 	// This is the complex type of the wire. the data_type_ may
 	// modify how this is interpreted.
-      data_type_t*set_data_type_;
+      std::unique_ptr<data_type_t> set_data_type_;
 
       ivl_discipline_t discipline_;
 
@@ -134,5 +138,9 @@ class PWire : public PNamedItem {
 				       const std::vector<netrange_t>&packed_dimensions)
 				       const;
 };
+
+#if __cplusplus < 201103L
+#undef unique_ptr
+#endif
 
 #endif /* IVL_PWire_H */
