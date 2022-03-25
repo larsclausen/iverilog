@@ -2410,6 +2410,11 @@ int draw_scope(ivl_scope_t net, ivl_scope_t parent)
       for (idx = 0 ;  idx < ivl_scope_params(net) ;  idx += 1) {
 	    ivl_parameter_t par = ivl_scope_param(net, idx);
 	    ivl_expr_t pex = ivl_parameter_expr(par);
+
+	      // This is a type parameter, skip it
+	    if (!pex)
+		  continue;
+
 	    switch (ivl_expr_type(pex)) {
 		case IVL_EX_STRING:
 		  fprintf(vvp_out, "P_%p .param/str \"%s\" %d %u %u, \"%s\";\n",

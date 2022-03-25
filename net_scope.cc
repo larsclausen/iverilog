@@ -307,6 +307,7 @@ const netenum_t*NetScope::find_enumeration_for_name(const Design*des, perm_strin
 void NetScope::set_parameter(perm_string key, bool is_annotatable,
 			     PExpr*val, data_type_t*val_type,
 			     bool local_flag, bool overridable,
+			     bool type_flag,
 			     NetScope::range_t*range_list,
 			     const LineInfo&file_line)
 {
@@ -317,6 +318,7 @@ void NetScope::set_parameter(perm_string key, bool is_annotatable,
       ref.val_scope = this;
       ref.local_flag = local_flag;
       ref.overridable = overridable;
+      ref.type_flag = type_flag;
       ivl_assert(file_line, ref.range == 0);
       ref.range = range_list;
       ref.val = 0;

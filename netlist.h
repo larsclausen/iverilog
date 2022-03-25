@@ -962,6 +962,7 @@ class NetScope : public Definitions, public Attrib {
       void set_parameter(perm_string name, bool is_annotatable,
 			 PExpr*val, data_type_t*data_type,
 			 bool local_flag, bool overridable,
+			 bool type_flag,
 			 NetScope::range_t*range_list,
 			 const LineInfo&file_line);
       void set_parameter(perm_string name, NetExpr*val,
@@ -1207,8 +1208,8 @@ class NetScope : public Definitions, public Attrib {
       struct param_expr_t : public LineInfo {
 	    param_expr_t() : val_expr(0), val_type(0), val_scope(0),
 		             solving(false), is_annotatable(false),
-		             local_flag(false),
-		             range(0), val(0), ivl_type(0) { }
+		             local_flag(false), overridable(false),
+			     type_flag(false), range(0), val(0), ivl_type(0) { }
 	    // Source expression and data type (before elaboration)
 	    PExpr*val_expr;
 	    data_type_t*val_type;
@@ -1222,10 +1223,18 @@ class NetScope : public Definitions, public Attrib {
 	    bool local_flag;
 	    // Can it be overriden?
 	    bool overridable;
+	    // Is it a type parameter
+	    bool type_flag;
 	    // range constraints
 	    struct range_t*range;
-	    // Expression value and type (elaborated versoins of val_expr/val_type)
+
+	    // Expression value. Elaborated version of val_expr.
+	    // For type parameters this will always be 0.
 	    NetExpr*val;
+
+	    // For non-type parameter this contains the elaborate type of the
+	    // parameter itself. For type parameters this contains the
+	    // elaborated assigned type value.
 	    ivl_type_t ivl_type;
       };
       std::map<perm_string,param_expr_t>parameters;
@@ -1248,6 +1257,7 @@ class NetScope : public Definitions, public Attrib {
       std::map<perm_string,LocalVar> loop_index_tmp;
 
     private:
+      void evaluate_type_parameter_(Design*des, param_ref_t cur);
       void evaluate_parameter_logic_(Design*des, param_ref_t cur);
       void evaluate_parameter_real_(Design*des, param_ref_t cur);
       void evaluate_parameter_string_(Design*des, param_ref_t cur);

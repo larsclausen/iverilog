@@ -310,6 +310,9 @@ void emit_scope_variables(ivl_scope_t scope)
       for (idx = 0; idx < count; idx += 1) {
 	    ivl_parameter_t par = ivl_scope_param(scope, idx);
 	    ivl_expr_t pex = ivl_parameter_expr(par);
+	      /* This is a type parameter, skip it */
+	    if (!pex)
+		  continue;
 	    fprintf(vlog_out, "%*cparameter ", indent, ' ');
 	    emit_id(ivl_parameter_basename(par));
 	    fprintf(vlog_out, " = ");

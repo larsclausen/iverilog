@@ -101,8 +101,9 @@ class LexicalScope {
 	   is elaborated. During parsing, I put the parameters into
 	   this map. */
       struct param_expr_t : public PNamedItem {
-            inline param_expr_t() : data_type(0), expr(0), range(0),
-				    local_flag(false), overridable(true) { }
+            param_expr_t() : data_type(0), expr(0), range(0),
+			     local_flag(false), overridable(true),
+			     type_flag(false) { }
 	      // Type information.
 	    data_type_t*data_type;
 	      // Value expression
@@ -113,6 +114,8 @@ class LexicalScope {
 	    bool local_flag;
 	      // Whether the parameter can be overridden
 	    bool overridable;
+	      // Whether the parameter is a type parameter
+	    bool type_flag;
 
 	    SymbolType symbol_type() const;
       };
