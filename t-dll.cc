@@ -504,6 +504,9 @@ void dll_target::make_scope_parameters(ivl_scope_t scop, const NetScope*net)
       for (pit_t cur_pit = net->parameters.begin()
 		 ; cur_pit != net->parameters.end() ; ++ cur_pit ) {
 
+	    if (cur_pit->second.type_flag)
+		  continue;
+
 	    assert(idx < scop->param.size());
 	    ivl_parameter_t cur_par = &scop->param[idx];
 	    cur_par->basename = cur_pit->first;

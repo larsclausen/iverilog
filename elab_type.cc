@@ -365,3 +365,16 @@ ivl_type_t uarray_type_t::elaborate_type_raw(Design*des, NetScope*scope) const
 
       return elaborate_array_type(des, scope, *this, btype, *dims.get());
 }
+
+ivl_type_t type_parameter_t::elaborate_type_raw(Design *des, NetScope*scope) const
+{
+      ivl_type_t type;
+
+      scope->get_parameter(des, name, type);
+
+      // Recover
+      if (!type)
+	    return new netvector_t(IVL_VT_LOGIC);
+
+      return type;
+}

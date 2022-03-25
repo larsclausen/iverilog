@@ -377,6 +377,13 @@ struct class_type_t : public data_type_t {
       virtual SymbolType symbol_type() const;
 };
 
+struct type_parameter_t : data_type_t {
+      explicit type_parameter_t(perm_string n) : name(n) { }
+      ivl_type_t elaborate_type_raw(Design *des, NetScope *scope) const;
+
+      perm_string name;
+};
+
 ivl_type_t elaborate_array_type(Design *des, NetScope *scope,
 			        const LineInfo &li, ivl_type_t base_type,
 			        const std::list<pform_range_t> &dims);

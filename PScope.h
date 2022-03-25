@@ -113,6 +113,8 @@ class LexicalScope {
 	    bool local_flag;
 	      // Whether the parameter can be overridden
 	    bool overridable;
+	     // Whether the parameter is a type parameter
+	    bool type_flag;
 
 	    SymbolType symbol_type() const;
       };
