@@ -171,27 +171,22 @@ const ivl_type_s* NetAssign_::net_type() const
 			return darray->element_type();
 	    }
 
-	    return 0;
+	    return ntype;
       }
-
-      if (const netclass_t*class_type = sig_->class_type()) {
-	    if (member_.nil())
-		  return sig_->net_type();
-
+      const netclass_t*class_type = sig_->class_type();
+      if (class_type && !member_.nil()) {
 	    int pidx = class_type->property_idx_from_name(member_);
 	    ivl_assert(*sig_, pidx >= 0);
 	    ivl_type_t tmp = class_type->get_prop_type(pidx);
 	    return tmp;
       }
 
-      if (const netdarray_t*darray = dynamic_cast<const netdarray_t*> (sig_->net_type())) {
-	    if (word_ == 0)
-		  return sig_->net_type();
-	    else
-		  return darray->element_type();
-      }
+      const ivl_type_s *ntype = sig_->net_type();
+      const netdarray_t*darray = dynamic_cast<const netdarray_t*>(ntype);
+      if (darray && word_ != 0)
+	    return darray->element_type();
 
-      return 0;
+      return ntype;
 }
 
 const netenum_t*NetAssign_::enumeration() const

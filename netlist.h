@@ -4943,7 +4943,6 @@ class NetESignal  : public NetExpr {
                           bool nested_func = false) const;
       NexusSet* nex_input_base(bool rem_out, bool always_sens, bool nested_func,
                                unsigned base, unsigned width) const;
-      const netenum_t*enumeration() const;
 
       virtual NetExpr*evaluate_function(const LineInfo&loc,
 					std::map<perm_string,LocalVar>&ctx) const;

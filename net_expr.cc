@@ -38,6 +38,10 @@ NetExpr::NetExpr(unsigned w)
 NetExpr::NetExpr(ivl_type_t t)
 : net_type_(t), width_(0), signed_flag_(false)
 {
+      if (t && t->packed()) {
+	    width_ = t->packed_width();
+	    signed_flag_ = t->get_signed();
+      }
 }
 
 NetExpr::~NetExpr()
