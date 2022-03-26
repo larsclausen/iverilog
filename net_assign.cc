@@ -112,6 +112,10 @@ ivl_select_type_t NetAssign_::select_type() const
 
 unsigned NetAssign_::lwidth() const
 {
+
+      if (base_)
+	    return lwid_;
+
 	// This gets me the type of the l-value expression, down to
 	// the type of the member. If this returns nil, then resort to
 	// the lwid_ value.
@@ -152,6 +156,12 @@ ivl_variable_type_t NetAssign_::expr_type() const
 
 const ivl_type_s* NetAssign_::net_type() const
 {
+        // We don't have types for array signals yet.
+      if (sig_->unpacked_dimensions()) {
+	    if (!word_)
+		  return nullptr;
+      }
+
       if (nest_) {
 	    const ivl_type_s*ntype = nest_->net_type();
 	    if (member_.nil())
@@ -165,7 +175,7 @@ const ivl_type_s* NetAssign_::net_type() const
 	    }
 
 	    if (const netdarray_t*darray = dynamic_cast<const netdarray_t*> (ntype)) {
-		  if (word_ == 0)
+		  if (!word_)
 			return ntype;
 		  else
 			return darray->element_type();
@@ -173,54 +183,28 @@ const ivl_type_s* NetAssign_::net_type() const
 
 	    return 0;
       }
-
-      if (const netclass_t*class_type = sig_->class_type()) {
-	    if (member_.nil())
-		  return sig_->net_type();
-
+      const netclass_t*class_type = sig_->class_type();
+      if (class_type && !member_.nil()) {
 	    int pidx = class_type->property_idx_from_name(member_);
 	    ivl_assert(*sig_, pidx >= 0);
 	    ivl_type_t tmp = class_type->get_prop_type(pidx);
 	    return tmp;
       }
 
-      if (const netdarray_t*darray = dynamic_cast<const netdarray_t*> (sig_->net_type())) {
-	    if (word_ == 0)
-		  return sig_->net_type();
-	    else
-		  return darray->element_type();
-      }
+      const ivl_type_s *ntype = sig_->net_type();
+      const netdarray_t*darray = dynamic_cast<const netdarray_t*>(ntype);
+      if (darray && word_)
+	    ntype = darray->element_type();
 
-      return 0;
+      if (!base_  && !more)
+	    return ntype;
+
+      return nullptr;
 }
 
 const netenum_t*NetAssign_::enumeration() const
 {
-      const netenum_t*tmp = 0;
-      ivl_type_t ntype = net_type();
-      if (ntype == 0) {
-
-	    ivl_assert(*this, sig_);
-
-	      // If the base signal is not an enumeration, return nil.
-	    if ( (tmp = sig_->enumeration()) == 0 )
-		  return 0;
-
-      } else {
-	    tmp = dynamic_cast<const netenum_t*>(ntype);
-	    if (tmp == 0)
-		  return 0;
-      }
-
-	// Part select of an enumeration is not an enumeration.
-      if (base_ != 0)
-	    return 0;
-
-	// Concatenation of enumerations is not an enumeration.
-      if (more != 0)
-	    return 0;
-
-      return tmp;
+      return dynamic_cast<const netenum_t*>(net_type());
 }
 
 perm_string NetAssign_::name() const
