@@ -4450,7 +4450,6 @@ class NetESelect  : public NetExpr {
 	// sub-expression. The type of an array/member select is
 	// the base type of the element/member.
       virtual ivl_variable_type_t expr_type() const;
-      virtual const netenum_t* enumeration() const;
 
       virtual NexusSet* nex_input(bool rem_out = true, bool always_sens = false,
                                   bool nested_func = false) const;
@@ -4465,7 +4464,6 @@ class NetESelect  : public NetExpr {
     private:
       NetExpr*expr_;
       NetExpr*base_;
-      ivl_type_t use_type_;
       ivl_select_type_t sel_type_;
 };
 
@@ -4643,7 +4641,6 @@ class NetESFunc  : public NetExpr {
       virtual ivl_variable_type_t expr_type() const;
       virtual NexusSet* nex_input(bool rem_out = true, bool always_sens = false,
                                   bool nested_func = false) const;
-      virtual const netenum_t* enumeration() const;
       virtual void dump(std::ostream&) const;
 
       virtual void expr_scan(struct expr_scan_t*) const;
@@ -4719,7 +4716,6 @@ class NetESFunc  : public NetExpr {
 
       const char* name_;
       ivl_variable_type_t type_;
-      const netenum_t*enum_type_;
       std::vector<NetExpr*>parms_;
       bool is_overridden_;
 
