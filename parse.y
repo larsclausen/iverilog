@@ -727,6 +727,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <typedef_basic_type> typedef_basic_type
 
+%type <package> package_scope
+
 %token K_TAND
 %nonassoc K_PLUS_EQ K_MINUS_EQ K_MUL_EQ K_DIV_EQ K_MOD_EQ K_AND_EQ K_OR_EQ
 %nonassoc K_XOR_EQ K_LS_EQ K_RS_EQ K_RSS_EQ K_NB_TRIGGER
@@ -1177,6 +1179,21 @@ data_declaration /* IEEE1800-2005: A.2.1.3 */
   | attribute_list_opt package_import_declaration
   ;
 
+package_scope
+  : PACKAGE_IDENTIFIER K_SCOPE_RES
+      { $$ = $1;
+      }
+  | TYPE_IDENTIFIER K_SCOPE_RES
+      { yyerror(@1, "error: Could not find package `%s`.", $1.text);
+	delete[] $1.text;
+        $$ = 0;
+      }
+  | IDENTIFIER K_SCOPE_RES
+      { yyerror(@1, "error: Could not find package `%s`.", $1);
+	delete[] $1;
+        $$ = 0;
+      }
+
 ps_type_identifier /* IEEE1800-2017: A.9.3 */
  : TYPE_IDENTIFIER
       { pform_set_type_referenced(@1, $1.text);
@@ -1184,13 +1201,13 @@ ps_type_identifier /* IEEE1800-2017: A.9.3 */
 	$$ = new typeref_t($1.type);
 	FILE_NAME($$, @1);
       }
-  | PACKAGE_IDENTIFIER K_SCOPE_RES
+  | package_scope
       { lex_in_package_scope($1); }
     TYPE_IDENTIFIER
       { lex_in_package_scope(0);
-	$$ = new typeref_t($1, $4.type);
-	FILE_NAME($$, @4);
-	delete[]$4.text;
+	$$ = new typeref_t($1, $3.type);
+	FILE_NAME($$, @3);
+	delete[] $3.text;
       }
 
 /* Data types that can have packed dimensions directly attached to it */
@@ -1987,12 +2004,16 @@ package_import_declaration /* IEEE1800-2005 A.2.1.3 */
   ;
 
 package_import_item
-  : PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER
-      { pform_package_import(@2, $1, $3);
-	delete[]$3;
+  : package_scope IDENTIFIER
+      { if ($1) {
+	    pform_package_import(@1, $1, $2);
+	    delete[]$2;
+        }
       }
-  | PACKAGE_IDENTIFIER K_SCOPE_RES '*'
-      { pform_package_import(@2, $1, 0);
+  | package_scope '*'
+      { if ($1) {
+	    pform_package_import(@1, $1, 0);
+        }
       }
   ;
 
