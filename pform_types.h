@@ -353,9 +353,6 @@ struct real_type_t : public data_type_t {
 };
 
 struct string_type_t : public data_type_t {
-      inline explicit string_type_t() { }
-      ~string_type_t();
-
       ivl_type_t elaborate_type_raw(Design*des, NetScope*scope) const;
 };
 

@@ -29,10 +29,6 @@ PNamedItem::SymbolType data_type_t::symbol_type() const
       return TYPE;
 }
 
-string_type_t::~string_type_t()
-{
-}
-
 atom_type_t size_type (atom_type_t::INT, true);
 
 PNamedItem::SymbolType enum_type_t::symbol_type() const
