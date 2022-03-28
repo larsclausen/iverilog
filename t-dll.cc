@@ -537,6 +537,8 @@ void dll_target::make_scope_parameters(ivl_scope_t scop, const NetScope*net)
 	    make_scope_param_expr(cur_par, etmp);
 	    idx += 1;
       }
+
+      scop->param.resize(idx);
 }
 
 void dll_target::make_scope_param_expr(ivl_parameter_t cur_par, NetExpr*etmp)
