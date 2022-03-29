@@ -7100,6 +7100,7 @@ Design* elaborate(list<perm_string>roots)
 		  NetScope*scope = des->make_package_scope(unit->pscope_name(), 0, true);
 		  scope->set_line(unit);
 		  scope->add_imports(&unit->explicit_imports);
+		  scope->add_typedefs(&unit->typedefs);
 		  set_scope_timescale(des, scope, unit);
 
 		  elaborator_work_item_t*es = new elaborate_package_t(des, scope, unit);
@@ -7125,6 +7126,7 @@ Design* elaborate(list<perm_string>roots)
 	    NetScope*scope = des->make_package_scope(pack->pscope_name(), unit_scope, false);
 	    scope->set_line(pack);
 	    scope->add_imports(&pack->explicit_imports);
+	    scope->add_typedefs(&pack->typedefs);
 	    set_scope_timescale(des, scope, pack);
 
 	    elaborator_work_item_t*es = new elaborate_package_t(des, scope, pack);

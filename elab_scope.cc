@@ -748,8 +748,6 @@ bool PPackage::elaborate_scope(Design*des, NetScope*scope)
 		 << "Elaborate package " << scope_path(scope) << "." << endl;
       }
 
-      scope->add_typedefs(&typedefs);
-
       collect_scope_parameters(des, scope, parameters);
 
       if (debug_scopes) {
