@@ -1057,7 +1057,6 @@ class NetScope : public Definitions, public Attrib {
 
       void set_line(perm_string file, perm_string def_file,
                     unsigned lineno, unsigned def_lineno);
-      void set_line(perm_string file, unsigned lineno);
       void set_line(const LineInfo *info);
       perm_string get_file() const { return file_; };
       perm_string get_def_file() const { return def_file_; };

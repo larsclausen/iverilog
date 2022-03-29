@@ -192,14 +192,6 @@ void NetScope::set_line(const LineInfo*info)
       def_lineno_ = lineno_;
 }
 
-void NetScope::set_line(perm_string file, unsigned lineno)
-{
-      file_ = file;
-      def_file_ = file;
-      lineno_ = lineno;
-      def_lineno_ = lineno;
-}
-
 string NetScope::get_fileline() const
 {
       ostringstream buf;
