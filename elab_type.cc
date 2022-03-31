@@ -416,5 +416,38 @@ ivl_type_t typedef_t::elaborate_type(Design *des, NetScope *scope)
 	    return new netvector_t(IVL_VT_LOGIC);
       }
 
-      return data_type->elaborate_type(des, scope);
+      ivl_type_t elab_type = data_type->elaborate_type(des, scope);
+
+      bool type_ok = true;
+      switch (basic_type) {
+      case ENUM:
+	    type_ok = dynamic_cast<const netenum_t *>(elab_type);
+	    break;
+      case STRUCT: {
+	    const netstruct_t *struct_type = dynamic_cast<const netstruct_t *>(elab_type);
+	    type_ok = struct_type && !struct_type->union_flag();
+	    break;
+      }
+      case UNION: {
+	    const netstruct_t *struct_type = dynamic_cast<const netstruct_t *>(elab_type);
+	    type_ok = struct_type && struct_type->union_flag();
+	    break;
+      }
+      case CLASS:
+	    type_ok = dynamic_cast<const netclass_t *>(elab_type);
+	    break;
+      default:
+	    break;
+      }
+
+      if (!type_ok) {
+	    cerr << data_type->get_fileline() << " error: "
+	         << "Unexpected type `" << *elab_type << "` for `" << name
+		 << "`. It was forward declared as `" << basic_type
+		 << "` at " << get_fileline() << "."
+		 << endl;
+	    des->errors++;
+      }
+
+      return elab_type;
 }
