@@ -1379,43 +1379,13 @@ unsigned PECallFunction::test_width_method_(Design *des, NetScope*scope,
 	    return 0;
       }
 
-      // Queue variable with a select expression. The type of this expression
-      // is the type of the object that will interpret the method. For
-      // example:
-      //    <scope>.x[e].len()
-      // If for example x is a queue of strings, then x[e] is a string and
-      // x[e].len() is the length of the string.
-      if (t && t->base_type() == IVL_VT_STRING) {
-	    if (method_name=="atohex") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = integer_width;
-		  min_width_  = integer_width;
-		  signed_flag_ = true;
-		  return expr_width_;
-	    }
-
-	    if (method_name=="atoi") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = integer_width;
-		  min_width_  = integer_width;
-		  return expr_width_;
-	    }
-
-	    if (method_name=="len") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = 32;
-		  min_width_  = 32;
-		  signed_flag_= true;
-		  return expr_width_;
-	    }
-      }
-
       if (const netcallable_t *callable = dynamic_cast<const netcallable_t *>(t)) {
 	    ivl_type_t mt = callable->method_get_type(des, scope, method_name);
 	    expr_type_ = mt->base_type();
 	    expr_width_ = mt->packed_width();
 	    min_width_ = expr_width();
 	    signed_flag_ = mt->get_signed();
+	    return expr_width_;
       }
 
       if (debug_elaborate) {
@@ -2769,67 +2739,6 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 		  m->set_line(*this);
 		  return m;
 	    }
-      }
-
-      // String methods.
-      if (sub_expr->expr_type()==IVL_VT_STRING) {
-
-	    // Get the method name that we are looking for.
-	    perm_string method_name = search_results.path_tail.back().name;
-
-	    if (method_name == "len") {
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_string_method$len",
-						     &netvector_t::atom2u32, 1);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    if (method_name == "atoi") {
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_string_method$atoi",
-						     netvector_t::integer_type(), 1);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    if (method_name == "atoreal") {
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_string_method$atoreal",
-						     &netreal_t::type_real, 1);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    if (method_name == "atohex") {
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_string_method$atohex",
-						     netvector_t::integer_type(), 1);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    if (method_name == "substr") {
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_string_method$substr",
-						     &netstring_t::type_string, 3);
-		  sys_expr->set_line(*this);
-
-		    // First argument is the source string.
-		  sys_expr->parm(0, sub_expr);
-
-		  ivl_assert(*this, parms_.size() == 2);
-		  NetExpr*tmp;
-
-		  tmp = elaborate_rval_expr(des, scope, &netvector_t::atom2u32,
-					    parms_[0], false);
-		  sys_expr->parm(1, tmp);
-
-		  tmp = elaborate_rval_expr(des, scope, &netvector_t::atom2u32,
-					    parms_[1], false);
-		  sys_expr->parm(2, tmp);
-
-		  return sys_expr;
-	    }
-
-	    cerr << get_fileline() << ": error: Method " << method_name
-		 << " is not a string method." << endl;
-	    return 0;
       }
 
       return 0;
