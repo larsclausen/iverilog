@@ -1418,39 +1418,6 @@ unsigned PECallFunction::test_width_method_(Design *des, NetScope*scope,
 	    signed_flag_ = mt->get_signed();
       }
 
-      // Class variables. In this case, the search found the class instance,
-      // and the scope is the scope where the instance lives. The class method
-      // in turn defines it's own scope. Use that to find the return value.
-      if (const netclass_t*class_type= dynamic_cast<const netclass_t *>(t)) {
-	    NetScope*method = class_type->method_from_name(method_name);
-
-	    if (method == 0) {
-		  return 0;
-	    }
-
-	    if (debug_elaborate) {
-		  cerr << get_fileline() << ": PECallFunction::test_width_method_: "
-		       << "Found method " << scope_path(method) << "(...)" << endl;
-	    }
-
-	    // Get the return value of the method function.
-	    if (NetNet*res = method->find_signal(method->basename())) {
-		  expr_type_   = res->data_type();
-		  expr_width_  = res->vector_width();
-		  min_width_   = expr_width_;
-		  signed_flag_ = res->get_signed();
-
-		  if (debug_elaborate) {
-			cerr << get_fileline() << ": PECallFunction::test_width_method_: "
-			     << "test_width of class method returns width " << expr_width_
-			     << ", type=" << expr_type_
-			     << "." << endl;
-		  }
-		  return expr_width_;
-	    }
-	    return 0;
-      }
-
       if (debug_elaborate) {
 	    cerr << get_fileline() << ": PECallFunction::test_width_method_: "
 		 << "I give up." << endl;
@@ -2802,46 +2769,6 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 		  m->set_line(*this);
 		  return m;
 	    }
-      }
-
-      // Class methods. Generate function call to the class method.
-      if (sub_expr->expr_type()==IVL_VT_CLASS) {
-
-	    // Get the method name that we are looking for.
-	    perm_string method_name = search_results.path_tail.back().name;
-
-	    NetNet*net = search_results.net;
-	    const netclass_t*class_type = net->class_type();
-	    ivl_assert(*this, class_type);
-	    NetScope*method = class_type->method_from_name(method_name);
-
-	    if (method == 0) {
-		  cerr << get_fileline() << ": Error: " << method_name
-		       << " is not a method of class " << class_type->get_name()
-		       << "." << endl;
-		  des->errors += 1;
-		  return 0;
-	    }
-
-	    NetFuncDef*def = method->func_def();
-	    ivl_assert(*this, def);
-
-	    NetNet*res = method->find_signal(method->basename());
-	    ivl_assert(*this, res);
-
-	    vector<NetExpr*>parms;
-
-	    NetESignal*ethis = new NetESignal(net);
-	    ethis->set_line(*this);
-	    parms.push_back(ethis);
-
-	    parms.resize(1 + parms_.size());
-	    elaborate_arguments_(des, scope, def, false, parms, 1);
-
-	    NetESignal*eres = new NetESignal(res);
-	    NetEUFunc*call = new NetEUFunc(scope, method, eres, parms, false);
-	    call->set_line(*this);
-	    return call;
       }
 
       // String methods.

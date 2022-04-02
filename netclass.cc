@@ -195,3 +195,74 @@ const NetExpr* netclass_t::get_parameter(Design *des, perm_string name,
 {
       return class_scope_->get_parameter(des, name, par_type);
 }
+
+ivl_type_t netclass_t::method_get_type(Design*, NetScope*,
+				      const perm_string &method_name) const
+{
+
+      NetScope*method = method_from_name(method_name);
+
+      if (!method)
+	    return 0;
+
+      if (debug_elaborate) {
+	    cerr << get_fileline() << ": PECallFunction::test_width_method_: "
+		 << "Found method " << scope_path(method) << "(...)" << endl;
+      }
+
+      // Get the return value of the method function.
+      if (NetNet*res = method->find_signal(method->basename())) {
+	    expr_type_   = res->data_type();
+	    expr_width_  = res->vector_width();
+	    min_width_   = expr_width_;
+	    signed_flag_ = res->get_signed();
+
+	    if (debug_elaborate) {
+		  cerr << get_fileline() << ": PECallFunction::test_width_method_: "
+		       << "test_width of class method returns width " << expr_width_
+		       << ", type=" << expr_type_
+		       << "." << endl;
+	    }
+	    return expr_width_;
+      }
+
+      return 0;
+}
+
+NetExpr* netclass_t::method_elaborate(const LineInfo *li, Design *des,
+				       NetScope *scope, const pform_name_t &use_path,
+				       const perm_string &method_name,
+				       NetExpr*expr, unsigned rtn_wid,
+				       const std::vector<PExpr*> &args) const
+{
+      NetScope*method = method_from_name(method_name);
+
+      if (!method == 0) {
+	    cerr << li << ": error: " << method_name
+		 << " is not a method of class `" << get_name()
+		 << "`." << endl;
+	    des->errors += 1;
+	    return 0;
+      }
+
+      NetFuncDef*def = method->func_def();
+      ivl_assert(*this, def);
+
+      NetNet*res = method->find_signal(method->basename());
+      ivl_assert(*this, res);
+
+      vector<NetExpr*>parms;
+
+      NetESignal*ethis = new NetESignal(net);
+      ethis->set_line(*this);
+      parms.push_back(ethis);
+
+      parms.resize(1 + parms_.size());
+      elaborate_arguments_(des, scope, def, false, parms, 1);
+
+      NetESignal*eres = new NetESignal(res);
+      NetEUFunc*call = new NetEUFunc(scope, method, eres, parms, false);
+      call->set_line(*this);
+
+      return call;
+}
