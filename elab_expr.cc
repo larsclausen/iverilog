@@ -1367,37 +1367,6 @@ unsigned PECallFunction::test_width_method_(Design*, NetScope*,
 	    return 0;
       }
 
-      // Queue variable without a select expression. The method applies to the
-      // queue, and not to the object that might be indexed from it. So return
-      // the expr_width for the return value of the queue method. For example:
-      //    <scope>.x.size();
-      // In this example, x is a queue.
-      if (search_results.net && search_results.net->data_type()==IVL_VT_QUEUE
-	  && search_results.path_head.back().index.empty()) {
-
-	    NetNet*net = search_results.net;
-	    const netdarray_t*darray = net->darray_type();
-	    ivl_assert(*this, darray);
-
-	    if (method_name == "size") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = 32;
-		  min_width_  = expr_width_;
-		  signed_flag_= true;
-		  return expr_width_;
-	    }
-
-	    if (method_name=="pop_back" || method_name=="pop_front") {
-		  expr_type_  = darray->element_base_type();
-		  expr_width_ = darray->element_width();
-		  min_width_  = expr_width_;
-		  signed_flag_= darray->get_signed();
-		  return expr_width_;
-	    }
-
-	    return 0;
-      }
-
       // Queue variable with a select expression. The type of this expression
       // is the type of the object that will interpret the method. For
       // example:
@@ -2876,60 +2845,6 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 		 << " is not a dynamic array method." << endl;
 	    return 0;
       }
-
-      // Queue methods. This handles the case that the located signal is a
-      // QUEUE object, and there is a method.
-      if (search_results.net && search_results.net->data_type()==IVL_VT_QUEUE
-	  && search_results.path_head.back().index.size()==0) {
-
-	    // Get the method name that we are looking for.
-	    perm_string method_name = search_results.path_tail.back().name;
-	    if (method_name == "size") {
-		  if (parms_.size() != 0) {
-			cerr << get_fileline() << ": error: size() method "
-			     << "takes no arguments" << endl;
-			des->errors += 1;
-		  }
-		  NetESFunc*sys_expr = new NetESFunc("$size", &netvector_t::atom2u32, 1);
-		  sys_expr->set_line(*this);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    const netqueue_t*queue = search_results.net->queue_type();
-	    ivl_type_t element_type = queue->element_type();
-	    if (method_name == "pop_back") {
-		  if (parms_.size() != 0) {
-			cerr << get_fileline() << ": error: pop_back() method "
-			     << "takes no arguments" << endl;
-			des->errors += 1;
-		  }
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_queue_method$pop_back",
-						     element_type, 1);
-		  sys_expr->set_line(*this);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    if (method_name == "pop_front") {
-		  if (parms_.size() != 0) {
-			cerr << get_fileline() << ": error: pop_front() method "
-			     << "takes no arguments" << endl;
-			des->errors += 1;
-		  }
-		  NetESFunc*sys_expr = new NetESFunc("$ivl_queue_method$pop_front",
-						     element_type, 1);
-		  sys_expr->set_line(*this);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    cerr << get_fileline() << ": error: Method " << method_name
-		 << " is not a queue method." << endl;
-	    des->errors += 1;
-	    return 0;
-      }
-
 
       NetNet*net = search_results.net;
       if (net && net->callable()) {
@@ -4563,45 +4478,6 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 			        "implemented." << endl;
 			des->errors += 1;
 			return 0;
-		  }
-	    }
-
-	      // If this is a queue object, and there are members in
-	      // the sr.path_tail, check for array properties.
-	    if (sr.net->queue_type() && !sr.path_tail.empty()) {
-                  if (debug_elaborate) {
-                        cerr << get_fileline() << ": PEIdent::elaborate_expr: "
-                             << "Ident " << sr.path_head
-                             << " looking for queue property " << sr.path_tail
-                             << endl;
-                  }
-
-		  ivl_assert(*this, sr.path_tail.size() == 1);
-		  const name_component_t member_comp = sr.path_tail.front();
-		  const netqueue_t*queue = sr.net->queue_type();
-		  ivl_type_t element_type = queue->element_type();
-		  if (member_comp.name == "pop_back") {
-			NetESFunc*fun = new NetESFunc("$ivl_queue_method$pop_back",
-			                              element_type, 1);
-			fun->set_line(*this);
-
-			NetESignal*arg = new NetESignal(sr.net);
-			arg->set_line(*sr.net);
-
-			fun->parm(0, arg);
-			return fun;
-		  }
-
-		  if (member_comp.name == "pop_front") {
-			NetESFunc*fun = new NetESFunc("$ivl_queue_method$pop_front",
-			                              element_type, 1);
-			fun->set_line(*this);
-
-			NetESignal*arg = new NetESignal(sr.net);
-			arg->set_line(*sr.net);
-
-			fun->parm(0, arg);
-			return fun;
 		  }
 	    }
 

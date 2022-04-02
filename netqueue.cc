@@ -18,6 +18,8 @@
  */
 
 # include  "netqueue.h"
+# include  "netvector.h"
+# include  "netlist.h"
 # include  <iostream>
 
 using namespace std;
@@ -50,4 +52,64 @@ bool netqueue_t::test_compatibility(ivl_type_t that) const
 	    return false;
 
       return element_type()->type_compatible(elem_type);
+}
+
+ivl_type_t netqueue_t::method_get_type(Design*, NetScope*,
+				       const perm_string &method_name) const
+{
+      if (method_name == "size") {
+	    return &netvector_t::atom2s32;
+      } else if (method_name=="pop_back" || method_name=="pop_front") {
+	    return element_type();
+      }
+
+      return 0;
+}
+
+NetExpr* netqueue_t::method_elaborate(const LineInfo *li, Design *des,
+				      NetScope *scope,
+				      const pform_name_t &use_path,
+				      const perm_string &method_name,
+				      NetExpr *expr, unsigned rtn_wid,
+				      const std::vector<PExpr*> &args) const
+{
+      if (method_name == "size") {
+	    if (args.size() != 0) {
+		  cerr << li->get_fileline() << ": error: size() method "
+		       << "takes no arguments" << endl;
+		  des->errors++;
+	    }
+	    NetESFunc*sys_expr = new NetESFunc("$size", &netvector_t::atom2s32, 1);
+	    sys_expr->parm(0, expr);
+	    return sys_expr;
+      }
+
+      if (method_name == "pop_back") {
+	    if (args.size() != 0) {
+		  cerr << li->get_fileline() << ": error: pop_back() method "
+		       << "takes no arguments" << endl;
+		  des->errors++;
+	    }
+	    NetESFunc*sys_expr = new NetESFunc("$ivl_queue_method$pop_back",
+					       element_type(), 1);
+	    sys_expr->parm(0, expr);
+	    return sys_expr;
+      }
+
+      if (method_name == "pop_front") {
+	    if (args.size() != 0) {
+		  cerr << li->get_fileline() << ": error: pop_front() method "
+		       << "takes no arguments" << endl;
+		  des->errors++;
+	    }
+	    NetESFunc*sys_expr = new NetESFunc("$ivl_queue_method$pop_front",
+					       element_type(), 1);
+	    sys_expr->parm(0, expr);
+	    return sys_expr;
+      }
+
+      cerr << li->get_fileline() << ": error: Method " << method_name
+	   << " is not a queue method." << endl;
+      des->errors++;
+      return 0;
 }

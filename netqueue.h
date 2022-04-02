@@ -20,6 +20,7 @@
  */
 
 # include  "netdarray.h"
+# include  "callable.h"
 # include  "ivl_target.h"
 
 /*
@@ -47,6 +48,14 @@ class netqueue_t : public netdarray_t {
       long max_idx(void) const { return max_idx_; }
 
       std::ostream& debug_dump(std::ostream&) const;
+
+      ivl_type_t method_get_type(Design *des, NetScope *scope,
+			         const perm_string &method_name) const;
+      NetExpr* method_elaborate(const LineInfo *li, Design *des,
+			        NetScope *scope, const pform_name_t &use_path,
+                                const perm_string &method_name,
+                                NetExpr*expr, unsigned rtn_wid,
+				const std::vector<PExpr*> &args) const;
 
     private:
       bool test_compatibility(ivl_type_t that) const;
