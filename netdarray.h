@@ -20,9 +20,10 @@
  */
 
 # include  "nettypes.h"
+# include  "callable.h"
 # include  "ivl_target.h"
 
-class netdarray_t : public netarray_t {
+class netdarray_t : public netarray_t, public netcallable_t {
 
     public:
       explicit netdarray_t(ivl_type_t vec);
@@ -46,6 +47,16 @@ class netdarray_t : public netarray_t {
       inline unsigned long element_width(void) const { return element_type()->packed_width(); }
 
       std::ostream& debug_dump(std::ostream&) const;
+
+      ivl_type_t method_get_type(Design*des, NetScope*scope,
+				 const perm_string &method_name) const;
+      NetExpr* method_elaborate(const LineInfo*li,
+                                Design*des, NetScope*scope,
+                                const pform_name_t&use_path,
+                                const perm_string &method_name,
+                                NetExpr*expr,
+                                unsigned rtn_wid,
+				const std::vector<PExpr*> &args) const;
 
     private:
       bool test_compatibility(ivl_type_t that) const;

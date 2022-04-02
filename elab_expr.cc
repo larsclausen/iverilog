@@ -1343,30 +1343,6 @@ unsigned PECallFunction::test_width_method_(Design*, NetScope*,
       ivl_assert(*this, search_results.path_tail.size() == 1);
       perm_string method_name = search_results.path_tail.back().name;
 
-      // Dynamic array variable without a select expression. The method
-      // applies to the array itself, and not to the object that might be
-      // indexed from it. So return
-      // the expr_width for the return value of the queue method. For example:
-      //    <scope>.x.size();
-      // In this example, x is a dynamic array.
-      if (search_results.net && search_results.net->data_type()==IVL_VT_DARRAY
-	  && search_results.path_head.back().index.empty()) {
-
-	    NetNet*net = search_results.net;
-	    const netdarray_t*darray = net->darray_type();
-	    ivl_assert(*this, darray);
-
-	    if (method_name == "size") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = 32;
-		  min_width_  = expr_width_;
-		  signed_flag_= true;
-		  return expr_width_;
-	    }
-
-	    return 0;
-      }
-
       // Queue variable with a select expression. The type of this expression
       // is the type of the object that will interpret the method. For
       // example:
@@ -2821,31 +2797,6 @@ NetExpr* PECallFunction::elaborate_expr_method_(Design*des, NetScope*scope,
 
       ivl_assert(*this, sub_expr);
 
-      // Dynamic array methods. This handles the case that the located signal
-      // is a dynamic array, and there is no index.
-      if (search_results.net && search_results.net->data_type()==IVL_VT_DARRAY
-	  && search_results.path_head.back().index.size()==0) {
-
-	    // Get the method name that we are looking for.
-	    perm_string method_name = search_results.path_tail.back().name;
-
-	    if (method_name == "size") {
-		  if (parms_.size() != 0) {
-			cerr << get_fileline() << ": error: size() method "
-			     << "takes no arguments" << endl;
-			des->errors += 1;
-		  }
-		  NetESFunc*sys_expr = new NetESFunc("$size", &netvector_t::atom2u32, 1);
-		  sys_expr->set_line(*this);
-		  sys_expr->parm(0, sub_expr);
-		  return sys_expr;
-	    }
-
-	    cerr << get_fileline() << ": error: Method " << method_name
-		 << " is not a dynamic array method." << endl;
-	    return 0;
-      }
-
       NetNet*net = search_results.net;
       if (net && net->callable()) {
 	    const netcallable_t *callable = net->callable();
@@ -3668,26 +3619,6 @@ unsigned PEIdent::test_width_method_(Design*des, NetScope*scope, width_mode_t&)
 	    return 0;
       }
 
-      if (/*const netdarray_t*dtype =*/ net->darray_type()) {
-	    if (member_name == "size") {
-		  expr_type_  = IVL_VT_BOOL;
-		  expr_width_ = 32;
-		  min_width_  = 32;
-		  signed_flag_= true;
-		  return 32;
-	    }
-      }
-
-      if (const struct netqueue_t *queue = net->queue_type()) {
-	    if (member_name == "pop_back" || member_name == "pop_front") {
-		  expr_type_ = queue->element_base_type();
-		  expr_width_ = queue->element_width();
-		  min_width_ = expr_width_;
-		  signed_flag_ = queue->get_signed();
-		  return expr_width_;
-	    }
-      }
-
       if (const netcallable_t *callable = net->callable()) {
 	    ivl_type_t t = callable->method_get_type(des, scope, member_name);
 	    expr_type_ = t->base_type();
@@ -4361,124 +4292,6 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 		  return check_for_struct_members(this, des, use_scope, sr.net,
 						  sr.path_head.back().index,
 						  sr.path_tail);
-	    }
-
-	      // If this is an array object, and there are members in
-	      // the sr.path_tail, check for array properties.
-	    if (sr.net->darray_type() && !sr.path_tail.empty()) {
-                  if (debug_elaborate) {
-			cerr << get_fileline() << ": PEIdent::elaborate_expr: "
-			        "Ident " << sr.path_head
-			     << " looking for array property " << sr.path_tail
-			     << endl;
-                  }
-
-		  ivl_assert(*this, sr.path_tail.size() == 1);
-		  const name_component_t member_comp = sr.path_tail.front();
-		  if (member_comp.name == "size") {
-			NetESFunc*fun = new NetESFunc("$size",
-						      &netvector_t::atom2s32,
-						      1);
-			fun->set_line(*this);
-
-			NetESignal*arg = new NetESignal(sr.net);
-			arg->set_line(*sr.net);
-
-			fun->parm(0, arg);
-			return fun;
-		  } else if (member_comp.name == "find") {
-			cerr << get_fileline() << ": sorry: 'find()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "find_index") {
-			cerr << get_fileline() << ": sorry: 'find_index()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "find_first") {
-			cerr << get_fileline() << ": sorry: 'find_first()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "find_first_index") {
-			cerr << get_fileline() << ": sorry: 'find_first_index()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "find_last") {
-			cerr << get_fileline() << ": sorry: 'find_last()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "find_last_index") {
-			cerr << get_fileline() << ": sorry: 'find_last_index()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "min") {
-			cerr << get_fileline() << ": sorry: 'min()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "max") {
-			cerr << get_fileline() << ": sorry: 'max()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "unique") {
-			cerr << get_fileline() << ": sorry: 'unique()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "unique_index") {
-			cerr << get_fileline() << ": sorry: 'unique_index()' "
-			        "array location method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-// FIXME: Check this is a real or integral type.
-		  } else if (member_comp.name == "sum") {
-			cerr << get_fileline() << ": sorry: 'sum()' "
-			        "array reduction method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "product") {
-			cerr << get_fileline() << ": sorry: 'product()' "
-			        "array reduction method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-// FIXME: Check this is only an integral type.
-		  } else if (member_comp.name == "and") {
-			cerr << get_fileline() << ": sorry: 'and()' "
-			        "array reduction method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "or") {
-			cerr << get_fileline() << ": sorry: 'or()' "
-			        "array reduction method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  } else if (member_comp.name == "xor") {
-			cerr << get_fileline() << ": sorry: 'xor()' "
-			        "array reduction method is not currently "
-			        "implemented." << endl;
-			des->errors += 1;
-			return 0;
-		  }
 	    }
 
 	    if ((sr.net->data_type() == IVL_VT_STRING) && !sr.path_tail.empty()) {
