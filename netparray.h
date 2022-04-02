@@ -68,6 +68,8 @@ class netparray_t : public netsarray_t {
       long packed_width(void) const;
       std::vector<netrange_t> slice_dimensions() const;
 
+      std::ostream& debug_dump(std::ostream&) const;
+
 };
 
 inline netparray_t::netparray_t(const std::vector<netrange_t>&pd,
@@ -85,6 +87,8 @@ class netuarray_t : public netsarray_t {
       explicit netuarray_t(const std::vector<netrange_t>&packed,
 			   ivl_type_t etype);
       ~netuarray_t();
+
+      std::ostream& debug_dump(std::ostream&) const;
 
     public:
 	// Virtual methods from the ivl_type_s type...

@@ -30,6 +30,7 @@
 # include  "discipline.h"
 # include  "netclass.h"
 # include  "netdarray.h"
+# include  "netparray.h"
 # include  "netqueue.h"
 # include  "netscalar.h"
 # include  "netvector.h"
@@ -256,6 +257,20 @@ ostream& netvector_t::debug_dump(ostream&o) const
 {
       o << "netvector_t:" << type_ << (signed_? " signed" : " unsigned") << packed_dims_;
       return o;
+}
+
+ostream& netuarray_t::debug_dump(ostream&fd) const
+{
+      fd << "unpacked array " << static_dimensions() << " of ";
+      fd << *element_type();
+      return fd;
+}
+
+ostream& netparray_t::debug_dump(ostream&fd) const
+{
+      fd << "packed array " << static_dimensions() << " of ";
+      fd << *element_type();
+      return fd;
 }
 
 static inline void dump_scope_path(ostream&o, const NetScope*scope)
