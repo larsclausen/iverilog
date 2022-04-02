@@ -1510,11 +1510,14 @@ void collapse_partselect_pv_to_concat(Design*des, NetNet*sig)
  */
 bool evaluate_index_prefix(Design*des, NetScope*scope,
 			   list<long>&prefix_indices,
-			   const list<index_component_t>&indices)
+			   const list<index_component_t>&indices,
+			   unsigned long start)
 {
       list<index_component_t>::const_iterator icur = indices.begin();
       for (size_t idx = 0 ; (idx+1) < indices.size() ; idx += 1, ++icur) {
 	    assert(icur != indices.end());
+		while (idx < start)
+			continue;
 	    if (icur->sel != index_component_t::SEL_BIT) {
 		  cerr << icur->msb->get_fileline() << ": error: "
 			"All but the final index in a chain of indices must be "

@@ -218,7 +218,6 @@ NetExpr* netenum_t::method_elaborate(const LineInfo*li,
 		  des->errors += 1;
 	    }
 	    NetEConst*tmp = make_const_val(size());
-	    tmp->set_line(*li);
 	    delete expr; // The elaborated enum variable is not needed.
 	    return tmp;
       }
@@ -234,9 +233,7 @@ NetExpr* netenum_t::method_elaborate(const LineInfo*li,
 		  des->errors += 1;
 	    }
 	    iterator item = first_name();
-	    NetEConstEnum*tmp = new NetEConstEnum(scope, item->first,
-	                                          this, item->second);
-	    tmp->set_line(*li);
+	    NetEConstEnum*tmp = new NetEConstEnum(item->first, this, item->second);
 	    delete expr; // The elaborated enum variable is not needed.
 	    return tmp;
       }
@@ -252,9 +249,7 @@ NetExpr* netenum_t::method_elaborate(const LineInfo*li,
 		  des->errors += 1;
 	    }
 	    iterator item = last_name();
-	    NetEConstEnum*tmp = new NetEConstEnum(scope, item->first,
-	                                          this, item->second);
-	    tmp->set_line(*li);
+	    NetEConstEnum*tmp = new NetEConstEnum(item->first, this, item->second);
 	    delete expr; // The elaborated enum variable is not needed.
 	    return tmp;
       }
@@ -265,7 +260,7 @@ NetExpr* netenum_t::method_elaborate(const LineInfo*li,
       NetExpr* count = 0;
       if (args.size() != 0) {
 	    count = elaborate_rval_expr(des, scope, &netvector_t::atom2u32,
-					IVL_VT_BOOL, 32, args[0]);
+					args[0]);
 	    if (count == 0) {
 		  cerr << li->get_fileline() << ": error: unable to elaborate "
 		          "enumeration method argument " << use_path << "."

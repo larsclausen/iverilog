@@ -489,7 +489,8 @@ extern void collapse_partselect_pv_to_concat(Design*des, NetNet*sig);
 
 extern bool evaluate_index_prefix(Design*des, NetScope*scope,
 				  std::list<long>&prefix_indices,
-				  const std::list<index_component_t>&indices);
+				  const std::list<index_component_t>&indices,
+				  unsigned long start = 0);
 
 extern NetExpr*collapse_array_indices(Design*des, NetScope*scope, NetNet*net,
 				      const std::list<index_component_t>&indices);
@@ -509,5 +510,9 @@ extern NetPartSelect* detect_partselect_lval(Link&pin);
  * based delays in the design, since this is likely an error.
  */
 extern void check_for_inconsistent_delays(NetScope*scope);
+
+ivl_type_t path_resolve_type(const LineInfo &li, Design *des, NetScope *scope,
+	const ivl_type_t type, pform_name_t &path,
+	NetExpr *&base);
 
 #endif /* IVL_netmisc_H */

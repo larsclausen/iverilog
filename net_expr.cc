@@ -72,7 +72,7 @@ ivl_variable_type_t NetExpr::expr_type() const
 
 const netenum_t*NetExpr::enumeration() const
 {
-      return 0;
+      return dynamic_cast<const netenum_t*>(net_type_);
 }
 
 NetEArrayPattern::NetEArrayPattern(ivl_type_t lv_type, vector<NetExpr*>&items)
@@ -278,6 +278,8 @@ const netenum_t*NetEConstEnum::enumeration() const
       return enum_set_;
 }
 
+
+
 NetECReal::NetECReal(const verireal&val)
 : value_(val)
 {
@@ -419,14 +421,14 @@ ivl_variable_type_t NetEProperty::expr_type() const
 
 NetESelect::NetESelect(NetExpr*exp, NetExpr*base, unsigned wid,
                        ivl_select_type_t sel_type)
-: expr_(exp), base_(base), use_type_(0), sel_type_(sel_type)
+: expr_(exp), base_(base), sel_type_(sel_type)
 {
       expr_width(wid);
 }
 
 NetESelect::NetESelect(NetExpr*exp, NetExpr*base, unsigned wid,
                        ivl_type_t use_type)
-: expr_(exp), base_(base), use_type_(use_type), sel_type_(IVL_SEL_OTHER)
+: NetExpr(use_type), expr_(exp), base_(base), sel_type_(IVL_SEL_OTHER)
 {
       expr_width(wid);
 }
@@ -454,8 +456,8 @@ ivl_select_type_t NetESelect::select_type() const
 
 ivl_variable_type_t NetESelect::expr_type() const
 {
-      if (use_type_)
-	    return use_type_->base_type();
+      if (net_type())
+	    return net_type()->base_type();
 
       ivl_variable_type_t type = expr_->expr_type();
 
@@ -466,11 +468,6 @@ ivl_variable_type_t NetESelect::expr_type() const
 	    return IVL_VT_BOOL;
 
       return type;
-}
-
-const netenum_t* NetESelect::enumeration() const
-{
-      return dynamic_cast<const netenum_t*> (use_type_);
 }
 
 bool NetESelect::has_width() const
@@ -537,11 +534,6 @@ NetExpr* NetESFunc::parm(unsigned idx)
 ivl_variable_type_t NetESFunc::expr_type() const
 {
       return type_;
-}
-
-const netenum_t* NetESFunc::enumeration() const
-{
-      return enum_type_;
 }
 
 NetEShallowCopy::NetEShallowCopy(NetExpr*arg1, NetExpr*arg2)

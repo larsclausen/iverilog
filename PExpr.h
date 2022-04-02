@@ -480,32 +480,36 @@ class PEIdent : public PExpr {
       NetExpr*elaborate_expr_net_word_(Design*des,
 				       NetScope*scope,
 				       NetNet*net,
-				       NetScope*found,
 				       unsigned expr_wid,
 				       unsigned flags) const;
       NetExpr*elaborate_expr_net_part_(Design*des,
 				       NetScope*scope,
-				       NetESignal*net,
+				       NetExpr*net,
+					   NetNet*sig,
 				       NetScope*found,
 				       unsigned expr_wid) const;
       NetExpr*elaborate_expr_net_idx_up_(Design*des,
 				         NetScope*scope,
-				         NetESignal*net,
+				         NetExpr*net,
+						 NetNet*sig,
 				         NetScope*found,
                                          bool need_const) const;
       NetExpr*elaborate_expr_net_idx_do_(Design*des,
 				         NetScope*scope,
-				         NetESignal*net,
+				         NetExpr*net,
+						 NetNet*sig,
 				         NetScope*found,
                                          bool need_const) const;
       NetExpr*elaborate_expr_net_bit_(Design*des,
 				      NetScope*scope,
-				      NetESignal*net,
+				      NetExpr*net,
+					  NetNet*sig,
 				      NetScope*found,
                                       bool need_const) const;
       NetExpr*elaborate_expr_net_bit_last_(Design*des,
 					   NetScope*scope,
-					   NetESignal*net,
+					   NetExpr*net,
+					  NetNet*sig,
 					   NetScope*found,
 					   bool need_const) const;
 
