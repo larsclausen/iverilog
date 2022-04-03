@@ -2108,6 +2108,7 @@ class NetEArrayPattern  : public NetExpr {
 class NetEConst  : public NetExpr {
 
     public:
+      explicit NetEConst(ivl_type_t type, const verinum&val);
       explicit NetEConst(const verinum&val);
       ~NetEConst();
 
@@ -2145,7 +2146,6 @@ class NetEConstEnum  : public NetEConst {
       ~NetEConstEnum();
 
       perm_string name() const;
-      const netenum_t*enumeration() const;
 
       virtual void expr_scan(struct expr_scan_t*) const;
       virtual void dump(std::ostream&) const;
@@ -2153,7 +2153,6 @@ class NetEConstEnum  : public NetEConst {
       virtual NetEConstEnum* dup_expr() const;
 
     private:
-      const netenum_t*enum_set_;
       perm_string name_;
 };
 
