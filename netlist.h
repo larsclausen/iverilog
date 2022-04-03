@@ -2068,6 +2068,7 @@ class NetExpr  : public LineInfo {
     protected:
       void expr_width(unsigned wid) { width_ = wid; }
       void cast_signed_base_(bool flag) { signed_flag_ = flag; }
+      void set_net_type(ivl_type_t type) { net_type_ = type; }
 
     private:
       ivl_type_t net_type_;
@@ -4575,7 +4576,6 @@ class NetEProperty : public NetExpr {
       inline const NetExpr*get_index() const { return index_; }
 
     public: // Overridden methods
-      ivl_variable_type_t expr_type() const;
       virtual void expr_scan(struct expr_scan_t*) const;
       virtual NetEProperty* dup_expr() const;
       virtual NexusSet* nex_input(bool rem_out = true, bool always_sens = false,

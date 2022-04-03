@@ -392,19 +392,11 @@ NetEProperty::NetEProperty(NetNet*net, perm_string pnam, NetExpr*idx)
       ivl_type_t prop_type = use_type->get_prop_type(pidx_);
       expr_width(prop_type->packed_width());
       cast_signed(prop_type->get_signed());
+	  set_net_type(prop_type);
 }
 
 NetEProperty::~NetEProperty()
 {
-}
-
-ivl_variable_type_t NetEProperty::expr_type() const
-{
-      const netclass_t*use_type = dynamic_cast<const netclass_t*>(net_->net_type());
-      assert(use_type);
-
-      ivl_type_t prop_type = use_type->get_prop_type(pidx_);
-      return prop_type->base_type();
 }
 
 NetESelect::NetESelect(NetExpr*exp, NetExpr*base, unsigned wid,
