@@ -2850,10 +2850,6 @@ class NetAssign_ {
 	// example a darray is indexed.
       const ivl_type_s* net_type() const;
 
-	// Return the enumeration type of this l-value, or nil if it's
-	// not an enumeration.
-      const netenum_t*enumeration() const;
-
 	// Get the name of the underlying object.
       perm_string name() const;
 
