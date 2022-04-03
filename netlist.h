@@ -4638,9 +4638,8 @@ class NetEScope  : public NetExpr {
 class NetESFunc  : public NetExpr {
 
     public:
-      NetESFunc(const char*name, ivl_variable_type_t t,
-		unsigned width, unsigned nprms, bool is_overridden =false);
-      NetESFunc(const char*name, ivl_type_t rtype, unsigned nprms);
+      NetESFunc(const char*name, ivl_type_t rtype, unsigned nprms,
+	        bool is_overridden = false);
       ~NetESFunc();
 
       const char* name() const;

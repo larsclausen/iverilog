@@ -235,7 +235,7 @@ NetESelect* NetESelect::dup_expr() const
 
 NetESFunc* NetESFunc::dup_expr() const
 {
-      NetESFunc*tmp = new NetESFunc(name_, type_, expr_width(), nparms(), is_overridden_);
+      NetESFunc*tmp = new NetESFunc(name_, net_type(), nparms(), is_overridden_);
       ivl_assert(*this, tmp);
 
       tmp->cast_signed(has_sign());

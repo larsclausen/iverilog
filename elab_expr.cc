@@ -1269,10 +1269,10 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
 	   in the sfunc_table. */
       const struct sfunc_return_type*sfunc_info = lookup_sys_func(name);
 
-      expr_type_   = sfunc_info->type;
-      expr_width_  = sfunc_info->wid;
+      expr_type_   = sfunc_info->type->base_type();
+      expr_width_  = sfunc_info->type->packed_width();
       min_width_   = expr_width_;
-      signed_flag_ = sfunc_info->signed_flag;
+      signed_flag_ = sfunc_info->type->get_signed();
 
       is_overridden_ = sfunc_info->override_flag;
 
@@ -1810,7 +1810,8 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
       if ((nparms == 1) && (parms_[0] == 0))
 	    nparms = 0;
 
-      NetESFunc*fun = new NetESFunc(name, expr_type_, expr_width_, nparms, is_overridden_);
+      const struct sfunc_return_type*sfunc_info = lookup_sys_func(name);
+      NetESFunc*fun = new NetESFunc(name, sfunc_info->type, nparms, is_overridden_);
       fun->set_line(*this);
 
       bool need_const = NEED_CONST & flags;

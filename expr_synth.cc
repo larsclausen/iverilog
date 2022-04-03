@@ -1415,7 +1415,7 @@ NetNet* NetESFunc::synthesize(Design*des, NetScope*scope, NetExpr*root)
 
       if (debug_elaborate) {
 	    cerr << get_fileline() << ": debug: Net system function "
-		 << name_ << " returns " << def->type << endl;
+		 << name_ << " returns " << *def->type << endl;
       }
 
       NetEvWait*trigger = 0;
@@ -1428,10 +1428,8 @@ NetNet* NetESFunc::synthesize(Design*des, NetScope*scope, NetExpr*root)
       net->set_line(*this);
       des->add_node(net);
 
-      netvector_t*osig_vec = new netvector_t(def->type, def->wid-1, 0);
-      osig_vec->set_signed(def->type==IVL_VT_REAL? true : false);
       NetNet*osig = new NetNet(scope, scope->local_symbol(),
-			       NetNet::WIRE, osig_vec);
+			       NetNet::WIRE, def->type);
       osig->set_line(*this);
       osig->local_flag(true);
 

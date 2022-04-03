@@ -284,9 +284,7 @@ extern StringHeapLex filename_strings;
  */
 struct sfunc_return_type {
       const char*   name;
-      ivl_variable_type_t type;
-      unsigned      wid;
-      bool          signed_flag;
+      ivl_type_t    type;
       bool          override_flag;
 };
 

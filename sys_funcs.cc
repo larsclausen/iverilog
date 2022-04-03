@@ -22,6 +22,8 @@
 # include  <cstdio>
 # include  <cstring>
 # include  <cstdlib>
+# include "netscalar.h"
+# include "netvector.h"
 
 /*
  * Manage the information about system functions. This information is
@@ -30,7 +32,7 @@
  */
 
 static const struct sfunc_return_type default_return_type =
-    { 0, IVL_VT_LOGIC, 32, false, false };
+    { 0, netvector_t::integer_type(), false };
 
 struct sfunc_return_type_cell : sfunc_return_type {
       struct sfunc_return_type_cell*next;
@@ -97,8 +99,6 @@ void add_sys_func(const struct sfunc_return_type&ret_type)
       struct sfunc_return_type_cell*cell = new struct sfunc_return_type_cell;
       cell->name = lex_strings.add(ret_type.name);
       cell->type = ret_type.type;
-      cell->wid  = ret_type.wid;
-      cell->signed_flag = ret_type.signed_flag;
       cell->override_flag = ret_type.override_flag;
       append_to_list(cell);
 }
@@ -166,9 +166,7 @@ int load_sys_func_table(const char*path)
 	    if (strcmp(stype,"vpiSysFuncReal") == 0) {
 		  cell = new struct sfunc_return_type_cell;
 		  cell->name = lex_strings.add(name);
-		  cell->type = IVL_VT_REAL;
-		  cell->wid  = 1;
-		  cell->signed_flag = true;
+		  cell->type = &netreal_t::type_real;
 		  cell->override_flag = false;
 		  append_to_list(cell);
 		  continue;
@@ -177,9 +175,7 @@ int load_sys_func_table(const char*path)
 	    if (strcmp(stype,"vpiSysFuncInt") == 0) {
 		  cell = new struct sfunc_return_type_cell;
 		  cell->name = lex_strings.add(name);
-		  cell->type = IVL_VT_LOGIC;
-		  cell->wid  = 32;
-		  cell->signed_flag = true;
+		  cell->type = netvector_t::integer_type();
 		  cell->override_flag = false;
 		  append_to_list(cell);
 		  continue;
@@ -218,9 +214,7 @@ int load_sys_func_table(const char*path)
 
 		  cell = new struct sfunc_return_type_cell;
 		  cell->name = lex_strings.add(name);
-		  cell->type = IVL_VT_LOGIC;
-		  cell->wid  = width;
-		  cell->signed_flag = signed_flag;
+		  cell->type = new netvector_t(IVL_VT_LOGIC, width, signed_flag);
 		  cell->override_flag = false;
 		  append_to_list(cell);
 		  continue;
@@ -229,9 +223,7 @@ int load_sys_func_table(const char*path)
 	    if (strcmp(stype,"vpiSysFuncVoid") == 0) {
 		  cell = new struct sfunc_return_type_cell;
 		  cell->name = lex_strings.add(name);
-		  cell->type = IVL_VT_VOID;
-		  cell->wid  = 0;
-		  cell->signed_flag = false;
+		  //cell->type = IVL_VT_VOID;
 		  cell->override_flag = false;
 		  append_to_list(cell);
 		  continue;
@@ -240,9 +232,7 @@ int load_sys_func_table(const char*path)
 	    if (strcmp(stype,"vpiSysFuncString") == 0) {
 		  cell = new struct sfunc_return_type_cell;
 		  cell->name = lex_strings.add(name);
-		  cell->type = IVL_VT_STRING;
-		  cell->wid  = 0;   // string is a dynamic length type
-		  cell->signed_flag = false;
+		  cell->type = &netstring_t::type_string;
 		  cell->override_flag = false;
 		  append_to_list(cell);
 		  continue;

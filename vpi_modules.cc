@@ -22,6 +22,8 @@
 #include "vpi_user.h"
 #include "sv_vpi_user.h"
 #include "vvp/ivl_dlfcn.h"
+#include "netscalar.h"
+#include "netvector.h"
 
 using namespace std;
 
@@ -140,46 +142,38 @@ vpiHandle vpi_register_systf(const struct t_vpi_systf_data*ss)
     ret_type.name = ss->tfname;
     switch (ss->sysfunctype) {
       case vpiIntFunc:
-        ret_type.type = IVL_VT_LOGIC;
-        ret_type.wid  = 32;
-        ret_type.signed_flag = true;
+	ret_type.type = netvector_t::integer_type();
         break;
       case vpiRealFunc:
-        ret_type.type = IVL_VT_REAL;
-        ret_type.wid  = 1;
-        ret_type.signed_flag = true;
+	ret_type.type = &netreal_t::type_real;
         break;
       case vpiTimeFunc:
-        ret_type.type = IVL_VT_LOGIC;
-        ret_type.wid  = 64;
-        ret_type.signed_flag = false;
+//        ret_type.type = netvector_t::time_type;
         break;
       case vpiSizedFunc:
-        ret_type.type = IVL_VT_LOGIC;
-        ret_type.wid  = ss->sizetf ? ss->sizetf(ss->user_data) : 32;
-        ret_type.signed_flag = false;
+        ret_type.type = new netvector_t(IVL_VT_LOGIC,
+				        ss->sizetf ?
+					  ss->sizetf(ss->user_data) :
+					  32,
+				        false);
         break;
       case vpiSizedSignedFunc:
-        ret_type.type = IVL_VT_LOGIC;
-        ret_type.wid  = ss->sizetf ? ss->sizetf(ss->user_data) : 32;
-        ret_type.signed_flag = true;
+        ret_type.type = new netvector_t(IVL_VT_LOGIC,
+				        ss->sizetf ?
+					  ss->sizetf(ss->user_data) :
+					  32,
+				        true);
         break;
       case vpiStringFunc:
-        ret_type.type = IVL_VT_STRING;
-        ret_type.wid  = 0;
-        ret_type.signed_flag = false;
+        ret_type.type = &netstring_t::type_string;
         break;
       case vpiOtherFunc:
-        ret_type.type = IVL_VT_NO_TYPE;
-        ret_type.wid  = 0;
-        ret_type.signed_flag = false;
+        ret_type.type = 0;
         break;
       default:
         cerr << "warning: " << ss->tfname << " has an unknown return type. "
                 "Assuming 32 bit unsigned." << endl;
-        ret_type.type = IVL_VT_LOGIC;
-        ret_type.wid  = 32;
-        ret_type.signed_flag = false;
+        ret_type.type = new netvector_t(IVL_VT_LOGIC, 32, false);
         break;
     }
     ret_type.override_flag = false;

@@ -478,18 +478,11 @@ bool NetESelect::has_width() const
       return true;
 }
 
-NetESFunc::NetESFunc(const char*n, ivl_variable_type_t t,
-		     unsigned width, unsigned np, bool is_overridden)
-: name_(0), type_(t), enum_type_(0), parms_(np), is_overridden_(is_overridden)
-{
-      name_ = lex_strings.add(n);
-      expr_width(width);
-}
-
-NetESFunc::NetESFunc(const char*n, ivl_type_t rtype, unsigned np)
+NetESFunc::NetESFunc(const char*n, ivl_type_t rtype, unsigned np,
+		     bool is_overridden)
 : NetExpr(rtype), name_(0), type_(rtype->base_type()),
   enum_type_(dynamic_cast<const netenum_t*>(rtype)), parms_(np),
-  is_overridden_(false)
+  is_overridden_(is_overridden)
 {
       name_ = lex_strings.add(n);
       expr_width(rtype->packed_width());

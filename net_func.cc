@@ -146,10 +146,10 @@ const char*NetSysFunc::func_name() const
 
 ivl_variable_type_t NetSysFunc::data_type() const
 {
-      return def_->type;
+      return def_->type->base_type();
 }
 
 unsigned NetSysFunc::vector_width() const
 {
-      return def_->wid;
+      return def_->type->packed_width();
 }
