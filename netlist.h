@@ -2107,6 +2107,7 @@ class NetEArrayPattern  : public NetExpr {
 class NetEConst  : public NetExpr {
 
     public:
+      explicit NetEConst(ivl_type_t type, const verinum&val);
       explicit NetEConst(const verinum&val);
       ~NetEConst();
 
@@ -2158,7 +2159,7 @@ class NetEConstParam  : public NetEConst {
 
     public:
       explicit NetEConstParam(const NetScope*scope, perm_string name,
-			      const verinum&val);
+			      ivl_type_t type, const verinum&val);
       ~NetEConstParam();
 
       perm_string name() const;
