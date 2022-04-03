@@ -5172,7 +5172,8 @@ NetExpr* PEIdent::elaborate_expr_param_bit_(Design*des, NetScope*scope,
       sel = normalize_variable_base(sel, par_msv, par_lsv, 1, true);
 
 	/* Create a parameter reference for the variable select. */
-      NetEConstParam*ptmp = new NetEConstParam(found_in, name, par_ex->value());
+      NetEConstParam*ptmp = new NetEConstParam(found_in, name, par_type,
+					       par_ex->value());
       ptmp->set_line(found_in->get_parameter_line_info(name));
 
       NetExpr*tmp = new NetESelect(ptmp, sel, 1);
@@ -5378,7 +5379,8 @@ NetExpr* PEIdent::elaborate_expr_param_idx_up_(Design*des, NetScope*scope,
       base = normalize_variable_base(base, par_msv, par_lsv, wid, true);
 
 	/* Create a parameter reference for the variable select. */
-      NetEConstParam*ptmp = new NetEConstParam(found_in, name, par_ex->value());
+      NetEConstParam*ptmp = new NetEConstParam(found_in, name, par_type,
+					       par_ex->value());
       ptmp->set_line(found_in->get_parameter_line_info(name));
 
       NetExpr*tmp = new NetESelect(ptmp, base, wid, IVL_SEL_IDX_UP);
@@ -5459,7 +5461,8 @@ NetExpr* PEIdent::elaborate_expr_param_idx_do_(Design*des, NetScope*scope,
       base = normalize_variable_base(base, par_msv, par_lsv, wid, false);
 
 	/* Create a parameter reference for the variable select. */
-      NetEConstParam*ptmp = new NetEConstParam(found_in, name, par_ex->value());
+      NetEConstParam*ptmp = new NetEConstParam(found_in, name, par_type,
+					       par_ex->value());
       ptmp->set_line(found_in->get_parameter_line_info(name));
 
       NetExpr*tmp = new NetESelect(ptmp, base, wid, IVL_SEL_IDX_DOWN);
@@ -5569,7 +5572,7 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
                   if (cvalue.has_len())
 			cvalue.has_sign(signed_flag_);
                   cvalue = cast_to_width(cvalue, expr_wid);
-		  tmp = new NetEConstParam(found_in, name, cvalue);
+		  tmp = new NetEConstParam(found_in, name, par_type, cvalue);
 		  tmp->cast_signed(signed_flag_);
 		  tmp->set_line(*par);
 

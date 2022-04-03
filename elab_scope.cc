@@ -51,6 +51,7 @@
 # include  "netclass.h"
 # include  "netenum.h"
 # include  "netqueue.h"
+# include  "netvector.h"
 # include  "parse_api.h"
 # include  "util.h"
 # include  <typeinfo>
@@ -1042,6 +1043,7 @@ bool PGenerate::generate_scope_loop_(Design*des, NetScope*container)
 		  genvar_verinum.has_sign(true);
 		  NetEConstParam*gp = new NetEConstParam(scope,
 							 loop_index,
+							 netvector_t::integer_type(),
 							 genvar_verinum);
 		    // The file and line information should really come
 		    // from the genvar statement, not the for loop.

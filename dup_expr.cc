@@ -156,7 +156,7 @@ NetEConstEnum* NetEConstEnum::dup_expr() const
 
 NetEConstParam* NetEConstParam::dup_expr() const
 {
-      NetEConstParam*tmp = new NetEConstParam(scope_, name_, value());
+      NetEConstParam*tmp = new NetEConstParam(scope_, name_, net_type(), value());
       ivl_assert(*this, tmp);
       tmp->set_line(*this);
       return tmp;
