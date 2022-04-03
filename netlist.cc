@@ -2308,6 +2308,14 @@ NetEConst::NetEConst(const verinum&val)
       cast_signed_base_(value_.has_sign());
 }
 
+NetEConst::NetEConst(ivl_type_t type, const verinum&val)
+: NetExpr(type), value_(val)
+{
+      ivl_assert(*this, type->packed());
+      ivl_assert(*this, type->packed_width() == val.len());
+      ivl_assert(*this, type->get_signed() == val.has_sign());
+}
+
 NetEConst::~NetEConst()
 {
 }
