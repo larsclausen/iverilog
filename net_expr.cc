@@ -258,19 +258,15 @@ void NetEConcat::set(unsigned idx, NetExpr*e)
       expr_width( expr_width() + repeat_ * e->expr_width() );
 }
 
-NetEConstEnum::NetEConstEnum(perm_string n, const netenum_t*eset, const verinum&v)
-: NetEConst(v), enum_set_(eset), name_(n)
+NetEConstEnum::NetEConstEnum(perm_string n, const netenum_t *enum_set,
+			     const verinum &val)
+: NetEConst(enum_set, val), name_(n)
 {
       assert(has_width());
 }
 
 NetEConstEnum::~NetEConstEnum()
 {
-}
-
-const netenum_t*NetEConstEnum::enumeration() const
-{
-      return enum_set_;
 }
 
 NetECReal::NetECReal(const verireal&val)
