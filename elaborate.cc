@@ -2545,7 +2545,7 @@ NetProc* PAssign::elaborate(Design*des, NetScope*scope) const
       NetExpr*rv;
       const ivl_type_s*lv_net_type = lv->net_type();
 
-      if (debug_elaborate) {
+      if (debug_elaborate || 1) {
 	    cerr << get_fileline() << ": PAssign::elaborate: ";
 	    if (lv_net_type)
 		  cerr << "lv_net_type=" << *lv_net_type << endl;
@@ -2553,49 +2553,8 @@ NetProc* PAssign::elaborate(Design*des, NetScope*scope) const
 		  cerr << "lv_net_type=<nil>" << endl;
       }
 
-	/* If the l-value is a compound type of some sort, then use
-	   the newer net_type form of the elaborate_rval_ method to
-	   handle the new types. */
-      if (dynamic_cast<const netclass_t*> (lv_net_type)) {
-	    ivl_assert(*this, lv->more==0);
-	    rv = elaborate_rval_(des, scope, lv_net_type);
-
-      } else if (const netdarray_t*dtype = dynamic_cast<const netdarray_t*> (lv_net_type)) {
-	    ivl_assert(*this, lv->more==0);
-	    if (debug_elaborate) {
-		  if (lv->word())
-			cerr << get_fileline() << ": PAssign::elaborate: "
-			     << "lv->word() = " << *lv->word() << endl;
-		  else
-			cerr << get_fileline() << ": PAssign::elaborate: "
-			     << "lv->word() = <nil>" << endl;
-	    }
-	    ivl_type_t use_lv_type = lv_net_type;
-	    if (lv->word())
-		  use_lv_type = dtype->element_type();
-
-	    rv = elaborate_rval_(des, scope, use_lv_type);
-
-      } else if (const netuarray_t*utype = dynamic_cast<const netuarray_t*>(lv_net_type)) {
-	    ivl_assert(*this, lv->more==0);
-	    if (debug_elaborate) {
-		  if (lv->word())
-			cerr << get_fileline() << ": PAssign::elaborate: "
-			     << "lv->word() = " << *lv->word() << endl;
-		  else
-			cerr << get_fileline() << ": PAssign::elaborate: "
-			     << "lv->word() = <nil>" << endl;
-	    }
-	    ivl_assert(*this, lv->word());
-	    ivl_type_t use_lv_type = utype->element_type();
-
-	    ivl_assert(*this, use_lv_type);
-	    rv = elaborate_rval_(des, scope, use_lv_type);
-
-      } else {
-	      /* Elaborate the r-value expression, then try to evaluate it. */
-	    rv = elaborate_rval_(des, scope, lv_net_type, lv->expr_type(), count_lval_width(lv));
-      }
+	/* Elaborate the r-value expression, then try to evaluate it. */
+      rv = elaborate_rval_(des, scope, lv_net_type, lv->expr_type(), count_lval_width(lv));
 
       if (rv == 0) {
 	    delete lv;

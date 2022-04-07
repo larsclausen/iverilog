@@ -22,6 +22,7 @@
 # include  "netlist.h"
 # include  "netclass.h"
 # include  "netdarray.h"
+# include  "netparray.h"
 # include  "netenum.h"
 # include  "ivl_assert.h"
 
@@ -154,14 +155,12 @@ const ivl_type_s* NetAssign_::net_type() const
 {
       if (nest_) {
 	    const ivl_type_s*ntype = nest_->net_type();
-	    if (member_.nil())
-		  return ntype;
-
-	    if (const netclass_t*class_type = dynamic_cast<const netclass_t*>(ntype)) {
-		  int pidx = class_type->property_idx_from_name(member_);
-		  ivl_assert(*this, pidx >= 0);
-		  ivl_type_t tmp = class_type->get_prop_type(pidx);
-		  return tmp;
+	    if (!member_.nil()) {
+		  if (const netclass_t*class_type = dynamic_cast<const netclass_t*>(ntype)) {
+			int pidx = class_type->property_idx_from_name(member_);
+			ivl_assert(*this, pidx >= 0);
+			ntype = class_type->get_prop_type(pidx);
+		  }
 	    }
 
 	    if (const netdarray_t*darray = dynamic_cast<const netdarray_t*> (ntype)) {
@@ -171,24 +170,39 @@ const ivl_type_s* NetAssign_::net_type() const
 			return darray->element_type();
 	    }
 
+	    if (const netuarray_t*uarray = dynamic_cast<const netuarray_t*> (ntype)) {
+		  if (word_ == 0)
+			return uarray;
+		  else
+			return uarray->element_type();
+	    }
+
 	    return 0;
       }
 
+      ivl_type_t type = sig_->net_type();
+
       if (const netclass_t*class_type = sig_->class_type()) {
 	    if (member_.nil())
-		  return sig_->net_type();
+		  return type;
 
 	    int pidx = class_type->property_idx_from_name(member_);
 	    ivl_assert(*sig_, pidx >= 0);
-	    ivl_type_t tmp = class_type->get_prop_type(pidx);
-	    return tmp;
+	    type = class_type->get_prop_type(pidx);
       }
 
-      if (const netdarray_t*darray = dynamic_cast<const netdarray_t*> (sig_->net_type())) {
+      if (const netdarray_t*darray = dynamic_cast<const netdarray_t*> (type)) {
 	    if (word_ == 0)
-		  return sig_->net_type();
+		  return type;
 	    else
 		  return darray->element_type();
+      }
+
+      if (const netuarray_t*uarray = dynamic_cast<const netuarray_t*> (type)) {
+	    if (word_ == 0)
+		  return uarray;
+	    else
+		  return uarray->element_type();
       }
 
       return 0;
