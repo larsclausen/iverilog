@@ -2596,20 +2596,11 @@ void pform_module_define_port(const struct vlltype&li,
 			      NetNet::PortType port_kind,
 			      NetNet::Type type,
 			      data_type_t*vtype,
+			      list<pform_range_t>*urange,
 			      list<named_pexpr_t>*attr,
 			      bool keep_attr)
 {
       pform_check_net_data_type(li, type, vtype);
-
-	// Unpacked dimensions
-      list<pform_range_t>*urange = 0;
-
-	// If this is an unpacked array, then split out the parts that
-	// we can send to the PWire object that we create.
-      if (uarray_type_t*uarr_type = dynamic_cast<uarray_type_t*> (vtype)) {
-	    urange = uarr_type->dims.get();
-	    vtype = uarr_type->base_type;
-      }
 
       PWire *cur = pform_get_or_make_wire(li, name, type, port_kind, SR_BOTH);
 
@@ -2636,13 +2627,9 @@ void pform_module_define_port(const struct vlltype&li,
 		 ; cur != ports->end() ; ++ cur ) {
 
 	    data_type_t*use_type = vtype;
-	    if (cur->udims)
-		  use_type = new uarray_type_t(vtype, cur->udims);
 
 	    pform_module_define_port(li, cur->name, port_kind, type, use_type,
-				     attr, true);
-	    if (cur->udims)
-		  delete use_type;
+				     cur->udims, attr, true);
 
 	    if (cur->expr)
 		  pform_make_var_init(li, cur->name, cur->expr);
@@ -2761,13 +2748,7 @@ vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
       assert(ports);
 
       vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
-      std::list<pform_range_t>*unpacked_dims = NULL;
       PWSRType rt = SR_BOTH;
-
-      if (uarray_type_t*uarray = dynamic_cast<uarray_type_t*> (vtype)) {
-            unpacked_dims = uarray->dims.get();
-            vtype = uarray->base_type;
-      }
 
       // If this is a non-ansi port declaration and the type is an implicit type
       // this is only a port declaration.
@@ -2792,14 +2773,6 @@ vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
 	    }
 
 	    res->push_back(pform_tf_port_t(curw));
-      }
-
-      if (unpacked_dims) {
-	    for (list<pform_port_t>::iterator cur = ports->begin()
-                    ; cur != ports->end() ; ++ cur ) {
-		PWire*wire = pform_get_wire_in_scope(cur->name);
-		wire->set_unpacked_idx(*unpacked_dims);
-	    }
       }
 
       delete ports;
@@ -3174,10 +3147,6 @@ void pform_set_data_type(const struct vlltype&li, data_type_t*data_type,
 	    assert(0);
       }
 
-      uarray_type_t*uarray_type = dynamic_cast<uarray_type_t*> (data_type);
-      if (uarray_type)
-            data_type = uarray_type->base_type;
-
       vector_type_t*vec_type = dynamic_cast<vector_type_t*> (data_type);
 
       for (std::vector<PWire*>::iterator it= wires->begin();
@@ -3191,10 +3160,6 @@ void pform_set_data_type(const struct vlltype&li, data_type_t*data_type,
 	    bool rc = wire->set_wire_type(net_type);
 	    ivl_assert(li, rc);
 
-	    if (uarray_type) {
-		  wire->set_unpacked_idx(*uarray_type->dims.get());
-		  wire->set_uarray_type(uarray_type);
-	    }
 	    wire->set_data_type(data_type);
 
 	    pform_bind_attributes(wire->attributes, attr, true);

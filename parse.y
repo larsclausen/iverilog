@@ -4396,7 +4396,7 @@ list_of_port_declarations
 		  pform_module_define_port(@3, name,
 					port_declaration_context.port_type,
 					port_declaration_context.port_net_type,
-					port_declaration_context.data_type, 0);
+					port_declaration_context.data_type, 0, 0);
 		  delete[]$3;
 		  $$ = tmp;
 		}
@@ -4415,10 +4415,8 @@ port_declaration
   : attribute_list_opt K_input net_type_opt data_type_or_implicit IDENTIFIER dimensions_opt
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($5);
-	data_type_t*use_type = $4;
-	if ($6) use_type = new uarray_type_t(use_type, $6);
 	ptmp = pform_module_port_reference(@2, name);
-	pform_module_define_port(@2, name, NetNet::PINPUT, $3, use_type, $1);
+	pform_module_define_port(@2, name, NetNet::PINPUT, $3, $4, $6, 0, $1);
 	port_declaration_context.port_type = NetNet::PINPUT;
 	port_declaration_context.port_net_type = $3;
 	port_declaration_context.data_type = $4;
@@ -4433,7 +4431,7 @@ port_declaration
 	real_type_t*real_type = new real_type_t(real_type_t::REAL);
 	FILE_NAME(real_type, @3);
 	pform_module_define_port(@2, name, NetNet::PINPUT,
-				 NetNet::WIRE, real_type, $1);
+				 NetNet::WIRE, real_type, 0, $1);
 	port_declaration_context.port_type = NetNet::PINPUT;
 	port_declaration_context.port_net_type = NetNet::WIRE;
 	port_declaration_context.data_type = real_type;
@@ -4447,7 +4445,7 @@ port_declaration
 	data_type_t*use_type = $4;
 	ptmp = pform_module_port_reference(@2, name);
 	ptmp->default_value = $7;
-	pform_module_define_port(@2, name, NetNet::PINPUT, $3, use_type, $1);
+	pform_module_define_port(@2, name, NetNet::PINPUT, $3, use_type, 0, $1);
 	port_declaration_context.port_type = NetNet::PINPUT;
 	port_declaration_context.port_net_type = $3;
 	port_declaration_context.data_type = $4;
@@ -4458,7 +4456,7 @@ port_declaration
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($5);
 	ptmp = pform_module_port_reference(@2, name);
-	pform_module_define_port(@2, name, NetNet::PINOUT, $3, $4, $1);
+	pform_module_define_port(@2, name, NetNet::PINOUT, $3, $4, 0, $1);
 	port_declaration_context.port_type = NetNet::PINOUT;
 	port_declaration_context.port_net_type = $3;
 	port_declaration_context.data_type = $4;
@@ -4477,7 +4475,7 @@ port_declaration
 	real_type_t*real_type = new real_type_t(real_type_t::REAL);
 	FILE_NAME(real_type, @3);
 	pform_module_define_port(@2, name, NetNet::PINOUT,
-				 NetNet::WIRE, real_type, $1);
+				 NetNet::WIRE, real_type, 0, $1);
 	port_declaration_context.port_type = NetNet::PINOUT;
 	port_declaration_context.port_net_type = NetNet::WIRE;
 	port_declaration_context.data_type = real_type;
@@ -4487,8 +4485,6 @@ port_declaration
   | attribute_list_opt K_output net_type_opt data_type_or_implicit IDENTIFIER dimensions_opt
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($5);
-	data_type_t*use_dtype = $4;
-	if ($6) use_dtype = new uarray_type_t(use_dtype, $6);
 	NetNet::Type use_type = $3;
 	if (use_type == NetNet::IMPLICIT) {
 	      if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($4)) {
@@ -4506,7 +4502,7 @@ port_declaration
 	      }
 	}
 	ptmp = pform_module_port_reference(@2, name);
-	pform_module_define_port(@2, name, NetNet::POUTPUT, use_type, use_dtype, $1);
+	pform_module_define_port(@2, name, NetNet::POUTPUT, use_type, $4, $6, $1);
 	port_declaration_context.port_type = NetNet::POUTPUT;
 	port_declaration_context.port_net_type = use_type;
 	port_declaration_context.data_type = $4;
@@ -4521,7 +4517,7 @@ port_declaration
 	real_type_t*real_type = new real_type_t(real_type_t::REAL);
 	FILE_NAME(real_type, @3);
 	pform_module_define_port(@2, name, NetNet::POUTPUT,
-				 NetNet::WIRE, real_type, $1);
+				 NetNet::WIRE, real_type, 0, $1);
 	port_declaration_context.port_type = NetNet::POUTPUT;
 	port_declaration_context.port_net_type = NetNet::WIRE;
 	port_declaration_context.data_type = real_type;
@@ -4536,7 +4532,7 @@ port_declaration
 	      use_type = NetNet::IMPLICIT_REG;
 	}
 	ptmp = pform_module_port_reference(@2, name);
-	pform_module_define_port(@2, name, NetNet::POUTPUT, use_type, $4, $1);
+	pform_module_define_port(@2, name, NetNet::POUTPUT, use_type, $4, 0, $1);
 	port_declaration_context.port_type = NetNet::PINOUT;
 	port_declaration_context.port_net_type = use_type;
 	port_declaration_context.data_type = $4;
