@@ -143,7 +143,7 @@ struct pform_tf_port_t {
  */
 class data_type_t : public PNamedItem {
     public:
-      inline explicit data_type_t() { }
+      inline explicit data_type_t() : elaborating(false) { }
       virtual ~data_type_t() = 0;
       // This method is used by the pform dumper to diagnostic dump. The
       //  pform_dump dumps type type in pform format, and the debug_dump
@@ -159,6 +159,8 @@ class data_type_t : public PNamedItem {
 	// Elaborate the type to an ivl_type_s type.
       virtual ivl_type_t elaborate_type_raw(Design*des, NetScope*scope) const;
       virtual NetScope *find_scope(Design* des, NetScope *scope) const;
+
+      bool elaborating;
 
 	// Keep per-scope elaboration results cached.
       std::map<Definitions*,ivl_type_t> cache_type_elaborate_;
