@@ -2152,16 +2152,16 @@ void pform_make_udp(const struct vlltype&loc, perm_string name,
  * and the name that I receive only has the tail component.
  */
 static void pform_set_net_range(PWire *wire,
-				const list<pform_range_t>*range,
-				bool signed_flag,
-				PWSRType rt = SR_NET,
-				std::list<named_pexpr_t>*attr = 0)
+			        const vector_type_t *vec_type,
+				PWSRType rt = SR_NET)
 {
-      if (range)
-	    cur->set_range(*range, rt);
-      cur->set_signed(signed_flag);
+      if (!vec_type)
+	    return;
 
-      pform_bind_attributes(cur->attributes, attr, true);
+      list<pform_range_t> *range = vec_type->pdims.get();
+      if (range)
+	    wire->set_range(*range, rt);
+      wire->set_signed(vec_type->signed_flag);
 }
 
 /*
@@ -2599,12 +2599,8 @@ void pform_module_define_port(const struct vlltype&li,
 			      list<named_pexpr_t>*attr,
 			      bool keep_attr)
 {
-      bool signed_flag = false;
-
       pform_check_net_data_type(li, type, vtype);
 
-	// Packed ranges
-      list<pform_range_t>*prange = 0;
 	// Unpacked dimensions
       list<pform_range_t>*urange = 0;
 
@@ -2615,29 +2611,12 @@ void pform_module_define_port(const struct vlltype&li,
 	    vtype = uarr_type->base_type;
       }
 
-      if (vector_type_t*vec_type = dynamic_cast<vector_type_t*> (vtype)) {
-	    signed_flag = vec_type->signed_flag;
-	    prange = vec_type->pdims.get();
-      } else if (real_type_t*rtype = dynamic_cast<real_type_t*>(vtype)) {
-	    signed_flag = true;
-	    prange = 0;
-
-	    if (rtype->type_code() != real_type_t::REAL) {
-		  VLerror(li, "sorry: Only real (not shortreal) supported here (%s:%d).",
-			  __FILE__, __LINE__);
-	    }
-
-      }
-
       PWire *cur = pform_get_or_make_wire(li, name, type, port_kind, SR_BOTH);
 
-      cur->set_signed(signed_flag);
+      pform_set_net_range(cur, dynamic_cast<vector_type_t *>(vtype), SR_BOTH);
 
       if (vtype)
 	    cur->set_data_type(vtype);
-
-      if (prange)
-	    cur->set_range(*prange, SR_BOTH);
 
       if (urange) {
 	    cur->set_unpacked_idx(*urange);
@@ -2772,17 +2751,20 @@ void pform_makewire(const struct vlltype&li,
  * constraints as those of tasks, so this works fine. Functions have
  * no output or inout ports.
  */
-static vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
-						     NetNet::PortType pt,
-						     ivl_variable_type_t vtype,
-						     bool signed_flag,
-						     list<pform_range_t>*range,
-						     list<pform_port_t>*ports)
+static vector<pform_tf_port_t>*pform_make_task_ports_vec(const struct vlltype&loc,
+							 NetNet::PortType pt,
+						         vector_type_t *vec_type,
+							 list<pform_port_t>*ports,
+							 bool allow_implicit)
 {
       assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
       assert(ports);
       vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
-      PWSRType rt = vtype != IVL_VT_NO_TYPE ? SR_BOTH : SR_PORT;
+
+      PWSRType rt = SR_BOTH;
+
+      if (allow_implicit && vec_type->implicit_flag)
+	    rt = SR_PORT;
 
       for (list<pform_port_t>::iterator cur = ports->begin()
 		 ; cur != ports->end() ; ++ cur ) {
@@ -2794,11 +2776,7 @@ static vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
 						pt, rt);
 	    if (rt == SR_BOTH)
 		  curw->set_data_type(vec_type);
-	    curw->set_signed(signed_flag);
-
-	      /* If there is a range involved, it needs to be set. */
-	    if (range)
-		  curw->set_range(*range, rt);
+	    pform_set_net_range(curw, vec_type, rt);
 
 	    if (cur->udims) {
 		  if (pform_requires_sv(loc, "Task/function port with unpacked dimensions"))
@@ -2808,7 +2786,6 @@ static vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
 	    res->push_back(pform_tf_port_t(curw));
       }
 
-      delete range;
       return res;
 }
 
@@ -2857,14 +2834,8 @@ vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
       }
 
       if (vector_type_t*vec_type = dynamic_cast<vector_type_t*> (vtype)) {
-	    ivl_variable_type_t base_type = vec_type->base_type;
-	    if (allow_implicit && vec_type->implicit_flag)
-		base_type = IVL_VT_NO_TYPE;
-
-	    ret = pform_make_task_ports(loc, pt, base_type,
-					 vec_type->signed_flag,
-					 copy_range(vec_type->pdims.get()),
-					 ports);
+	    ret = pform_make_task_ports_vec(loc, pt, vec_type, ports,
+					    allow_implicit);
       }
 
       if (! ret) {
@@ -3200,15 +3171,7 @@ void pform_set_port_type(const struct vlltype&li,
 {
       assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
 
-      list<pform_range_t>*range = 0;
-      bool signed_flag = false;
-      if (vector_type_t*vt = dynamic_cast<vector_type_t*> (dt)) {
-	    assert(vt->implicit_flag);
-	    range = vt->pdims.get();
-	    signed_flag = vt->signed_flag;
-      } else {
-	    assert(dt == 0);
-      }
+      vector_type_t*vt = dynamic_cast<vector_type_t*> (dt);
 
       bool have_init_expr = false;
       for (list<pform_port_t>::iterator cur = ports->begin()
@@ -3217,7 +3180,8 @@ void pform_set_port_type(const struct vlltype&li,
 	    PWire *wire = pform_get_or_make_wire(li, cur->name,
 						 NetNet::IMPLICIT, pt,
 						 SR_PORT);
-	    pform_set_net_range(wire, range, signed_flag, SR_PORT, attr);
+	    pform_set_net_range(wire, vt, SR_PORT);
+	    pform_bind_attributes(wire->attributes, attr, true);
 
 	    if (cur->udims) {
 		  cerr << li << ": warning: "
@@ -3268,8 +3232,7 @@ void pform_set_data_type(const struct vlltype&li, data_type_t*data_type,
 	   it != wires->end() ; ++it) {
 	    PWire *wire = *it;
 
-	    if (vec_type)
-		  pform_set_net_range(wire, vec_type->pdims.get(), vec_type->signed_flag);
+	    pform_set_net_range(wire, vec_type);
 
 	    // If these fail there is a bug somewhere else. pform_set_data_type()
 	    // is only ever called on a fresh wire that already exists.
