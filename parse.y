@@ -5836,7 +5836,7 @@ dimensions
 net_variable
   : IDENTIFIER dimensions_opt
       { perm_string name = lex_strings.make($1);
-	$$ = pform_makewire(@1, name, NetNet::IMPLICIT, IVL_VT_NO_TYPE, $2);
+	$$ = pform_makewire(@1, name, NetNet::IMPLICIT, $2);
 	delete [] $1;
       }
   ;
@@ -6927,7 +6927,7 @@ udp_port_decl
       { $$ = pform_make_udp_input_ports($2); }
   | K_output IDENTIFIER ';'
       { perm_string pname = lex_strings.make($2);
-	PWire*pp = new PWire(pname, NetNet::IMPLICIT, NetNet::POUTPUT, IVL_VT_LOGIC);
+	PWire*pp = new PWire(pname, NetNet::IMPLICIT, NetNet::POUTPUT);
 	vector<PWire*>*tmp = new std::vector<PWire*>(1);
 	(*tmp)[0] = pp;
 	$$ = tmp;
@@ -6935,7 +6935,7 @@ udp_port_decl
       }
   | K_reg IDENTIFIER ';'
       { perm_string pname = lex_strings.make($2);
-	PWire*pp = new PWire(pname, NetNet::REG, NetNet::PIMPLICIT, IVL_VT_LOGIC);
+	PWire*pp = new PWire(pname, NetNet::REG, NetNet::PIMPLICIT);
 	vector<PWire*>*tmp = new std::vector<PWire*>(1);
 	(*tmp)[0] = pp;
 	$$ = tmp;
@@ -6943,7 +6943,7 @@ udp_port_decl
       }
   | K_output K_reg IDENTIFIER ';'
       { perm_string pname = lex_strings.make($3);
-	PWire*pp = new PWire(pname, NetNet::REG, NetNet::POUTPUT, IVL_VT_LOGIC);
+	PWire*pp = new PWire(pname, NetNet::REG, NetNet::POUTPUT);
 	vector<PWire*>*tmp = new std::vector<PWire*>(1);
 	(*tmp)[0] = pp;
 	$$ = tmp;

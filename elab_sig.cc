@@ -937,15 +937,22 @@ bool test_ranges_eeq(const vector<netrange_t>&lef, const vector<netrange_t>&rig)
 ivl_type_t PWire::elaborate_type(Design*des, NetScope*scope,
 			         const std::vector<netrange_t>&packed_dimensions) const
 {
-      if (set_data_type_ && !dynamic_cast<vector_type_t*>(set_data_type_)) {
-	    ivl_type_t use_type = set_data_type_->elaborate_type(des, scope);
+      vector_type_t *vec_type = dynamic_cast<vector_type_t*>(set_data_type_);
+
+      if (set_data_type_ && !vec_type) {
 	    ivl_assert(*this, packed_dimensions.empty());
-	    return use_type;
+	    return set_data_type_->elaborate_type(des, scope);
       }
 
       // Fallback method. Create vector type.
 
-      ivl_variable_type_t use_data_type = data_type_;
+      ivl_variable_type_t use_data_type;
+      if (vec_type) {
+	    use_data_type = vec_type->base_type;
+      } else {
+	    use_data_type = IVL_VT_LOGIC;
+      }
+
       if (use_data_type == IVL_VT_NO_TYPE) {
 	    use_data_type = IVL_VT_LOGIC;
 	    if (debug_elaborate) {
@@ -992,9 +999,10 @@ NetNet* PWire::elaborate_sig(Design*des, NetScope*scope) const
       if (debug_elaborate) {
 	    cerr << get_fileline() << ": PWire::elaborate_sig: "
 		 << "Signal " << basename()
-		 << ", wtype=" << wtype
-		 << ", data_type_=" << data_type_
-		 << ", unpacked_.size()=" << unpacked_.size()
+		 << ", wtype=" << wtype;
+	    if (set_data_type_)
+		  cerr << ", set_data_type_=" << *set_data_type_;
+	    cerr << ", unpacked_.size()=" << unpacked_.size()
 		 << endl;
       }
 
