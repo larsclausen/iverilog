@@ -5555,7 +5555,7 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
       NetExpr*tmp = 0;
 
       const NetEConstEnum*etmp = dynamic_cast<const NetEConstEnum*>(par);
-      if (etmp) {
+      if (etmp && (!par_type || dynamic_cast<const netenum_t *>(par_type))) {
 	    if (debug_elaborate)
 		  cerr << get_fileline() << ": debug: "
 		       << "Elaborate parameter <" << path_

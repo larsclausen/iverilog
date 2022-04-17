@@ -2311,9 +2311,9 @@ NetEConst::NetEConst(const verinum&val)
 NetEConst::NetEConst(ivl_type_t type, const verinum&val)
 : NetExpr(type), value_(val)
 {
-      ivl_assert(*this, type->packed());
-      ivl_assert(*this, type->packed_width() == val.len());
-      ivl_assert(*this, type->get_signed() == val.has_sign());
+      //ivl_assert(*this, type->packed());
+      //ivl_assert(*this, type->packed_width() == val.len());
+      //ivl_assert(*this, type->get_signed() == val.has_sign());
 }
 
 NetEConst::~NetEConst()
@@ -2324,6 +2324,7 @@ void NetEConst::cast_signed(bool flag)
 {
       cast_signed_base_(flag);
       value_.has_sign(flag);
+      cout << "cast signed " << flag << endl;
 }
 
 const verinum& NetEConst::value() const
@@ -2363,6 +2364,7 @@ NetEConstParam::NetEConstParam(const NetScope*s, perm_string n,
 			       ivl_type_t type, const verinum&v)
 : NetEConst(type, v), scope_(s), name_(n)
 {
+      //cout << "foo " << *type << endl;
 }
 
 NetEConstParam::~NetEConstParam()

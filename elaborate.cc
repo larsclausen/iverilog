@@ -151,6 +151,7 @@ void PGAssign::elaborate(Design*des, NetScope*scope) const
       }
 
       if (lval->enumeration()) {
+	    cout << "here: " << *rval_expr << endl;
 	    if (! rval_expr->enumeration()) {
 		  cerr << get_fileline() << ": error: "
 		          "This assignment requires an explicit cast." << endl;
@@ -2732,6 +2733,7 @@ NetProc* PAssign::elaborate(Design*des, NetScope*scope) const
       }
 
       if (lv->enumeration()) {
+	    cout << *rv << endl;
 	    if (! rv->enumeration()) {
 		  cerr << get_fileline() << ": error: "
 		          "This assignment requires an explicit cast." << endl;
