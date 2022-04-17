@@ -648,6 +648,7 @@ sv_typedef_queue_base1	normal,-g2009		ivltests
 sv_typedef_queue_base2	normal,-g2009		ivltests
 sv_typedef_queue_base3	normal,-g2009		ivltests
 sv_typedef_queue_base4	normal,-g2009		ivltests
+sv_typedef_recursive	normal,-g2009		ivltests
 sv_typedef_scope1	normal,-g2009		ivltests
 sv_typedef_scope2	normal,-g2009		ivltests
 sv_typedef_scope3	normal,-g2009		ivltests
