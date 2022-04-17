@@ -2615,7 +2615,8 @@ void pform_module_define_port(const struct vlltype&li,
 	    cur->set_data_type(vtype);
 
       if (urange) {
-	    cur->set_unpacked_idx(*urange);
+	    if (pform_requires_sv(li, "Module port with unpacked dimensions"))
+		  cur->set_unpacked_idx(*urange);
       }
 
       pform_bind_attributes(cur->attributes, attr, keep_attr);
