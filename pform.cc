@@ -2751,31 +2751,39 @@ void pform_makewire(const struct vlltype&li,
  * constraints as those of tasks, so this works fine. Functions have
  * no output or inout ports.
  */
-static vector<pform_tf_port_t>*pform_make_task_ports_vec(const struct vlltype&loc,
-							 NetNet::PortType pt,
-						         vector_type_t *vec_type,
-							 list<pform_port_t>*ports,
-							 bool allow_implicit)
+vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
+				      NetNet::PortType pt,
+				      data_type_t*vtype,
+				      list<pform_port_t>*ports,
+				      bool allow_implicit)
 {
       assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
       assert(ports);
-      vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
 
+      vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
+      std::list<pform_range_t>*unpacked_dims = NULL;
       PWSRType rt = SR_BOTH;
 
-      if (allow_implicit && vec_type->implicit_flag)
+      if (uarray_type_t*uarray = dynamic_cast<uarray_type_t*> (vtype)) {
+            unpacked_dims = uarray->dims.get();
+            vtype = uarray->base_type;
+      }
+
+      // If this is a non-ansi port declaration and the type is an implicit type
+      // this is only a port declaration.
+      vector_type_t*vec_type = dynamic_cast<vector_type_t*>(vtype);
+      if (allow_implicit && (!vtype || (vec_type && vec_type->implicit_flag)))
 	    rt = SR_PORT;
 
-      for (list<pform_port_t>::iterator cur = ports->begin()
-		 ; cur != ports->end() ; ++ cur ) {
+      for (list<pform_port_t>::iterator cur = ports->begin();
+	   cur != ports->end(); ++cur) {
 	    perm_string &name = cur->name;
 
-	      /* Look for a preexisting wire. If it exists, set the
-		 port direction. If not, create it. */
 	    PWire*curw = pform_get_or_make_wire(loc, name, NetNet::IMPLICIT_REG,
 						pt, rt);
 	    if (rt == SR_BOTH)
-		  curw->set_data_type(vec_type);
+		  curw->set_data_type(vtype);
+
 	    pform_set_net_range(curw, vec_type, rt);
 
 	    if (cur->udims) {
@@ -2784,62 +2792,6 @@ static vector<pform_tf_port_t>*pform_make_task_ports_vec(const struct vlltype&lo
 	    }
 
 	    res->push_back(pform_tf_port_t(curw));
-      }
-
-      return res;
-}
-
-static vector<pform_tf_port_t>*do_make_task_ports(const struct vlltype&loc,
-					 NetNet::PortType pt,
-					 data_type_t*data_type,
-					 list<pform_port_t>*ports)
-{
-      assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
-      assert(ports);
-      vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
-      PWSRType rt = data_type ? SR_BOTH : SR_PORT;
-
-      for (list<pform_port_t>::iterator cur = ports->begin()
-		 ; cur != ports->end() ; ++cur) {
-	    perm_string &name = cur->name;
-
-	    PWire*curw = pform_get_or_make_wire(loc, name, NetNet::IMPLICIT_REG,
-						pt, rt);
-
-	    if (data_type)
-		  curw->set_data_type(data_type);
-
-	    if (cur->udims) {
-		  if (pform_requires_sv(loc, "Task/function port with unpacked dimensions"))
-			curw->set_unpacked_idx(*cur->udims);
-	    }
-
-	    res->push_back(pform_tf_port_t(curw));
-      }
-      return res;
-}
-
-vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
-				      NetNet::PortType pt,
-				      data_type_t*vtype,
-				      list<pform_port_t>*ports,
-				      bool allow_implicit)
-{
-      vector<pform_tf_port_t>*ret = NULL;
-      std::list<pform_range_t>*unpacked_dims = NULL;
-
-      if (uarray_type_t*uarray = dynamic_cast<uarray_type_t*> (vtype)) {
-            unpacked_dims = uarray->dims.get();
-            vtype = uarray->base_type;
-      }
-
-      if (vector_type_t*vec_type = dynamic_cast<vector_type_t*> (vtype)) {
-	    ret = pform_make_task_ports_vec(loc, pt, vec_type, ports,
-					    allow_implicit);
-      }
-
-      if (! ret) {
-	    ret = do_make_task_ports(loc, pt, vtype, ports);
       }
 
       if (unpacked_dims) {
@@ -2851,7 +2803,7 @@ vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
       }
 
       delete ports;
-      return ret;
+      return res;
 }
 
 /*
