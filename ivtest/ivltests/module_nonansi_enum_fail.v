@@ -1,4 +1,4 @@
-
+// Check that it is an error to have a non-ansi port
 
 typedef enum integer {
   A, B
