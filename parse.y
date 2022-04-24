@@ -2323,9 +2323,27 @@ tf_port_declaration /* IEEE1800-2005: A.2.7 */
 
 
 data_type_or_implicit_plus_id
-  : data_type_or_implicit IDENTIFIER 
+  : IDENTIFIER
+      { $$.type = 0;
+        $$.id = $1;
+      }
+  | data_type IDENTIFIER
       { $$.type = $1;
         $$.id = $2;
+       }
+  | signing dimensions_opt IDENTIFIER
+      { vector_type_t*tmp = new vector_type_t(IVL_VT_LOGIC, $1, $2);
+	tmp->implicit_flag = true;
+	FILE_NAME(tmp, @1);
+	$$.type = tmp;
+	$$.id = $3;
+      }
+  | scalar_vector_opt dimensions IDENTIFIER
+      { vector_type_t*tmp = new vector_type_t(IVL_VT_LOGIC, false, $2);
+	tmp->implicit_flag = true;
+	FILE_NAME(tmp, @2);
+	$$.type = tmp;
+	$$.id = $3;
       }
   ;
 
