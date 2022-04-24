@@ -907,6 +907,12 @@ data_type_t* pform_test_type_identifier(const struct vlltype&loc, const char*txt
 	    if (cur != cur_scope->typedefs.end())
 		  return cur->second;
 
+	    // If it is defined as something else in this scope it is not a data
+	    // type
+	    auto sym = cur_scope->local_symbols.find(name);
+	    if (sym != cur_scope->local_symbols.end())
+		  return nullptr;
+
             PPackage*pkg = find_potential_import(loc, cur_scope, name, false, false);
             if (pkg) {
 	          cur = pkg->typedefs.find(name);

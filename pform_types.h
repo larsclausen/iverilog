@@ -429,4 +429,9 @@ extern std::ostream& operator<< (std::ostream&out, const index_component_t&that)
 #undef unique_ptr
 #endif
 
+struct pform_port_list {
+      std::list<pform_port_t> *ports;
+      data_type_t *type;
+};
+
 #endif /* IVL_pform_types_H */
