@@ -134,19 +134,21 @@ static std::list<named_pexpr_t>*attributes_in_context = 0;
 static const struct str_pair_t pull_strength = { IVL_DR_PULL,  IVL_DR_PULL };
 static const struct str_pair_t str_strength = { IVL_DR_STRONG, IVL_DR_STRONG };
 
-static std::list<pform_port_t>* make_port_list(char*id, std::list<pform_range_t>*udims, PExpr*expr)
+static struct pform_port_list make_port_list(struct data_type_t *type, char*id, std::list<pform_range_t>*udims, PExpr*expr)
 {
-      std::list<pform_port_t>*tmp = new std::list<pform_port_t>;
-      tmp->push_back(pform_port_t(lex_strings.make(id), udims, expr));
+      struct pform_port_list list;
+      list.type = type;
+      list.ports = new std::list<pform_port_t>;
+      list.ports->push_back(pform_port_t(lex_strings.make(id), udims, expr));
       delete[]id;
-      return tmp;
+      return list;
 }
-static std::list<pform_port_t>* make_port_list(list<pform_port_t>*tmp,
-                                          char*id, std::list<pform_range_t>*udims, PExpr*expr)
+static struct pform_port_list make_port_list(struct pform_port_list list,
+                                             char*id, std::list<pform_range_t>*udims, PExpr*expr)
 {
-      tmp->push_back(pform_port_t(lex_strings.make(id), udims, expr));
+      list.ports->push_back(pform_port_t(lex_strings.make(id), udims, expr));
       delete[]id;
-      return tmp;
+      return list;
 }
 
 static std::list<perm_string>* list_from_identifier(char*id)
@@ -376,7 +378,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       char*text;
       std::list<perm_string>*perm_strings;
 
-      std::list<pform_port_t>*port_list;
+      struct pform_port_list port_list;
 
       std::vector<pform_tf_port_t>* tf_ports;
 
@@ -1196,6 +1198,7 @@ ps_type_identifier /* IEEE1800-2017: A.9.3 */
 	$$ = $4.type;
 	delete[]$4.text;
       }
+
 
 /* Data types that can have packed dimensions directly attached to it */
 packed_array_data_type /* IEEE1800-2005: A.2.2.1 */
@@ -2316,8 +2319,8 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 
 
 tf_port_declaration /* IEEE1800-2005: A.2.7 */
-  : port_direction K_var_opt data_type_or_implicit list_of_port_identifiers ';'
-      { $$ = pform_make_task_ports(@1, $1, $3, $4, true);
+  : port_direction K_var_opt list_of_port_identifiers ';'
+      { $$ = pform_make_task_ports(@1, $1, $3.type, $3.ports, true);
       }
   ;
 
@@ -2348,9 +2351,8 @@ data_type_or_implicit_plus_id
   ;
 
 data_type_or_implicit_or_void_plus_id
-  : data_type_or_implicit IDENTIFIER 
-      { $$.type = $1;
-        $$.id = $2;
+  : data_type_or_implicit_plus_id
+      { $$ = $1;
       }
   | K_void IDENTIFIER
       { void_type_t*tmp = new void_type_t;
@@ -2376,7 +2378,7 @@ tf_port_item /* IEEE1800-2005: A.2.7 */
 	NetNet::PortType use_port_type = $1;
         if ((use_port_type == NetNet::PIMPLICIT) && (gn_system_verilog() || ($3.type == 0)))
               use_port_type = port_declaration_context.port_type;
-	list<pform_port_t>* port_list = make_port_list($3.id, $4, 0);
+	struct pform_port_list port_list = make_port_list(0, $3.id, $4, 0);
 
 	if (use_port_type == NetNet::PIMPLICIT) {
 	      yyerror(@1, "error: missing task/function port direction.");
@@ -2391,7 +2393,7 @@ tf_port_item /* IEEE1800-2005: A.2.7 */
 	      }
 	      tmp = pform_make_task_ports(@3, use_port_type,
 					  port_declaration_context.data_type,
-					  port_list);
+					  port_list.ports);
 
 	} else {
 		// Otherwise, the decorations for this identifier
@@ -2403,7 +2405,8 @@ tf_port_item /* IEEE1800-2005: A.2.7 */
 		    FILE_NAME($3.type, @3);
 	      }
 	      port_declaration_context.data_type = $3.type;
-	      tmp = pform_make_task_ports(@3, use_port_type, $3.type, port_list);
+	      tmp = pform_make_task_ports(@3, use_port_type, $3.type,
+					  port_list.ports);
 	}
 
 	$$ = tmp;
@@ -4312,8 +4315,8 @@ list_of_identifiers
 	;
 
 list_of_port_identifiers
-	: IDENTIFIER dimensions_opt
-                { $$ = make_port_list($1, $2, 0); }
+	: data_type_or_implicit_plus_id dimensions_opt
+                { $$ = make_port_list($1.type, $1.id, $2, 0); }
 	| list_of_port_identifiers ',' IDENTIFIER dimensions_opt
                 { $$ = make_port_list($1, $3, $4, 0); }
 	;
@@ -4881,8 +4884,8 @@ module_item
        input wire signed [h:l] <list>;
      This creates the wire and sets the port type all at once. */
 
-  | attribute_list_opt port_direction net_type_or_var data_type_or_implicit list_of_port_identifiers ';'
-      { pform_module_define_port(@2, $5, $2, $3, $4, $1); }
+  | attribute_list_opt port_direction net_type_or_var list_of_port_identifiers ';'
+      { pform_module_define_port(@2, $4.ports, $2, $3, $4.type, $1); }
 
   | attribute_list_opt port_direction K_wreal list_of_port_identifiers ';'
       { real_type_t*real_type = new real_type_t(real_type_t::REAL);
@@ -4895,28 +4898,28 @@ module_item
      and also handle incomplete port declarations, e.g.
        input signed [h:l] <list>;
    */
-  | attribute_list_opt K_inout data_type_or_implicit list_of_port_identifiers ';'
-      { NetNet::Type use_type = $3 ? NetNet::IMPLICIT : NetNet::NONE;
-	if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($3)) {
+  | attribute_list_opt K_inout list_of_port_identifiers ';'
+      { NetNet::Type use_type = $3.type ? NetNet::IMPLICIT : NetNet::NONE;
+	if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($3.type)) {
 	      if (dtype->implicit_flag)
 		    use_type = NetNet::NONE;
 	}
 	if (use_type == NetNet::NONE)
-	      pform_set_port_type(@2, $4, NetNet::PINOUT, $3, $1);
+	      pform_set_port_type(@2, $3.ports, NetNet::PINOUT, $3.type, $1);
 	else
-	      pform_module_define_port(@2, $4, NetNet::PINOUT, use_type, $3, $1);
+	      pform_module_define_port(@2, $3.ports, NetNet::PINOUT, use_type, $3.type, $1);
       }
 
-  | attribute_list_opt K_input data_type_or_implicit list_of_port_identifiers ';'
-      { NetNet::Type use_type = $3 ? NetNet::IMPLICIT : NetNet::NONE;
-	if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($3)) {
+  | attribute_list_opt K_input list_of_port_identifiers ';'
+      { NetNet::Type use_type = $3.type ? NetNet::IMPLICIT : NetNet::NONE;
+	if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($3.type)) {
 	      if (dtype->implicit_flag)
 		    use_type = NetNet::NONE;
 	}
 	if (use_type == NetNet::NONE)
-	      pform_set_port_type(@2, $4, NetNet::PINPUT, $3, $1);
+	      pform_set_port_type(@2, $3.ports, NetNet::PINPUT, $3.type, $1);
 	else
-	      pform_module_define_port(@2, $4, NetNet::PINPUT, use_type, $3, $1);
+	      pform_module_define_port(@2, $3.ports, NetNet::PINPUT, use_type, $3.type, $1);
       }
 
   | attribute_list_opt K_output data_type_or_implicit list_of_variable_port_identifiers ';'
