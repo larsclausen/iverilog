@@ -422,7 +422,7 @@ extern bool evaluate_range(Design*des, NetScope*scope, const LineInfo*li,
 
 extern bool evaluate_ranges(Design*des, NetScope*scope, const LineInfo*li,
 			    std::vector<netrange_t>&llist,
-			    const std::list<pform_range_t>&rlist);
+			    const std::vector<pform_range_t>&rlist);
 /*
  * This procedure evaluates an expression and if the evaluation is
  * successful the original expression is replaced with the new one.

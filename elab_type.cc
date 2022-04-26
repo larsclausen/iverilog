@@ -314,7 +314,7 @@ static ivl_type_t elaborate_static_array_type(Design *des, const LineInfo &li,
 
 ivl_type_t elaborate_array_type(Design *des, NetScope *scope,
 			        const LineInfo &li, ivl_type_t base_type,
-			        const list<pform_range_t> &dims)
+			        const std::vector<pform_range_t> &dims)
 {
       const long warn_dimension_size = 1 << 30;
       std::vector<netrange_t> dimensions;
@@ -322,7 +322,7 @@ ivl_type_t elaborate_array_type(Design *des, NetScope *scope,
 
       ivl_type_t type = base_type;
 
-      for (list<pform_range_t>::const_iterator cur = dims.begin();
+      for (std::vector<pform_range_t>::const_iterator cur = dims.begin();
 	   cur != dims.end() ; ++cur) {
 	    PExpr *lidx = cur->first;
 	    PExpr *ridx = cur->second;

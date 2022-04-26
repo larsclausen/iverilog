@@ -75,9 +75,9 @@ class PWire : public PNamedItem {
       ivl_variable_type_t get_data_type() const;
 
       void set_range_scalar(PWSRType type);
-      void set_range(const std::list<pform_range_t>&ranges, PWSRType type);
+      void set_range(const std::vector<pform_range_t>&ranges, PWSRType type);
 
-      void set_unpacked_idx(const std::list<pform_range_t>&ranges);
+      void set_unpacked_idx(const std::vector<pform_range_t>&ranges);
       void set_uarray_type(uarray_type_t*type) { uarray_type_ = type; }
 
       void set_data_type(data_type_t*type);
@@ -107,16 +107,16 @@ class PWire : public PNamedItem {
 	// bit. The first item in the list is the first range, and so
 	// on. For example "reg [3:0][7:0] ..." will contains the
 	// range_t object for [3:0] first and [7:0] last.
-      std::list<pform_range_t>port_;
+      std::vector<pform_range_t>port_;
       bool port_set_;
-      std::list<pform_range_t>net_;
+      std::vector<pform_range_t>net_;
       bool net_set_;
       bool is_scalar_;
       unsigned error_cnt_;
 
 	// If this wire is actually a memory, these indices will give
 	// me the size and address ranges of the memory.
-      std::list<pform_range_t>unpacked_;
+      std::vector<pform_range_t>unpacked_;
       uarray_type_t*uarray_type_;
 
 	// This is the complex type of the wire. the data_type_ may

@@ -98,8 +98,7 @@ struct parmvalue_t {
 struct str_pair_t { ivl_drive_t str0, str1; };
 
 
-extern std::list<pform_range_t>* make_range_from_width(uint64_t wid);
-extern std::list<pform_range_t>* copy_range(std::list<pform_range_t>* orig);
+extern std::vector<pform_range_t>* copy_range(std::vector<pform_range_t>* orig);
 
   /* Use this function to transform the parted form of the attribute
      list to the attribute map that is used later. */
@@ -308,7 +307,7 @@ extern void pform_make_elab_task(const struct vlltype&li,
                                  const std::vector<PExpr*>&params);
 
 extern void pform_set_typedef(perm_string name, data_type_t*data_type,
-			      std::list<pform_range_t>*unp_ranges);
+			      std::vector<pform_range_t>*unp_ranges);
 
 extern void pform_set_type_referenced(const struct vlltype&loc, const char*name);
 
@@ -336,7 +335,7 @@ extern PForeach* pform_make_foreach(const struct vlltype&loc,
 extern PWire *pform_makewire(const struct vlltype&li, perm_string name,
 			     NetNet::Type type,
 			     ivl_variable_type_t dt,
-			     std::list<pform_range_t> *indices);
+			     std::vector<pform_range_t> *indices);
 
 /* This form handles assignment declarations. */
 
@@ -397,7 +396,7 @@ extern void pform_set_parameter(const struct vlltype&loc,
 				PExpr*expr, LexicalScope::range_t*value_range);
 extern void pform_set_specparam(const struct vlltype&loc,
 				 perm_string name,
-				 std::list<pform_range_t>*range,
+				 std::vector<pform_range_t>*range,
 				 PExpr*expr);
 extern void pform_set_defparam(const pform_name_t&name, PExpr*expr);
 
@@ -408,7 +407,7 @@ extern void pform_make_let(const struct vlltype&loc,
 
 extern PLet::let_port_t* pform_make_let_port(data_type_t*data_type,
                                              perm_string name,
-                                             std::list<pform_range_t>*range,
+                                             std::vector<pform_range_t>*range,
                                              PExpr*def);
 
 /*

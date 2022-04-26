@@ -176,7 +176,7 @@ void PWire::set_range_scalar(PWSRType type)
       }
 }
 
-void PWire::set_range(const list<pform_range_t>&rlist, PWSRType type)
+void PWire::set_range(const std::vector<pform_range_t>&rlist, PWSRType type)
 {
       switch (type) {
 	  case SR_PORT:
@@ -226,7 +226,7 @@ void PWire::set_range(const list<pform_range_t>&rlist, PWSRType type)
       }
 }
 
-void PWire::set_unpacked_idx(const list<pform_range_t>&ranges)
+void PWire::set_unpacked_idx(const std::vector<pform_range_t>&ranges)
 {
       if (! unpacked_.empty()) {
 	    cerr << get_fileline() << ": error: Array ``" << name_

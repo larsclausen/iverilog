@@ -83,7 +83,7 @@ struct lgate : public LineInfo {
       std::vector<PExpr*>*parms;
       std::list<named_pexpr_t>*parms_by_name;
 
-      std::list<pform_range_t>*ranges;
+      std::vector<pform_range_t>*ranges;
 };
 
 /*
@@ -92,12 +92,12 @@ struct lgate : public LineInfo {
  * declarations.
  */
 struct pform_port_t {
-      pform_port_t(perm_string n, std::list<pform_range_t>*ud, PExpr*e)
+      pform_port_t(perm_string n, std::vector<pform_range_t>*ud, PExpr*e)
 	: name(n), udims(ud), expr(e) { }
       ~pform_port_t() { }
 
       perm_string name;
-      std::list<pform_range_t>*udims;
+      std::vector<pform_range_t>*udims;
       PExpr*expr;
 };
 
@@ -134,7 +134,7 @@ struct name_component_t {
 
 struct decl_assignment_t {
       perm_string name;
-      std::list<pform_range_t>index;
+      std::vector<pform_range_t>index;
       std::unique_ptr<PExpr> expr;
 };
 
@@ -260,7 +260,7 @@ extern atom_type_t size_type;
  */
 struct vector_type_t : public data_type_t {
       inline explicit vector_type_t(ivl_variable_type_t bt, bool sf,
-				    std::list<pform_range_t>*pd)
+				    std::vector<pform_range_t>*pd)
       : base_type(bt), signed_flag(sf), integer_flag(false), implicit_flag(false), pdims(pd) { }
       virtual ivl_variable_type_t figure_packed_base_type(void)const;
       virtual void pform_dump(std::ostream&out, unsigned indent) const;
@@ -271,16 +271,16 @@ struct vector_type_t : public data_type_t {
       bool signed_flag;
       bool integer_flag; // True if "integer" was used
       bool implicit_flag; // True if this type is implicitly logic/reg
-      std::unique_ptr< std::list<pform_range_t> > pdims;
+      std::unique_ptr< std::vector<pform_range_t> > pdims;
 };
 
 struct array_base_t : public data_type_t {
     public:
-      inline explicit array_base_t(data_type_t*btype, std::list<pform_range_t>*pd)
+      inline explicit array_base_t(data_type_t*btype, std::vector<pform_range_t>*pd)
       : base_type(btype), dims(pd) { }
 
       data_type_t*base_type;
-      std::unique_ptr< std::list<pform_range_t> > dims;
+      std::unique_ptr< std::vector<pform_range_t> > dims;
 };
 
 /*
@@ -290,7 +290,7 @@ struct array_base_t : public data_type_t {
  * worked out during elaboration.
  */
 struct parray_type_t : public array_base_t {
-      inline explicit parray_type_t(data_type_t*btype, std::list<pform_range_t>*pd)
+      inline explicit parray_type_t(data_type_t*btype, std::vector<pform_range_t>*pd)
       : array_base_t(btype, pd) { }
 
       virtual ivl_variable_type_t figure_packed_base_type(void)const;
@@ -302,7 +302,7 @@ struct parray_type_t : public array_base_t {
  * The uarray_type_t represents unpacked array types.
  */
 struct uarray_type_t : public array_base_t {
-      inline explicit uarray_type_t(data_type_t*btype, std::list<pform_range_t>*pd)
+      inline explicit uarray_type_t(data_type_t*btype, std::vector<pform_range_t>*pd)
       : array_base_t(btype, pd) { }
 
     public:
@@ -377,7 +377,7 @@ struct class_type_t : public data_type_t {
 
 ivl_type_t elaborate_array_type(Design *des, NetScope *scope,
 			        const LineInfo &li, ivl_type_t base_type,
-			        const std::list<pform_range_t> &dims);
+			        const std::vector<pform_range_t> &dims);
 
 /*
  * The pform_name_t is the general form for a hierarchical

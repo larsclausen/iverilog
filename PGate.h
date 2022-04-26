@@ -59,7 +59,7 @@ class PGate : public PNamedItem {
 
       virtual ~PGate();
 
-      void set_ranges(std::list<pform_range_t>*ranges);
+      void set_ranges(std::vector<pform_range_t>*ranges);
       bool is_array() const { return ranges_ != 0; }
 
       perm_string get_name() const { return name_; }
@@ -107,7 +107,7 @@ class PGate : public PNamedItem {
       PDelays delay_;
       std::vector<PExpr*>pins_;
 
-      std::list<pform_range_t>*ranges_;
+      std::vector<pform_range_t>*ranges_;
 
       ivl_drive_t str0_, str1_;
 

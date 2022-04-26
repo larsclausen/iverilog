@@ -164,7 +164,7 @@ class PLet : public PTaskFunc {
       typedef struct let_port {
 	    data_type_t*type_;
 	    perm_string name_;
-	    std::list<pform_range_t>*range_;
+	    std::vector<pform_range_t>*range_;
 	    PExpr*def_;
 
 	    void dump(std::ostream&, unsigned) const;

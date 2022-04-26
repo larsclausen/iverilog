@@ -63,7 +63,7 @@ PGate::~PGate()
 {
 }
 
-void PGate::set_ranges(list<pform_range_t>*ranges)
+void PGate::set_ranges(vector<pform_range_t>*ranges)
 {
       assert(ranges_ == 0);
       ranges_ = ranges;

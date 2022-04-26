@@ -1136,11 +1136,13 @@ bool evaluate_range(Design*des, NetScope*scope, const LineInfo*li,
 
 bool evaluate_ranges(Design*des, NetScope*scope, const LineInfo*li,
 		     vector<netrange_t>&llist,
-		     const list<pform_range_t>&rlist)
+		     const std::vector<pform_range_t>&rlist)
 {
       bool dimensions_ok = true;
 
-      for (list<pform_range_t>::const_iterator cur = rlist.begin()
+      llist.reserve(rlist.size());
+
+      for (std::vector<pform_range_t>::const_iterator cur = rlist.begin()
 		 ; cur != rlist.end() ; ++cur) {
             long index_l, index_r;
             dimensions_ok &= evaluate_range(des, scope, li, *cur, index_l, index_r);

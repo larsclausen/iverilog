@@ -256,7 +256,7 @@ void vector_type_t::pform_dump(ostream&fd, unsigned indent) const
 {
       fd << setw(indent) << "" << "vector of " << base_type;
       if (pdims.get()) {
-	    for (list<pform_range_t>::iterator cur = pdims->begin()
+	    for (std::vector<pform_range_t>::iterator cur = pdims->begin()
 		       ; cur != pdims->end() ; ++cur) {
 		  fd << "[";
 		  if (cur->first)  fd << *(cur->first);
@@ -276,7 +276,7 @@ ostream& vector_type_t::debug_dump(ostream&fd) const
 	    return fd;
       }
 
-      for (list<pform_range_t>::iterator cur = pdims->begin()
+      for (std::vector<pform_range_t>::iterator cur = pdims->begin()
 		 ; cur != pdims->end() ; ++cur) {
 	    fd << "[";
 	    if (cur->first)  fd << *(cur->first);
@@ -623,7 +623,7 @@ void PWire::dump(ostream&out, unsigned ind) const
 		  out << " port<scalar>";
 	    } else {
 		  out << " port";
-		  for (list<pform_range_t>::const_iterator cur = port_.begin()
+		  for (std::vector<pform_range_t>::const_iterator cur = port_.begin()
 			     ; cur != port_.end() ; ++cur) {
 			out << "[";
 			if (cur->first)  out << *cur->first;
@@ -637,7 +637,7 @@ void PWire::dump(ostream&out, unsigned ind) const
 		  out << " net<scalar>";
 	    } else {
 		  out << " net";
-		  for (list<pform_range_t>::const_iterator cur = net_.begin()
+		  for (std::vector<pform_range_t>::const_iterator cur = net_.begin()
 			     ; cur != net_.end() ; ++cur) {
 			out << "[";
 			if (cur->first)  out << *cur->first;
@@ -650,7 +650,7 @@ void PWire::dump(ostream&out, unsigned ind) const
       out << " " << name_;
 
 	// If the wire has unpacked indices, dump them.
-      for (list<pform_range_t>::const_iterator cur = unpacked_.begin()
+      for (std::vector<pform_range_t>::const_iterator cur = unpacked_.begin()
 		 ; cur != unpacked_.end() ; ++cur) {
 	    out << "[";
 	    if (cur->first) out << *cur->first;
@@ -699,7 +699,7 @@ void PGate::dump_delays(ostream&out) const
 
 void PGate::dump_ranges(ostream&out) const
 {
-      for (list<pform_range_t>::iterator cur = ranges_->begin()
+      for (std::vector<pform_range_t>::iterator cur = ranges_->begin()
 		 ; cur != ranges_->end() ; ++cur) {
 	    out << "[";
 	    if (cur->first)  out << *(cur->first);

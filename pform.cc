@@ -857,7 +857,7 @@ void pform_put_enum_type_in_scope(enum_type_t*enum_set)
       lexical_scope->enum_sets.push_back(enum_set);
 }
 
-void pform_set_typedef(perm_string name, data_type_t*data_type, std::list<pform_range_t>*unp_ranges)
+void pform_set_typedef(perm_string name, data_type_t*data_type, std::vector<pform_range_t>*unp_ranges)
 {
       if(unp_ranges)
 	    data_type = new uarray_type_t(data_type, unp_ranges);
@@ -2143,7 +2143,7 @@ void pform_make_udp(const struct vlltype&loc, perm_string name,
  * and the name that I receive only has the tail component.
  */
 static void pform_set_net_range(PWire *wire,
-				const list<pform_range_t>*range,
+				const std::vector<pform_range_t>*range,
 				bool signed_flag,
 				PWSRType rt = SR_NET,
 				std::list<named_pexpr_t>*attr = 0)
@@ -2276,7 +2276,7 @@ static void pform_make_modgate(perm_string type,
 			       perm_string name,
 			       struct parmvalue_t*overrides,
 			       vector<PExpr*>*wires,
-			       list<pform_range_t>*ranges,
+			       std::vector<pform_range_t>*ranges,
 			       const LineInfo&li,
 			       std::list<named_pexpr_t>*attr)
 {
@@ -2319,7 +2319,7 @@ static void pform_make_modgate(perm_string type,
 			       perm_string name,
 			       struct parmvalue_t*overrides,
 			       list<named_pexpr_t>*bind,
-			       list<pform_range_t>*ranges,
+			       std::vector<pform_range_t>*ranges,
 			       const LineInfo&li,
 			       std::list<named_pexpr_t>*attr)
 {
@@ -2549,9 +2549,9 @@ void pform_module_define_port(const struct vlltype&li,
       pform_check_net_data_type(li, type, vtype);
 
 	// Packed ranges
-      list<pform_range_t>*prange = 0;
+      std::vector<pform_range_t>*prange = 0;
 	// Unpacked dimensions
-      list<pform_range_t>*urange = 0;
+      std::vector<pform_range_t>*urange = 0;
 
 	// If this is an unpacked array, then split out the parts that
 	// we can send to the PWire object that we create.
@@ -2700,7 +2700,7 @@ static PWire* pform_get_or_make_wire(const vlltype&li, perm_string name,
  * this one to create the wire and stash it.
  */
 PWire *pform_makewire(const vlltype&li, perm_string name, NetNet::Type type,
-		      ivl_variable_type_t dt, std::list<pform_range_t> *indices)
+		      ivl_variable_type_t dt, std::vector<pform_range_t> *indices)
 {
       PWire*cur = pform_get_or_make_wire(li, name, type, NetNet::NOT_A_PORT,
 					 dt);
@@ -2815,7 +2815,7 @@ static vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
 						     NetNet::PortType pt,
 						     ivl_variable_type_t vtype,
 						     bool signed_flag,
-						     list<pform_range_t>*range,
+						     std::vector<pform_range_t>*range,
 						     list<pform_port_t>*ports)
 {
       assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
@@ -2896,7 +2896,7 @@ vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
 				      bool allow_implicit)
 {
       vector<pform_tf_port_t>*ret = NULL;
-      std::list<pform_range_t>*unpacked_dims = NULL;
+      std::vector<pform_range_t>*unpacked_dims = NULL;
 
       if (uarray_type_t*uarray = dynamic_cast<uarray_type_t*> (vtype)) {
             unpacked_dims = uarray->dims.get();
@@ -3113,7 +3113,7 @@ void pform_set_parameter(const struct vlltype&loc,
 }
 
 void pform_set_specparam(const struct vlltype&loc, perm_string name,
-			 list<pform_range_t>*range, PExpr*expr)
+			 std::vector<pform_range_t>*range, PExpr*expr)
 {
       assert(! pform_cur_module.empty());
       Module*scope = pform_cur_module.front();
@@ -3175,7 +3175,7 @@ void pform_make_let(const struct vlltype&loc,
 
 PLet::let_port_t* pform_make_let_port(data_type_t*data_type,
                                       perm_string name,
-                                      list<pform_range_t>*range,
+                                      std::vector<pform_range_t>*range,
                                       PExpr*def)
 {
       PLet::let_port_t*res = new PLet::let_port_t;
@@ -3288,7 +3288,7 @@ void pform_set_port_type(const struct vlltype&li,
 {
       assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
 
-      list<pform_range_t>*range = 0;
+      std::vector<pform_range_t>*range = 0;
       bool signed_flag = false;
       if (vector_type_t*vt = dynamic_cast<vector_type_t*> (dt)) {
 	    assert(vt->implicit_flag);

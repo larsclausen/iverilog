@@ -76,7 +76,7 @@ void pform_class_property(const struct vlltype&loc,
 	    data_type_t*use_type = data_type;
 
 	    if (! curp->index.empty()) {
-		  list<pform_range_t>*pd = new list<pform_range_t> (curp->index);
+		  vector<pform_range_t>*pd = new vector<pform_range_t> (curp->index);
 		  use_type = new uarray_type_t(use_type, pd);
 		  FILE_NAME(use_type, loc);
 	    }

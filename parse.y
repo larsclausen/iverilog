@@ -39,7 +39,7 @@ extern void lex_end_table();
 
 static data_type_t* param_data_type = 0;
 static bool param_is_local = false;
-static std::list<pform_range_t>* specparam_active_range = 0;
+static std::vector<pform_range_t>* specparam_active_range = 0;
 
 /* Port declaration lists use this structure for context. */
 static struct {
@@ -134,7 +134,7 @@ static std::list<named_pexpr_t>*attributes_in_context = 0;
 static const struct str_pair_t pull_strength = { IVL_DR_PULL,  IVL_DR_PULL };
 static const struct str_pair_t str_strength = { IVL_DR_STRONG, IVL_DR_STRONG };
 
-static std::list<pform_port_t>* make_port_list(char*id, std::list<pform_range_t>*udims, PExpr*expr)
+static std::list<pform_port_t>* make_port_list(char*id, std::vector<pform_range_t>*udims, PExpr*expr)
 {
       std::list<pform_port_t>*tmp = new std::list<pform_port_t>;
       tmp->push_back(pform_port_t(lex_strings.make(id), udims, expr));
@@ -142,22 +142,11 @@ static std::list<pform_port_t>* make_port_list(char*id, std::list<pform_range_t>
       return tmp;
 }
 static std::list<pform_port_t>* make_port_list(list<pform_port_t>*tmp,
-                                          char*id, std::list<pform_range_t>*udims, PExpr*expr)
+                                          char*id, std::vector<pform_range_t>*udims, PExpr*expr)
 {
       tmp->push_back(pform_port_t(lex_strings.make(id), udims, expr));
       delete[]id;
       return tmp;
-}
-
-list<pform_range_t>* make_range_from_width(uint64_t wid)
-{
-      pform_range_t range;
-      range.first  = new PENumber(new verinum(wid-1, integer_width));
-      range.second = new PENumber(new verinum((uint64_t)0, integer_width));
-
-      std::list<pform_range_t>*rlist = new std::list<pform_range_t>;
-      rlist->push_back(range);
-      return rlist;
 }
 
 static std::list<perm_string>* list_from_identifier(char*id)
@@ -175,12 +164,12 @@ static std::list<perm_string>* list_from_identifier(list<perm_string>*tmp, char*
       return tmp;
 }
 
-list<pform_range_t>* copy_range(list<pform_range_t>* orig)
+vector<pform_range_t>* copy_range(vector<pform_range_t>* orig)
 {
-      std::list<pform_range_t>*copy = 0;
+      std::vector<pform_range_t>*copy = 0;
 
       if (orig)
-	    copy = new std::list<pform_range_t> (*orig);
+	    copy = new std::vector<pform_range_t> (*orig);
 
       return copy;
 }
@@ -420,7 +409,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       named_pexpr_t*named_pexpr;
       std::list<named_pexpr_t>*named_pexprs;
       struct parmvalue_t*parmvalue;
-      std::list<pform_range_t>*ranges;
+      PExpr* range[2];
+      std::vector<pform_range_t>*ranges;
 
       PExpr*expr;
       std::vector<PExpr*>*exprs;
@@ -679,7 +669,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <property_qualifier> class_item_qualifier_opt property_qualifier_opt
 %type <property_qualifier> random_qualifier
 
-%type <ranges> variable_dimension
+%type <range> variable_dimension
 %type <ranges> dimensions_opt dimensions
 
 %type <nettype>  net_type net_type_opt
@@ -2469,10 +2459,8 @@ value_range /* IEEE1800-2005: A.8.3 */
 
 variable_dimension /* IEEE1800-2005: A.2.5 */
   : '[' expression ':' expression ']'
-      { std::list<pform_range_t> *tmp = new std::list<pform_range_t>;
-	pform_range_t index ($2,$4);
-	tmp->push_back(index);
-	$$ = tmp;
+      { $$[0] = $2;
+        $$[1] = $4;
       }
   | '[' expression ']'
       { // SystemVerilog canonical range
@@ -2481,33 +2469,26 @@ variable_dimension /* IEEE1800-2005: A.2.5 */
 	      cerr << @2 << ": warning: Use of SystemVerilog [size] dimension. "
 		   << "Use at least -g2005-sv to remove this warning." << endl;
 	}
-	list<pform_range_t> *tmp = new std::list<pform_range_t>;
-	pform_range_t index ($2,0);
-	tmp->push_back(index);
-	$$ = tmp;
+
+        $$[0] = $2;
+        $$[1] = 0;
       }
   | '[' ']'
-      { std::list<pform_range_t> *tmp = new std::list<pform_range_t>;
-	pform_range_t index (0,0);
-	pform_requires_sv(@$, "Dynamic array declaration");
-	tmp->push_back(index);
-	$$ = tmp;
+      { pform_requires_sv(@$, "Dynamic array declaration");
+        $$[0] = 0;
+        $$[1] = 0;
       }
   | '[' '$' ']'
       { // SystemVerilog queue
-	list<pform_range_t> *tmp = new std::list<pform_range_t>;
-	pform_range_t index (new PENull,0);
 	pform_requires_sv(@$, "Queue declaration");
-	tmp->push_back(index);
-	$$ = tmp;
+        $$[0] = new PENull;
+        $$[1] = 0;
       }
   | '[' '$' ':' expression ']'
       { // SystemVerilog queue with a max size
-	list<pform_range_t> *tmp = new std::list<pform_range_t>;
-	pform_range_t index (new PENull,$4);
 	pform_requires_sv(@$, "Queue declaration");
-	tmp->push_back(index);
-	$$ = tmp;
+        $$[0] = new PENull;
+        $$[1] = $4;
       }
   ;
 
@@ -5795,13 +5776,13 @@ dimensions_opt
 
 dimensions
   : variable_dimension
-      { $$ = $1; }
+      { std::vector<pform_range_t> *tmp = new std::vector<pform_range_t>;
+        tmp->push_back(pform_range_t($1[0], $1[1]));
+	$$ = tmp;
+      }
   | dimensions variable_dimension
-      { std::list<pform_range_t> *tmp = $1;
-	if ($2) {
-	      tmp->splice(tmp->end(), *$2);
-	      delete $2;
-	}
+      { std::vector<pform_range_t> *tmp = $1;
+        tmp->push_back(pform_range_t($2[0], $2[1]));
 	$$ = tmp;
       }
   ;
