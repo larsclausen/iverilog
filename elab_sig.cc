@@ -387,10 +387,9 @@ void netclass_t::elaborate_sig(Design*des, PClass*pclass)
 		       << "." << endl;
 	    }
 
-	    list<netrange_t> nil_list;
 	    ivl_type_t use_type = cur->second.type->elaborate_type(des, class_scope_);
 	    /* NetNet*sig = */ new NetNet(class_scope_, cur->first, NetNet::REG,
-				    nil_list, use_type);
+					  use_type);
       }
 
       for (map<perm_string,PFunction*>::iterator cur = pclass->funcs.begin()
@@ -657,8 +656,7 @@ void PFunction::elaborate_sig(Design*des, NetScope*scope) const
 			if (return_type_)
 			      return_type_->pform_dump(cerr, 8);
 		  }
-		  list<netrange_t> ret_unpacked;
-		  ret_sig = new NetNet(scope, fname, NetNet::REG, ret_unpacked, ret_type);
+		  ret_sig = new NetNet(scope, fname, NetNet::REG, ret_type);
 
 		  ret_sig->set_line(*this);
 		  ret_sig->port_type(NetNet::POUTPUT);
