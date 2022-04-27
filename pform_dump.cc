@@ -238,7 +238,7 @@ void struct_type_t::pform_dump(ostream&out, unsigned indent) const
       if (members.get()==0)
 	    return;
 
-      for (list<struct_member_t*>::iterator cur = members->begin()
+      for (vector<struct_member_t*>::iterator cur = members->begin()
 		 ; cur != members->end() ; ++ cur) {
 	    struct_member_t*curp = *cur;
 	    curp->pform_dump(out, indent+4);

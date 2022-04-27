@@ -436,7 +436,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       std::list<decl_assignment_t*>*decl_assignments;
 
       struct_member_t*struct_member;
-      std::list<struct_member_t*>*struct_members;
+      std::vector<struct_member_t*>*struct_members;
       struct_type_t*struct_type;
 
       data_type_t*data_type;
@@ -2854,12 +2854,12 @@ struct_data_type /* IEEE 1800-2012 A.2.2.1 */
      in IEEE 1800-2012 A.2.2.1. */
 struct_union_member_list
   : struct_union_member_list struct_union_member
-      { std::list<struct_member_t*>*tmp = $1;
+      { std::vector<struct_member_t*>*tmp = $1;
 	if ($2) tmp->push_back($2);
 	$$ = tmp;
       }
   | struct_union_member
-      { std::list<struct_member_t*>*tmp = new std::list<struct_member_t*>;
+      { std::vector<struct_member_t*>*tmp = new std::vector<struct_member_t*>;
 	if ($1) tmp->push_back($1);
 	$$ = tmp;
       }
