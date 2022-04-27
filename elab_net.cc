@@ -203,7 +203,7 @@ bool PEConcat::is_collapsible_net(Design*des, NetScope*scope,
 bool PEIdent::eval_part_select_(Design*des, NetScope*scope, NetNet*sig,
 				long&midx, long&lidx) const
 {
-      list<long> prefix_indices;
+      std::vector<long> prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, sig, prefix_indices);
       ivl_assert(*this, rc);
 
@@ -577,7 +577,7 @@ NetNet* PEIdent::elaborate_lnet_common_(Design*des, NetScope*scope,
       // array word assignment.
       bool widx_flag = false;
 
-      list<long> unpacked_indices_const;
+      std::vector<long> unpacked_indices_const;
 
       // Detect the net is a structure and there was a method path
       // detected. We have already broken the path_ into the path to
@@ -736,7 +736,7 @@ NetNet* PEIdent::elaborate_lnet_common_(Design*des, NetScope*scope,
 
 	      // Evaluate all the index expressions into an
 	      // "unpacked_indices" array.
-	    list<NetExpr*>unpacked_indices;
+	    std::vector<NetExpr*>unpacked_indices;
 	    indices_flags flags;
 	    indices_to_expressions(des, scope, this,
 				   path_tail.index, sig->unpacked_dimensions(),

@@ -235,7 +235,7 @@ extern NetExpr*normalize_variable_base(NetExpr *base,
  *   ... foo[1][x] ...
  * base is (x) and the generated expression will be (x+8).
  */
-extern NetExpr*normalize_variable_bit_base(const std::list<long>&indices, NetExpr *base,
+extern NetExpr*normalize_variable_bit_base(const std::vector<long>&indices, NetExpr *base,
 					   const NetNet*reg);
 
 /*
@@ -247,7 +247,7 @@ extern NetExpr*normalize_variable_bit_base(const std::list<long>&indices, NetExp
  * base is (x), wid input is (2), and is_up is (true). The output
  * expression is (x+8).
  */
-extern NetExpr *normalize_variable_part_base(const std::list<long>&indices, NetExpr*base,
+extern NetExpr *normalize_variable_part_base(const std::vector<long>&indices, NetExpr*base,
 					     const NetNet*reg,
 					     unsigned long wid, bool is_up);
 /*
@@ -261,7 +261,7 @@ extern NetExpr *normalize_variable_part_base(const std::list<long>&indices, NetE
  * base is (x) and the generated expression will be (x*8 - 8), with
  * lwid set to (8).
  */
-extern NetExpr*normalize_variable_slice_base(const std::list<long>&indices, NetExpr *base,
+extern NetExpr*normalize_variable_slice_base(const std::vector<long>&indices, NetExpr *base,
 					     const NetNet*reg, unsigned long&lwid);
 
 /*
@@ -269,10 +269,10 @@ extern NetExpr*normalize_variable_slice_base(const std::list<long>&indices, NetE
  * index values in the form [<>][<>]....
  */
 template <class TYPE> struct __IndicesManip {
-      explicit inline __IndicesManip(const std::list<TYPE>&v) : val(v) { }
-      const std::list<TYPE>&val;
+      explicit inline __IndicesManip(const std::vector<TYPE>&v) : val(v) { }
+      const std::vector<TYPE>&val;
 };
-template <class TYPE> inline __IndicesManip<TYPE> as_indices(const std::list<TYPE>&indices)
+template <class TYPE> inline __IndicesManip<TYPE> as_indices(const std::vector<TYPE>&indices)
 { return __IndicesManip<TYPE>(indices); }
 
 extern std::ostream& operator << (std::ostream&o, __IndicesManip<long>);
@@ -297,13 +297,13 @@ extern void indices_to_expressions(Design*des, NetScope*scope,
 				   bool need_const,
 				     // These are the outputs.
 				   indices_flags&flags,
-				   std::list<NetExpr*>&indices,std::list<long>&indices_const);
+				   std::vector<NetExpr*>&indices,std::vector<long>&indices_const);
 
-extern NetExpr*normalize_variable_unpacked(const NetNet*net, std::list<long>&indices);
-extern NetExpr*normalize_variable_unpacked(const netsarray_t*net, std::list<long>&indices);
+extern NetExpr*normalize_variable_unpacked(const NetNet*net, std::vector<long>&indices);
+extern NetExpr*normalize_variable_unpacked(const netsarray_t*net, std::vector<long>&indices);
 
-extern NetExpr*normalize_variable_unpacked(const NetNet*net, std::list<NetExpr*>&indices);
-extern NetExpr*normalize_variable_unpacked(const LineInfo&loc, const netsarray_t*net, std::list<NetExpr*>&indices);
+extern NetExpr*normalize_variable_unpacked(const NetNet*net, std::vector<NetExpr*>&indices);
+extern NetExpr*normalize_variable_unpacked(const LineInfo&loc, const netsarray_t*net, std::vector<NetExpr*>&indices);
 
 extern NetExpr*make_canonical_index(Design*des, NetScope*scope,
 				      // loc for error messages
@@ -488,7 +488,7 @@ extern uint64_t get_scaled_time_from_real(Design*des,
 extern void collapse_partselect_pv_to_concat(Design*des, NetNet*sig);
 
 extern bool evaluate_index_prefix(Design*des, NetScope*scope,
-				  std::list<long>&prefix_indices,
+				  std::vector<long>&prefix_indices,
 				  const std::list<index_component_t>&indices);
 
 extern NetExpr*collapse_array_indices(Design*des, NetScope*scope, NetNet*net,

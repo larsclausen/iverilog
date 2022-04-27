@@ -2329,7 +2329,7 @@ static NetExpr* check_for_struct_members(const LineInfo*li,
 			}
 
 			  // Evaluate all but the last index expression, into prefix_indices.
-			list<long>prefix_indices;
+			std::vector<long>prefix_indices;
 			bool rc = evaluate_index_prefix(des, scope, prefix_indices, member_comp.index);
 			ivl_assert(*li, rc);
 
@@ -2402,7 +2402,7 @@ static NetExpr* check_for_struct_members(const LineInfo*li,
 		  }
 
 		    // Evaluate all but the last index expression, into prefix_indices.
-		  list<long>prefix_indices;
+		  vector<long>prefix_indices;
 		  bool rc = evaluate_index_prefix(des, scope, prefix_indices, member_comp.index);
 		  ivl_assert(*li, rc);
 
@@ -3747,7 +3747,7 @@ NetExpr* PEFNumber::elaborate_expr(Design*, NetScope*, unsigned, unsigned) const
 }
 
 bool PEIdent::calculate_packed_indices_(Design*des, NetScope*scope, NetNet*net,
-					list<long>&prefix_indices) const
+					std::vector<long>&prefix_indices) const
 {
       unsigned dimensions = net->unpacked_dimensions() + net->packed_dimensions();
       switch (net->data_type()) {
@@ -4395,8 +4395,8 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 
 	// Convert a set of index expressions to a single expression
 	// that addresses the canonical element.
-      list<NetExpr*>unpacked_indices;
-      list<long> unpacked_indices_const;
+      std::vector<NetExpr*>unpacked_indices;
+      std::vector<long> unpacked_indices_const;
       indices_flags idx_flags;
       indices_to_expressions(des, scope, this,
 			     use_comp.index, net->unpacked_dimensions(),
@@ -5601,8 +5601,8 @@ NetExpr* PEIdent::elaborate_expr_net_word_(Design*des, NetScope*scope,
 
 	// Evaluate all the index expressions into an
 	// "unpacked_indices" array.
-      list<NetExpr*>unpacked_indices;
-      list<long> unpacked_indices_const;
+      std::vector<NetExpr*>unpacked_indices;
+      std::vector<long> unpacked_indices_const;
       indices_flags idx_flags;
       indices_to_expressions(des, scope, this,
 			     name_tail.index, net->unpacked_dimensions(),
@@ -5693,7 +5693,7 @@ NetExpr* PEIdent::elaborate_expr_net_part_(Design*des, NetScope*scope,
 				           NetESignal*net, NetScope*,
                                            unsigned expr_wid) const
 {
-      list<long> prefix_indices;
+      std::vector<long> prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, net->sig(), prefix_indices);
       if (!rc)
 	    return 0;
@@ -5842,7 +5842,7 @@ NetExpr* PEIdent::elaborate_expr_net_idx_up_(Design*des, NetScope*scope,
 				             NetESignal*net, NetScope*,
                                              bool need_const) const
 {
-      list<long>prefix_indices;
+      std::vector<long>prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, net->sig(), prefix_indices);
       if (!rc)
 	    return 0;
@@ -5974,7 +5974,7 @@ NetExpr* PEIdent::elaborate_expr_net_idx_do_(Design*des, NetScope*scope,
 					     NetESignal*net, NetScope*,
                                              bool need_const) const
 {
-      list<long>prefix_indices;
+      std::vector<long>prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, net->sig(), prefix_indices);
       if (!rc)
 	    return 0;
@@ -6102,7 +6102,7 @@ NetExpr* PEIdent::elaborate_expr_net_bit_(Design*des, NetScope*scope,
 				          NetESignal*net, NetScope*,
                                           bool need_const) const
 {
-      list<long>prefix_indices;
+      std::vector<long>prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, net->sig(), prefix_indices);
       if (!rc)
 	    return 0;
@@ -6378,7 +6378,7 @@ NetExpr* PEIdent::elaborate_expr_net(Design*des, NetScope*scope,
 	    return 0;
       }
 
-      list<long> prefix_indices;
+      std::vector<long> prefix_indices;
       bool rc = evaluate_index_prefix(des, scope, prefix_indices, path_.back().index);
       if (!rc) return 0;
 

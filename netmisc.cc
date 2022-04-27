@@ -412,7 +412,7 @@ NetExpr *normalize_variable_base(NetExpr *base,
       return normalize_variable_base(base, rng.get_msb(), rng.get_lsb(), wid, is_up);
 }
 
-NetExpr *normalize_variable_bit_base(const list<long>&indices, NetExpr*base,
+NetExpr *normalize_variable_bit_base(const std::vector<long>&indices, NetExpr*base,
 				     const NetNet*reg)
 {
       const vector<netrange_t>&packed_dims = reg->packed_dims();
@@ -427,7 +427,7 @@ NetExpr *normalize_variable_bit_base(const list<long>&indices, NetExpr*base,
       return normalize_variable_base(base, rng.get_msb(), rng.get_lsb(), 1, true, slice_off);
 }
 
-NetExpr *normalize_variable_part_base(const list<long>&indices, NetExpr*base,
+NetExpr *normalize_variable_part_base(const std::vector<long>&indices, NetExpr*base,
 				      const NetNet*reg,
 				      unsigned long wid, bool is_up)
 {
@@ -443,7 +443,7 @@ NetExpr *normalize_variable_part_base(const list<long>&indices, NetExpr*base,
       return normalize_variable_base(base, rng.get_msb(), rng.get_lsb(), wid, is_up, slice_off);
 }
 
-NetExpr *normalize_variable_slice_base(const list<long>&indices, NetExpr*base,
+NetExpr *normalize_variable_slice_base(const std::vector<long>&indices, NetExpr*base,
 				       const NetNet*reg, unsigned long&lwid)
 {
       const vector<netrange_t>&packed_dims = reg->packed_dims();
@@ -494,7 +494,7 @@ NetExpr *normalize_variable_slice_base(const list<long>&indices, NetExpr*base,
 
 ostream& operator << (ostream&o, __IndicesManip<long> val)
 {
-      for (list<long>::const_iterator cur = val.val.begin()
+      for (std::vector<long>::const_iterator cur = val.val.begin()
 		 ; cur != val.val.end() ; ++cur) {
 	    o << "[" << *cur << "]";
       }
@@ -503,7 +503,7 @@ ostream& operator << (ostream&o, __IndicesManip<long> val)
 
 ostream& operator << (ostream&o, __IndicesManip<NetExpr*> val)
 {
-      for (list<NetExpr*>::const_iterator cur = val.val.begin()
+      for (std::vector<NetExpr*>::const_iterator cur = val.val.begin()
 		 ; cur != val.val.end() ; ++cur) {
 	    o << "[" << *(*cur) << "]";
       }
@@ -526,9 +526,11 @@ void indices_to_expressions(Design*des, NetScope*scope,
 			    bool need_const,
 			      // These are the outputs.
 			    indices_flags&flags,
-			    list<NetExpr*>&indices, list<long>&indices_const)
+			    std::vector<NetExpr*>&indices, std::vector<long>&indices_const)
 {
       ivl_assert(*loc, count <= src.size());
+
+      indices.reserve(count);
 
       flags.invalid   = false;
       flags.variable  = false;
@@ -581,7 +583,7 @@ static void make_strides(const vector<netrange_t>&dims,
  * word. If any of the indices are out of bounds, return nil instead
  * of an expression.
  */
-static NetExpr* normalize_variable_unpacked(const vector<netrange_t>&dims, list<long>&indices)
+static NetExpr* normalize_variable_unpacked(const vector<netrange_t>&dims, std::vector<long>&indices)
 {
 	// Make strides for each index. The stride is the distance (in
 	// words) to the next element in the canonical array.
@@ -591,7 +593,7 @@ static NetExpr* normalize_variable_unpacked(const vector<netrange_t>&dims, list<
       int64_t canonical_addr = 0;
 
       int idx = 0;
-      for (list<long>::const_iterator cur = indices.begin()
+      for (std::vector<long>::const_iterator cur = indices.begin()
 		 ; cur != indices.end() ; ++cur, ++idx) {
 	    long tmp = *cur;
 
@@ -612,19 +614,19 @@ static NetExpr* normalize_variable_unpacked(const vector<netrange_t>&dims, list<
       return canonical_expr;
 }
 
-NetExpr* normalize_variable_unpacked(const NetNet*net, list<long>&indices)
+NetExpr* normalize_variable_unpacked(const NetNet*net, std::vector<long>&indices)
 {
       const vector<netrange_t>&dims = net->unpacked_dims();
       return normalize_variable_unpacked(dims, indices);
 }
 
-NetExpr* normalize_variable_unpacked(const netsarray_t*stype, list<long>&indices)
+NetExpr* normalize_variable_unpacked(const netsarray_t*stype, std::vector<long>&indices)
 {
       const vector<netrange_t>&dims = stype->static_dimensions();
       return normalize_variable_unpacked(dims, indices);
 }
 
-NetExpr* normalize_variable_unpacked(const LineInfo&loc, const vector<netrange_t>&dims, list<NetExpr*>&indices)
+NetExpr* normalize_variable_unpacked(const LineInfo&loc, const vector<netrange_t>&dims, std::vector<NetExpr*>&indices)
 {
 	// Make strides for each index. The stride is the distance (in
 	// words) to the next element in the canonical array.
@@ -634,7 +636,7 @@ NetExpr* normalize_variable_unpacked(const LineInfo&loc, const vector<netrange_t
       NetExpr*canonical_expr = 0;
 
       int idx = 0;
-      for (list<NetExpr*>::const_iterator cur = indices.begin()
+      for (std::vector<NetExpr*>::const_iterator cur = indices.begin()
 		 ; cur != indices.end() ; ++cur, ++idx) {
 	    NetExpr*tmp = *cur;
 	      // If the expression elaboration generated errors, then
@@ -709,13 +711,13 @@ NetExpr* normalize_variable_unpacked(const LineInfo&loc, const vector<netrange_t
       return canonical_expr;
 }
 
-NetExpr* normalize_variable_unpacked(const NetNet*net, list<NetExpr*>&indices)
+NetExpr* normalize_variable_unpacked(const NetNet*net, std::vector<NetExpr*>&indices)
 {
       const vector<netrange_t>&dims = net->unpacked_dims();
       return normalize_variable_unpacked(*net, dims, indices);
 }
 
-NetExpr* normalize_variable_unpacked(const LineInfo&loc, const netsarray_t*stype, list<NetExpr*>&indices)
+NetExpr* normalize_variable_unpacked(const LineInfo&loc, const netsarray_t*stype, std::vector<NetExpr*>&indices)
 {
       const vector<netrange_t>&dims = stype->static_dimensions();
       return normalize_variable_unpacked(loc, dims, indices);
@@ -729,8 +731,8 @@ NetExpr* make_canonical_index(Design*des, NetScope*scope,
 {
       NetExpr*canon_index = 0;
 
-      list<long> indices_const;
-      list<NetExpr*> indices_expr;
+      std::vector<long> indices_const;
+      std::vector<NetExpr*> indices_expr;
       indices_flags flags;
       indices_to_expressions(des, scope, loc,
 			     src, src.size(),
@@ -1511,7 +1513,7 @@ void collapse_partselect_pv_to_concat(Design*des, NetNet*sig)
  * Leave the last index for special handling.
  */
 bool evaluate_index_prefix(Design*des, NetScope*scope,
-			   list<long>&prefix_indices,
+			   std::vector<long>&prefix_indices,
 			   const list<index_component_t>&indices)
 {
       list<index_component_t>::const_iterator icur = indices.begin();
@@ -1551,8 +1553,8 @@ NetExpr*collapse_array_exprs(Design*des, NetScope*scope,
 			     const list<index_component_t>&indices)
 {
 	// First elaborate all the expressions as far as possible.
-      list<NetExpr*> exprs;
-      list<long> exprs_const;
+      std::vector<NetExpr*> exprs;
+      std::vector<long> exprs_const;
       indices_flags flags;
       indices_to_expressions(des, scope, loc, indices,
                              net->packed_dimensions(),
@@ -1568,7 +1570,7 @@ NetExpr*collapse_array_exprs(Design*des, NetScope*scope,
       const std::vector<netrange_t>&pdims = net->packed_dims();
       std::vector<netrange_t>::const_iterator pcur = pdims.begin();
 
-      list<NetExpr*>::iterator ecur = exprs.begin();
+      std::vector<NetExpr*>::iterator ecur = exprs.begin();
       NetExpr* base = 0;
       for (size_t idx = 0 ; idx < net->packed_dimensions() ; idx += 1, ++pcur, ++ecur) {
 	    unsigned cur_slice_width = net->slice_width(idx+1);
@@ -1609,7 +1611,7 @@ NetExpr*collapse_array_exprs(Design*des, NetScope*scope,
 NetExpr*collapse_array_indices(Design*des, NetScope*scope, NetNet*net,
 			       const list<index_component_t>&indices)
 {
-      list<long>prefix_indices;
+      std::vector<long>prefix_indices;
       bool rc = evaluate_index_prefix(des, scope, prefix_indices, indices);
       assert(rc);
 

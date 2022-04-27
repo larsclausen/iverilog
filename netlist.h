@@ -739,17 +739,17 @@ class NetNet  : public NetObj, public PortType {
 	   example, "reg [4:1][3:0]..." has the canonical dimension
 	   [15:0] and the sb_to_idx() method will convert [2][2] to
 	   the canonical index [6]. */
-      long sb_to_idx(const std::list<long>&prefix, long sb) const;
+      long sb_to_idx(const std::vector<long>&prefix, long sb) const;
 
 	/* This method converts a partial packed indices list and a
 	   tail index, and generates a canonical slice offset and
 	   width. */
-      bool sb_to_slice(const std::list<long>&prefix, long sb, long&off, unsigned long&wid) const;
+      bool sb_to_slice(const std::vector<long>&prefix, long sb, long&off, unsigned long&wid) const;
 
 	/* This method checks that the signed index is valid for this
 	   signal. If it is, the above sb_to_idx can be used to get
 	   the pin# from the index. */
-      bool sb_is_valid(const std::list<long>&prefix, long sb) const;
+      bool sb_is_valid(const std::vector<long>&prefix, long sb) const;
 
 	/* This method returns 0 for scalars and vectors, and greater
 	   for arrays. The value is the number of array

@@ -766,7 +766,7 @@ void NetNet::set_discipline(ivl_discipline_t dis)
       discipline_ = dis;
 }
 
-bool NetNet::sb_is_valid(const list<long>&indices, long sb) const
+bool NetNet::sb_is_valid(const std::vector<long>&indices, long sb) const
 {
       ivl_assert(*this, indices.size()+1 == packed_dims().size());
       assert(packed_dims().size() == 1);
@@ -777,7 +777,7 @@ bool NetNet::sb_is_valid(const list<long>&indices, long sb) const
 	    return (sb <= rng.get_lsb()) && (sb >= rng.get_msb());
 }
 
-long NetNet::sb_to_idx(const list<long>&indices, long sb) const
+long NetNet::sb_to_idx(const std::vector<long>&indices, long sb) const
 {
       ivl_assert(*this, indices.size()+1 == packed_dims().size());
 
@@ -795,7 +795,7 @@ long NetNet::sb_to_idx(const list<long>&indices, long sb) const
 	// dimension. If this is a multi-dimension packed array then
 	// we need to add in the canonical address of the current slice.
       if (! indices.empty()) {
-	    list<long>::const_iterator icur = indices.end();
+	    std::vector<long>::const_iterator icur = indices.end();
 	    do {
 		  -- icur;
 		  -- pcur;
@@ -815,7 +815,7 @@ long NetNet::sb_to_idx(const list<long>&indices, long sb) const
       return acc_off;
 }
 
-bool NetNet::sb_to_slice(const list<long>&indices, long sb, long&loff, unsigned long&lwid) const
+bool NetNet::sb_to_slice(const std::vector<long>&indices, long sb, long&loff, unsigned long&lwid) const
 {
       ivl_assert(*this, indices.size() < packed_dims().size());
       return prefix_to_slice(packed_dims(), indices, sb, loff, lwid);

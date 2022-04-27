@@ -408,7 +408,7 @@ class PEIdent : public PExpr {
 	//    [y][x]       - BAD
 	// Leave the last index for special handling.
       bool calculate_packed_indices_(Design*des, NetScope*scope, NetNet*net,
-				     std::list<long>&prefix_indices) const;
+				     std::vector<long>&prefix_indices) const;
 
     private:
       NetAssign_*elaborate_lval_method_class_member_(Design*, NetScope*) const;

@@ -102,7 +102,7 @@ unsigned long netrange_width(const vector<netrange_t>&packed)
  * is an extra index of the prefix.
  */
 bool prefix_to_slice(const std::vector<netrange_t>&dims,
-		     const std::list<long>&prefix, long sb,
+		     const std::vector<long>&prefix, long sb,
 		     long&loff, unsigned long&lwid)
 {
       assert(prefix.size() < dims.size());
@@ -148,7 +148,7 @@ bool prefix_to_slice(const std::vector<netrange_t>&dims,
 	// through the dimensions until we run out. Accumulate a
 	// growing slice width (acc_wid) that is used to calculate the
 	// growing offset (acc_off).
-      list<long>::const_iterator icur = prefix.end();
+      std::vector<long>::const_iterator icur = prefix.end();
       do {
 	    -- icur;
 	    acc_wid *= pcur->width();

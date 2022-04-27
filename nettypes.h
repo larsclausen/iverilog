@@ -159,7 +159,7 @@ extern bool calculate_param_range(const LineInfo&line, ivl_type_t par_type,
  * the packed array.
  */
 extern bool prefix_to_slice(const std::vector<netrange_t>&dims,
-			    const std::list<long>&prefix, long sb,
+			    const std::vector<long>&prefix, long sb,
 			    long&loff, unsigned long&lwid);
 
 #endif /* IVL_nettypes_H */

@@ -530,8 +530,8 @@ NetAssign_* PEIdent::elaborate_lval_net_word_(Design*des,
 
 	// Evaluate all the index expressions into an
 	// "unpacked_indices" array.
-      list<NetExpr*>unpacked_indices;
-      list<long> unpacked_indices_const;
+      std::vector<NetExpr*>unpacked_indices;
+      std::vector<long> unpacked_indices_const;
       indices_flags flags;
       indices_to_expressions(des, scope, this,
 			     name_tail.index, reg->unpacked_dimensions(),
@@ -631,7 +631,7 @@ bool PEIdent::elaborate_lval_net_bit_(Design*des,
 				      NetAssign_*lv,
 				      bool need_const_idx) const
 {
-      list<long>prefix_indices;
+      std::vector<long>prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, lv->sig(), prefix_indices);
       if (!rc) return false;
 
@@ -829,7 +829,7 @@ bool PEIdent::elaborate_lval_net_part_(Design*des,
 				       NetScope*scope,
 				       NetAssign_*lv) const
 {
-      list<long> prefix_indices;
+      std::vector<long> prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, lv->sig(), prefix_indices);
       ivl_assert(*this, rc);
 
@@ -943,7 +943,7 @@ bool PEIdent::elaborate_lval_net_idx_(Design*des,
 				      index_component_t::ctype_t use_sel,
 				      bool need_const_idx) const
 {
-      list<long>prefix_indices;
+      std::vector<long>prefix_indices;
       bool rc = calculate_packed_indices_(des, scope, lv->sig(), prefix_indices);
       ivl_assert(*this, rc);
 
@@ -1360,7 +1360,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 			}
 
 			  // Evaluate all but the last index expression, into prefix_indices.
-			list<long>prefix_indices;
+			std::vector<long>prefix_indices;
 			bool rc = evaluate_index_prefix(des, scope, prefix_indices, member_comp.index);
 			ivl_assert(*this, rc);
 
@@ -1429,7 +1429,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 		  }
 
 		    // Evaluate all but the last index expression, into prefix_indices.
-		  list<long>prefix_indices;
+		  std::vector<long>prefix_indices;
 		  bool rc = evaluate_index_prefix(des, scope, prefix_indices, member_comp.index);
 		  ivl_assert(*this, rc);
 
