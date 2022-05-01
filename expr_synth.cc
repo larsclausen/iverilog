@@ -120,15 +120,15 @@ NetNet* NetEBAdd::synthesize(Design*des, NetScope*scope, NetExpr*root)
 	    width=lsig->vector_width();
       }
 
-      perm_string path = lsig->scope()->local_symbol();
+      perm_string path = scope->local_symbol();
       netvector_t*osig_vec = new netvector_t(expr_type(), width-1, 0);
       osig_vec->set_signed(has_sign());
-      NetNet*osig = new NetNet(lsig->scope(), path, NetNet::IMPLICIT, osig_vec);
+      NetNet*osig = new NetNet(scope, path, NetNet::IMPLICIT, osig_type);
       osig->set_line(*this);
       osig->local_flag(true);
 
-      perm_string oname = osig->scope()->local_symbol();
-      NetAddSub *adder = new NetAddSub(lsig->scope(), oname, width);
+      perm_string oname = scope->local_symbol();
+      NetAddSub *adder = new NetAddSub(scope, oname, width);
       adder->set_line(*this);
       connect(lsig->pin(0), adder->pin_DataA());
       connect(rsig->pin(0), adder->pin_DataB());
@@ -1269,13 +1269,13 @@ NetNet* NetETernary::synthesize(Design *des, NetScope*scope, NetExpr*root)
 	    return 0;
       }
 
-      perm_string path = csig->scope()->local_symbol();
+      perm_string path = scope->local_symbol();
 
       ivl_assert(*this, csig->vector_width() == 1);
 
       unsigned width=expr_width();
       netvector_t*osig_vec = new netvector_t(expr_type(), width-1, 0);
-      NetNet*osig = new NetNet(csig->scope(), path, NetNet::IMPLICIT, osig_vec);
+      NetNet*osig = new NetNet(scope, path, NetNet::IMPLICIT, osig_vec);
       osig->set_line(*this);
       osig->local_flag(true);
 
@@ -1295,8 +1295,8 @@ NetNet* NetETernary::synthesize(Design *des, NetScope*scope, NetExpr*root)
       }
 
 
-      perm_string oname = csig->scope()->local_symbol();
-      NetMux *mux = new NetMux(csig->scope(), oname, width,
+      perm_string oname = scope->local_symbol();
+      NetMux *mux = new NetMux(scope, oname, width,
 			       2, csig->vector_width());
       mux->set_line(*this);
       connect(tsig->pin(0), mux->pin_Data(1));
