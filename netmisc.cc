@@ -845,6 +845,50 @@ NetExpr* condition_reduce(NetExpr*expr)
       return cmp;
 }
 
+NetExpr* assignment_cast(Design *des, NetExpr *expr,
+			 ivl_variable_type_t cast_type, unsigned int width)
+{
+      if (cast_type == IVL_VT_NO_TYPE)
+	    return expr;
+
+      if (cast_type == expr->expr_type()) {
+	    switch (cast_type) {
+		case IVL_VT_BOOL:
+		case IVL_VT_LOGIC:
+		  if (width != 0 && width != expr->expr_width())
+			return pad_to_width(expr, width, *expr);
+		  break;
+	        default:
+		  break;
+	    }
+	    return expr;
+      }
+
+      switch (expr->expr_type()) {
+	  case IVL_VT_BOOL:
+	  case IVL_VT_LOGIC:
+	  case IVL_VT_REAL:
+	    break;
+	  default:
+	    delete expr;
+	    return 0;
+      }
+
+      switch (cast_type) {
+	  case IVL_VT_REAL:
+	    return cast_to_real(expr);
+	  case IVL_VT_BOOL:
+	    return cast_to_int2(expr, width);
+	  case IVL_VT_LOGIC:
+	    return cast_to_int4(expr, width);
+	  default:
+	    break;
+      }
+
+      delete expr;
+      return 0;
+}
+
 NetExpr* elab_and_eval(Design*des, NetScope*scope, PExpr*pe,
 		       int context_width, bool need_const, bool annotatable,
 		       ivl_variable_type_t cast_type, bool force_unsigned)
@@ -927,33 +971,13 @@ NetExpr* elab_and_eval(Design*des, NetScope*scope, PExpr*pe,
       NetExpr*tmp = pe->elaborate_expr(des, scope, expr_width, flags);
       if (tmp == 0) return 0;
 
-      if ((cast_type != IVL_VT_NO_TYPE) && (cast_type != tmp->expr_type())) {
-            switch (tmp->expr_type()) {
-                case IVL_VT_BOOL:
-                case IVL_VT_LOGIC:
-                case IVL_VT_REAL:
-                  break;
-                default:
-                  cerr << tmp->get_fileline() << ": error: "
-                          "The expression '" << *pe << "' cannot be implicitly "
-                          "cast to the target type." << endl;
-                  des->errors += 1;
-                  delete tmp;
-                  return 0;
-            }
-            switch (cast_type) {
-                case IVL_VT_REAL:
-                  tmp = cast_to_real(tmp);
-                  break;
-                case IVL_VT_BOOL:
-                  tmp = cast_to_int2(tmp, pos_context_width);
-                  break;
-                case IVL_VT_LOGIC:
-                  tmp = cast_to_int4(tmp, pos_context_width);
-                  break;
-                default:
-                  break;
-            }
+      tmp = assignment_cast(des, tmp, cast_type, pos_context_width);
+      if (!tmp) {
+            cerr << pe->get_fileline() << ": error: "
+                    "The expression '" << *pe << "' cannot be implicitly "
+                    "cast to the target type." << endl;
+	    des->errors += 1;
+	    return 0;
       }
 
       eval_expr(tmp, context_width);

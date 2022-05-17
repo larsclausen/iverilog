@@ -416,6 +416,10 @@ extern NetExpr* elaborate_rval_expr(Design *des, NetScope *scope,
 				    bool need_const = false,
 				    bool force_unsigned = false);
 
+extern NetExpr* assignment_cast(Design *des, NetExpr *expr,
+			        ivl_variable_type_t cast_type,
+				unsigned int width);
+
 extern bool evaluate_range(Design*des, NetScope*scope, const LineInfo*li,
                            const pform_range_t&range,
                            long&index_l, long&index_r);

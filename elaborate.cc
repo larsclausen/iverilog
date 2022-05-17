@@ -4128,24 +4128,16 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 
 	      /* Handle any implicit cast. */
 	    unsigned lv_width = count_lval_width(lv);
-	    if (lv->expr_type() != rv->expr_type()) {
-		  switch (lv->expr_type()) {
-		      case IVL_VT_REAL:
-			rv = cast_to_real(rv);
-			break;
-		      case IVL_VT_BOOL:
-			rv = cast_to_int2(rv, lv_width);
-			break;
-		      case IVL_VT_LOGIC:
-			rv = cast_to_int4(rv, lv_width);
-			break;
-		      default:
-			  /* Don't yet know how to handle this. */
-			ivl_assert(*this, 0);
-			break;
-		  }
+	    rv = assignment_cast(des, rv, lv->expr_type(), lv_width);
+	    if (!rv) {
+		  cerr << get_fileline() << ": error: "
+		       << "port `" << port->name() << "` cannot be implicitly "
+		       << "cast to the type of `" << *parms_[parms_idx] << "`."
+		       << endl;
+		  des->errors += 1;
+
+		  continue;
 	    }
-	    rv = pad_to_width(rv, lv_width, *this);
 
 	      /* Generate the assignment statement. */
 	    NetAssign*ass = new NetAssign(lv, rv);
