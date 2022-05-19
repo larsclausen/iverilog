@@ -882,7 +882,7 @@ NetExpr* assignment_cast(Design *des, NetExpr *expr,
 	  case IVL_VT_LOGIC:
 	    return cast_to_int4(expr, width);
 	  default:
-	    break;
+	    return expr;
       }
 
       delete expr;
