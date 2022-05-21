@@ -68,7 +68,7 @@ class netstruct_t : public LineInfo, public ivl_type_s {
 
 	// Return the width (in bits) of the packed record, or -1 if
 	// the record is not packed.
-      long packed_width() const;
+      unsigned long packed_width() const;
       netranges_t slice_dimensions() const;
 
 	// Return the base type of the packed record, or

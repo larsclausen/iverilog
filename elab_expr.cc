@@ -2277,7 +2277,7 @@ static NetExpr* check_for_struct_members(const LineInfo*li,
 	    }
 
 	    off += tmp_off;
-	    ivl_assert(*li, use_width >= (unsigned long)member_type->packed_width());
+	    ivl_assert(*li, use_width >= member_type->packed_width());
 	    use_width = member_type->packed_width();
 
 	      // At this point, off and use_width are the part select
@@ -2435,7 +2435,7 @@ static NetExpr* check_for_struct_members(const LineInfo*li,
 		  prefix_to_slice(mem_packed_dims, prefix_indices, tmp, loff, lwid);
 
 		  ivl_type_t element_type = array->element_type();
-		  long element_width = element_type->packed_width();
+		  unsigned long element_width = element_type->packed_width();
 		  if (debug_elaborate) {
 			cerr << li->get_fileline() << ": PEIdent::elaborate_lval_net_packed_member_: "
 			     << "parray subselection loff=" << loff

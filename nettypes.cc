@@ -36,7 +36,7 @@ bool ivl_type_s::packed(void) const
       return false;
 }
 
-long ivl_type_s::packed_width(void) const
+unsigned long ivl_type_s::packed_width(void) const
 {
       return 1;
 }

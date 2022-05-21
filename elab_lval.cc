@@ -1317,7 +1317,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 	    }
 
 	    off += tmp_off;
-	    ivl_assert(*this, use_width >= (unsigned long)member->net_type->packed_width());
+	    ivl_assert(*this, use_width >= member->net_type->packed_width());
 	    use_width = member->net_type->packed_width();
 
 	      // At this point, off and use_width are the part select
@@ -1470,7 +1470,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 		  prefix_to_slice(mem_packed_dims, prefix_indices, tmp, loff, lwid);
 
 		  ivl_type_t element_type = array->element_type();
-		  long element_width = element_type->packed_width();
+		  unsigned long element_width = element_type->packed_width();
 		  if (debug_elaborate) {
 			cerr << get_fileline() << ": PEIdent::elaborate_lval_net_packed_member_: "
 			     << "parray subselection loff=" << loff

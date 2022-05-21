@@ -96,7 +96,7 @@ const netstruct_t::member_t* netstruct_t::packed_member(perm_string name, unsign
       return 0;
 }
 
-long netstruct_t::packed_width(void) const
+unsigned long netstruct_t::packed_width(void) const
 {
       if (! packed_)
 	    return -1;
@@ -108,7 +108,7 @@ long netstruct_t::packed_width(void) const
 	    return members_.front().net_type->packed_width();
 
 	// The width of a packed struct is the sum of member widths.
-      long res = 0;
+      unsigned long res = 0;
       for (size_t idx = 0 ; idx < members_.size() ; idx += 1)
 	    res += members_[idx].net_type->packed_width();
 

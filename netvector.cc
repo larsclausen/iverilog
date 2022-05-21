@@ -77,7 +77,7 @@ bool netvector_t::packed(void) const
       return true;
 }
 
-long netvector_t::packed_width() const
+unsigned long netvector_t::packed_width() const
 {
       return netrange_width(packed_dims_);
 }

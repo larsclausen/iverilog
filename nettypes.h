@@ -39,7 +39,7 @@ class ivl_type_s {
     public:
       virtual ~ivl_type_s() =0;
       virtual bool packed(void) const;
-      virtual long packed_width(void) const;
+      virtual unsigned long packed_width() const;
       virtual netranges_t slice_dimensions() const;
 
 	// Some types have a base variable type. This is the bit type

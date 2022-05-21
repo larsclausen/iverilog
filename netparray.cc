@@ -40,7 +40,7 @@ bool netparray_t::packed(void) const
       return true;
 }
 
-long netparray_t::packed_width(void) const
+unsigned long netparray_t::packed_width() const
 {
       return netrange_width(static_dimensions(),
 			   element_type->packed_width());

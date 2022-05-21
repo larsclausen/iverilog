@@ -200,9 +200,7 @@ static void elaborate_scope_enumeration(Design*des, NetScope*scope,
 
       size_t name_idx = 0;
 	// Find the enumeration width.
-      long raw_width = use_enum->packed_width();
-      assert(raw_width > 0);
-      unsigned enum_width = (unsigned)raw_width;
+      unsigned long enum_width = use_enum->packed_width();
       bool is_signed = use_enum->get_signed();
 	// Define the default start value and the increment value to be the
 	// correct type for this enumeration.

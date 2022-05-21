@@ -56,7 +56,7 @@ class netvector_t : public ivl_type_s {
       const netranges_t&packed_dims() const;
 
       bool packed(void) const;
-      long packed_width() const;
+      unsigned long packed_width() const;
       netranges_t slice_dimensions() const;
 
       std::ostream& debug_dump(std::ostream&) const;

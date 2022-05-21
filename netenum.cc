@@ -51,7 +51,7 @@ bool netenum_t::packed() const
       return true;
 }
 
-long netenum_t::packed_width() const
+unsigned long netenum_t::packed_width() const
 {
 	return base_type_->packed_width();
 }
