@@ -51,16 +51,10 @@ long netparray_t::packed_width(void) const
 
 netranges_t netparray_t::slice_dimensions() const
 {
-      const netranges_t&packed_dims = static_dimensions();
+      const netranges_t &elem_dims = element_type()->slice_dimensions();
 
-      netranges_t elem_dims = element_type()->slice_dimensions();
-
-      netranges_t res (packed_dims.size() + elem_dims.size());
-
-      for (size_t idx = 0 ; idx < packed_dims.size() ; idx += 1)
-	    res[idx] = packed_dims[idx];
-      for (size_t idx = 0 ; idx < elem_dims.size() ; idx += 1)
-	    res[idx+packed_dims.size()] = elem_dims[idx];
+      netranges_t res = static_dimensions();
+      res.insert(res.end(), elem_dims.begin(), elem_dims.end());
 
       return res;
 }
