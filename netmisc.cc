@@ -851,18 +851,8 @@ NetExpr* assignment_cast(Design *des, NetExpr *expr,
       if (cast_type == IVL_VT_NO_TYPE)
 	    return expr;
 
-      if (cast_type == expr->expr_type()) {
-	    switch (cast_type) {
-		case IVL_VT_BOOL:
-		case IVL_VT_LOGIC:
-		  if (width != 0 && width != expr->expr_width())
-			return pad_to_width(expr, width, *expr);
-		  break;
-	        default:
-		  break;
-	    }
-	    return expr;
-      }
+      cout << width << " " << expr->expr_width() << endl;
+      cout << cast_type << " " << expr->expr_type() << endl;
 
       switch (expr->expr_type()) {
 	  case IVL_VT_BOOL:
@@ -874,19 +864,33 @@ NetExpr* assignment_cast(Design *des, NetExpr *expr,
 	    return 0;
       }
 
-      switch (cast_type) {
-	  case IVL_VT_REAL:
-	    return cast_to_real(expr);
-	  case IVL_VT_BOOL:
-	    return cast_to_int2(expr, width);
-	  case IVL_VT_LOGIC:
-	    return cast_to_int4(expr, width);
-	  default:
-	    return expr;
+      if (cast_type != expr->expr_type()) {
+	    switch (cast_type) {
+		case IVL_VT_REAL:
+		  expr = cast_to_real(expr);
+		  break;
+		case IVL_VT_BOOL:
+		  expr = cast_to_int2(expr, width);
+		  break;
+		case IVL_VT_LOGIC:
+		  expr = cast_to_int4(expr, width);
+		  break;
+		default:
+		  break;
+	    }
       }
 
-      delete expr;
-      return 0;
+      switch (cast_type) {
+	  case IVL_VT_BOOL:
+	  case IVL_VT_LOGIC:
+	    if (width != 0 && width != expr->expr_width())
+		  return cast_to_width(expr, width, expr->has_sign(), *expr);
+	    break;
+	  default:
+	    break;
+      }
+
+      return expr;
 }
 
 NetExpr* elab_and_eval(Design*des, NetScope*scope, PExpr*pe,

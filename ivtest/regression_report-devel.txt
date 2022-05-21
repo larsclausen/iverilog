@@ -424,6 +424,7 @@ Running compiler/VVP tests for Icarus Verilog version: 12.
                   br_gh127f: Passed.
                    br_gh142: Passed - CE.
                    br_gh152: Passed - CE.
+                   br_gh156: Passed.
                    br_gh157: Passed - CE.
                    br_gh162: Passed.
                    br_gh163: Passed - CE.
@@ -1413,7 +1414,7 @@ parameter_override_invalid6: Passed - CE.
                   pr2842185: Passed.
                   pr2842621: Passed.
               pr2842621_std: Passed.
-                  pr2848986: Passed - CE.
+                  pr2848986: ==> Failed - CE - output does not match gold file.
                   pr2849783: Passed.
                   pr2865563: Passed.
                   pr2877564: Passed - CE.
@@ -2414,7 +2415,7 @@ parameter_override_invalid8: Passed - CE.
           sv_queue_oob_real: Passed.
         sv_queue_oob_string: Passed.
           sv_queue_oob_vec4: Passed.
-            sv_queue_parray: Passed.
+            sv_queue_parray: ==> Failed - running vvp.
     sv_queue_parray_bounded: Passed.
        sv_queue_parray_fail: Passed - CE.
               sv_queue_real: Passed.
@@ -2764,4 +2765,4 @@ parameter_override_invalid8: Passed - CE.
                 ufuncsynth1: Passed.
 ============================================================================
 Test results:
-  Total=2762, Passed=2756, Failed=0, Not Implemented=3, Expected Fail=3
+  Total=2763, Passed=2755, Failed=2, Not Implemented=3, Expected Fail=3
