@@ -1754,7 +1754,8 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 		  use_width = 1;
 		  while (const netuarray_t *utype =
 			 dynamic_cast<const netuarray_t*>(data_type)) {
-			use_width *= netrange_width(utype->static_dimensions());
+			use_width = netrange_width(utype->static_dimensions(),
+			                           use_width);
 			data_type = utype->element_type();
 		  }
 		  if (!data_type->packed()) {

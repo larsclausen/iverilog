@@ -143,7 +143,8 @@ class netrange_t {
 
 extern std::ostream&operator << (std::ostream&out, const netranges_t&rlist);
 
-extern unsigned long netrange_width(const netranges_t&dims);
+extern unsigned long netrange_width(const netranges_t&dims,
+				    unsigned long base_wid = 1);
 
 /*
  * There are a few cases where we need to know about the single-level

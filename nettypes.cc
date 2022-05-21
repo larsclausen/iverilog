@@ -83,13 +83,13 @@ ivl_variable_type_t netarray_t::base_type() const
       return element_type_->base_type();
 }
 
-unsigned long netrange_width(const netranges_t&packed)
+unsigned long netrange_width(const netranges_t&packed, unsigned long base_wid)
 {
-      unsigned wid = 1;
+      unsigned long wid = base_wid;
+
       for (netranges_t::const_iterator cur = packed.begin()
 		 ; cur != packed.end() ; ++cur) {
-	    unsigned use_wid = cur->width();
-	    wid *= use_wid;
+	    wid *= cur->width();
       }
 
       return wid;
