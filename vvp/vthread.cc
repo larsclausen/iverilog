@@ -1065,13 +1065,20 @@ bool of_ADD_WR(vthread_t thr, vvp_code_t)
       return true;
 }
 
+static bool check_array_index(int64_t index)
+{
+	if (index < 0 || index > UINT_MAX)
+		return false;
+	return true;
+}
+
 template <bool has_event>
 bool assign_real_array(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
 {
-      long adr = thr->words[3].w_int;
+      int64_t adr = thr->words[3].w_int;
       double value = thr->pop_real();
 
-      if (adr < 0)
+      if (check_array_index(adr))
 	    return true;
 
       if (!has_event || thr->ecount == 0)
@@ -1170,23 +1177,29 @@ bool assign_vec4_array(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
       int adr_idx = 3;
 
       int64_t  off = off_idx ? thr->words[off_idx].w_int : 0;
-      long     adr = thr->words[adr_idx].w_int;
+      int64_t adr = thr->words[adr_idx].w_int;
 
-      vvp_vector4_t val = thr->pop_vec4();
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
-      if (thr->flags[4] != BIT4_0)
+      if (thr->flags[4] != BIT4_0 || !check_array_index(adr)) {
+        thr->pop_vec4(1);
 	    return true;
+	  }
 
-      if (!resize_rval_vec(val, off, cp->array->get_word_size()))
+      vvp_vector4_t& val = thr->peek_vec4();
+      if (!resize_rval_vec(val, off, cp->array->get_word_size())) {
+        thr->pop_vec4(1);
 	    return true;
+	  }
 
       if (!has_event || thr->ecount == 0) {
 	    schedule_assign_array_word(cp->array, adr, off, val, delay);
       } else {
 	    schedule_evctl(cp->array, adr, val, off, thr->event, thr->ecount);
       }
+
+      thr->pop_vec4(1);
 
       return true;
 }
@@ -1220,15 +1233,19 @@ bool assign_vec4_off(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
-      if (thr->flags[4] != BIT4_0)
+      if (thr->flags[4] != BIT4_0) {
+        thr->pop_vec4(1);
 	    return true;
+	  }
 
       vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
       assert(sig);
 
       vvp_vector4_t&val = thr->peek_vec4();
-      if (!resize_rval_vec(val, off, sig->value_size()))
+      if (!resize_rval_vec(val, off, sig->value_size())) {
+        thr->pop_vec4(1);
 	    return true;
+	  }
 
       if (!has_event || thr->ecount == 0) {
 	    schedule_assign_vector(ptr, off, sig->value_size(), val, delay);
@@ -2535,8 +2552,9 @@ bool of_DELETE_TAIL(vthread_t thr, vvp_code_t cp)
       vvp_queue*queue = obj->get_object().peek<vvp_queue>();
       assert(queue);
 
-      unsigned idx = thr->words[cp->bit_idx[0]].w_int;
-      queue->erase_tail(idx);
+      int64_t idx = thr->words[cp->bit_idx[0]].w_int;
+	  if (check_array_index(idx))
+		  queue->erase_tail(idx);
 
       return true;
 }
@@ -3781,7 +3799,7 @@ static bool loada(vthread_t thr, vvp_code_t cp)
       long adr = thr->words[idx].w_int;
       ELEM word;
 
-      if (thr->flags[4] == BIT4_0)
+      if (thr->flags[4] == BIT4_0 && check_array_index(adr))
 	    word = get_array_word<ELEM>(cp->array, adr);
       else
 	    dq_default(word, cp->array->get_word_size());
@@ -3812,8 +3830,8 @@ static bool load_dar(vthread_t thr, vvp_code_t cp)
       vvp_darray*darray = obj->get_object().peek<vvp_darray>();
 
       ELEM word;
-      if (darray &&
-          (adr >= 0) && (thr->flags[4] == BIT4_0)) // A defined address >= 0
+      if (darray && check_array_index(adr) &&
+	      thr->flags[4] == BIT4_0) // A defined address >= 0
 	    darray->get_word(adr, word);
       else
 	    dq_default(word, obj->size());
@@ -5014,12 +5032,12 @@ bool of_PUSHV_STR(vthread_t thr, vvp_code_t)
 bool of_PUTC_STR_VEC4(vthread_t thr, vvp_code_t cp)
 {
       unsigned muxr = cp->bit_idx[0];
-      int32_t mux = muxr? thr->words[muxr].w_int : 0;
+      long mux = muxr? thr->words[muxr].w_int : 0;
 
       vvp_vector4_t val = thr->pop_vec4();
       assert(val.size() == 8);
 
-      if (mux < 0)
+      if (thr->flags[4] != BIT4_0 || !check_array_index(mux))
 	    return true;
 
 	/* Get the existing value of the string. If we find that the
@@ -5520,7 +5538,7 @@ static void thread_peek(vthread_t thr, vvp_vector4_t&value)
 template <typename ELEM>
 static bool set_dar_obj(vthread_t thr, vvp_code_t cp)
 {
-      unsigned adr = thr->words[cp->number].w_int;
+      int64_t adr = thr->words[cp->number].w_int;
 
       ELEM value;
       thread_peek(thr, value);
@@ -5529,7 +5547,8 @@ static bool set_dar_obj(vthread_t thr, vvp_code_t cp)
       vvp_darray*darray = top.peek<vvp_darray>();
       assert(darray);
 
-      darray->set_word(adr, value);
+	  if (thr->flags[4] == BIT4_0 && check_array_index(adr))
+		  darray->set_word(adr, value);
       return true;
 }
 
@@ -5732,7 +5751,7 @@ static bool store_dar(vthread_t thr, vvp_code_t cp)
 	    cerr << thr->get_fileline()
 	         << "Warning: cannot write to a negative " << get_darray_type(value)
 	         << " index (" << adr << ")." << endl;
-      else if (thr->flags[4] != BIT4_0)
+      else if (thr->flags[4] != BIT4_0 || adr > UINT_MAX)
 	    cerr << thr->get_fileline()
 	         << "Warning: cannot write to an undefined " << get_darray_type(value)
 	         << " index." << endl;
@@ -6082,7 +6101,7 @@ static bool storea(vthread_t thr, vvp_code_t cp)
       ELEM val;
       pop_value(thr, val, 0);
 
-      if (thr->flags[4] == BIT4_0)
+      if (thr->flags[4] == BIT4_0 && check_array_index(adr))
 	    cp->array->set_word(adr, val);
 
       return true;
@@ -6195,11 +6214,11 @@ bool of_STORE_VEC4A(vthread_t thr, vvp_code_t cp)
       unsigned adr_index = cp->bit_idx[0];
       unsigned off_index = cp->bit_idx[1];
 
-      long adr = adr_index? thr->words[adr_index].w_int : 0;
+      int64_t adr = adr_index ? thr->words[adr_index].w_int : 0;
       int64_t off = off_index ? thr->words[off_index].w_int : 0;
 
 	// Suppress action if flags-4 is true.
-      if (thr->flags[4] != BIT4_0) {
+      if (thr->flags[4] != BIT4_0 || check_array_index(adr)) {
 	    thr->pop_vec4(1);
 	    return true;
       }
@@ -6293,12 +6312,12 @@ bool of_SUBSTR_VEC4(vthread_t thr, vvp_code_t cp)
       unsigned sel_idx = cp->bit_idx[0];
       unsigned wid = cp->bit_idx[1];
 
-      int32_t sel = thr->words[sel_idx].w_int;
+      int64_t sel = thr->words[sel_idx].w_int;
       string&val = thr->peek_str(0);
 
       assert(wid%8 == 0);
 
-      if (sel < 0 || sel >= (int32_t)val.size()) {
+      if (thr->flags[4] != BIT4_0 || sel < 0 || sel >= (int32_t)val.size()) {
 	    vvp_vector4_t res (wid, BIT4_0);
 	    thr->push_vec4(res);
 	    return true;
@@ -6357,13 +6376,12 @@ bool of_TEST_NUL(vthread_t thr, vvp_code_t cp)
 bool of_TEST_NUL_A(vthread_t thr, vvp_code_t cp)
 {
       unsigned idx = cp->bit_idx[0];
-      unsigned adr = thr->words[idx].w_int;
+      int64_t adr = thr->words[idx].w_int;
       vvp_object_t word;
 
 	/* If the address is undefined, return true. */
-      if (thr->flags[4] != BIT4_0) {
+      if (thr->flags[4] != BIT4_0 || !check_array_index(adr))
 	    return true;
-      }
 
       cp->array->get_word_obj(adr, word);
       if (word.test_nil())

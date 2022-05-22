@@ -1970,12 +1970,14 @@ template <class INT>bool vector4_to_value(const vvp_vector4_t&vec, INT&val,
       bool rc_flag = true;
 
       unsigned size = vec.size();
-      if (size > 8*sizeof(val)) size = 8*sizeof(val);
+//      if (size > 8*sizeof(val)) size = 8*sizeof(val);
       for (unsigned idx = 0 ;  idx < size ;  idx += 1) {
 	    switch (vec.value(idx)) {
 		case BIT4_0:
 		  break;
 		case BIT4_1:
+		  if (msk == 0)
+		    return false;
 		  res |= msk;
 		  break;
 		default:
