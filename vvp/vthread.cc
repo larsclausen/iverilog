@@ -5062,11 +5062,8 @@ bool of_PUTC_STR_VEC4(vthread_t thr, vvp_code_t cp)
       if (tmp.size() <= (size_t)mux)
 	    return true;
 
-      char val_str = 0;
-      for (size_t idx = 0 ; idx < 8 ; idx += 1) {
-	    if (val.value(idx)==BIT4_1)
-		  val_str |= 1<<idx;
-      }
+      int8_t val_str = 0;
+      vector4_to_value(val, val_str, false);
 
 	// It is a quirk of the Verilog standard that putc(..., 'h00)
 	// has no effect. Test for that case here.
