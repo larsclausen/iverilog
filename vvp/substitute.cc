@@ -44,10 +44,8 @@ class vvp_fun_substitute : public vvp_net_fun_t {
 };
 
 vvp_fun_substitute::vvp_fun_substitute(unsigned wid, unsigned soff, unsigned swid)
-: wid_(wid), soff_(soff), swid_(swid), val_(wid)
+: wid_(wid), soff_(soff), swid_(swid), val_(wid, BIT4_Z)
 {
-      for (unsigned idx = 0 ; idx < val_.size() ; idx += 1)
-	    val_.set_bit(idx, BIT4_Z);
 }
 
 vvp_fun_substitute::~vvp_fun_substitute()
@@ -73,8 +71,7 @@ void vvp_fun_substitute::recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
       } else {
 	    assert(bit.size() == swid_);
 
-	    for (unsigned idx = 0 ; idx < swid_ ; idx += 1)
-		  val_.set_bit(idx+soff_, bit.value(idx));
+		val_.set_vec(soff_, bit);
       }
 
       port.ptr()->send_vec4(val_, 0);

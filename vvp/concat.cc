@@ -27,15 +27,12 @@ using namespace std;
 
 vvp_fun_concat::vvp_fun_concat(unsigned w0, unsigned w1,
 			       unsigned w2, unsigned w3)
-: val_(w0+w1+w2+w3)
+: val_(w0+w1+w2+w3, BIT4_Z)
 {
       wid_[0] = w0;
       wid_[1] = w1;
       wid_[2] = w2;
       wid_[3] = w3;
-
-      for (unsigned idx = 0 ;  idx < val_.size() ;  idx += 1)
-	    val_.set_bit(idx, BIT4_Z);
 }
 
 vvp_fun_concat::~vvp_fun_concat()
@@ -58,9 +55,7 @@ void vvp_fun_concat::recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
       for (unsigned idx = 0 ;  idx < pdx ;  idx += 1)
 	    off += wid_[idx];
 
-      for (unsigned idx = 0 ;  idx < wid_[pdx] ;  idx += 1) {
-	    val_.set_bit(off+idx, bit.value(idx));
-      }
+	  val_.set_vec(off, bit);
 
       port.ptr()->send_vec4(val_, 0);
 }
@@ -69,7 +64,6 @@ void vvp_fun_concat::recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t&bit,
                                   unsigned base, unsigned vwid, vvp_context_t)
 {
       unsigned pdx = port.port();
-      unsigned wid = bit.size();
 
       if (vwid != wid_[pdx]) {
 	    cerr << "internal error: port " << pdx
@@ -82,13 +76,8 @@ void vvp_fun_concat::recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t&bit,
       for (unsigned idx = 0 ;  idx < pdx ;  idx += 1)
 	    off += wid_[idx];
 
-      unsigned limit = off + wid_[pdx];
-
       off += base;
-      for (unsigned idx = 0 ;  idx < wid ;  idx += 1) {
-            if (off+idx >= limit) break;
-	    val_.set_bit(off+idx, bit.value(idx));
-      }
+      val_.set_vec(off, bit);
 
       port.ptr()->send_vec4(val_, 0);
 }
@@ -156,9 +145,7 @@ void vvp_fun_concat8::recv_vec8(vvp_net_ptr_t port, const vvp_vector8_t&bit)
       for (unsigned idx = 0 ;  idx < pdx ;  idx += 1)
 	    off += wid_[idx];
 
-      for (unsigned idx = 0 ;  idx < wid_[pdx] ;  idx += 1) {
-	    val_.set_bit(off+idx, bit.value(idx));
-      }
+	  val_.set_vec(off, bit);
 
       port.ptr()->send_vec8(val_);
 }
@@ -180,13 +167,9 @@ void vvp_fun_concat8::recv_vec8_pv(vvp_net_ptr_t port, const vvp_vector8_t&bit,
       for (unsigned idx = 0 ;  idx < pdx ;  idx += 1)
 	    off += wid_[idx];
 
-      unsigned limit = off + wid_[pdx];
-
       off += base;
-      for (unsigned idx = 0 ;  idx < wid ;  idx += 1) {
-            if (off+idx >= limit) break;
-	    val_.set_bit(off+idx, bit.value(idx));
-      }
+
+	  val_.set_vec(off, bit);
 
       port.ptr()->send_vec8(val_);
 }
@@ -226,9 +209,7 @@ void vvp_fun_repeat::recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
       for (unsigned rdx = 0 ;  rdx < rep_ ;  rdx += 1) {
 	    unsigned off = rdx * bit.size();
 
-	    for (unsigned idx = 0 ; idx < bit.size() ;  idx += 1)
-		  val.set_bit(off+idx, bit.value(idx));
-
+		val.set_vec(off, bit);
       }
 
       port.ptr()->send_vec4(val, 0);

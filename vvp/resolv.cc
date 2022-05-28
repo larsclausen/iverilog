@@ -54,17 +54,9 @@ resolv_core::~resolv_core()
 void resolv_core::recv_vec4_pv_(unsigned port, const vvp_vector4_t&bit,
 				unsigned base, unsigned vwid)
 {
-      unsigned wid = bit.size();
-      vvp_vector4_t res (vwid);
+      vvp_vector4_t res (vwid, BIT4_Z);
 
-      for (unsigned idx = 0 ;  idx < base ;  idx += 1)
-	    res.set_bit(idx, BIT4_Z);
-
-      for (unsigned idx = 0 ;  idx < wid && idx+base < vwid;  idx += 1)
-	    res.set_bit(idx+base, bit.value(idx));
-
-      for (unsigned idx = base+wid ;  idx < vwid ;  idx += 1)
-	    res.set_bit(idx, BIT4_Z);
+	  res.set_vec(base, bit);
 
       recv_vec4_(port, res);
 }
@@ -78,8 +70,7 @@ void resolv_core::recv_vec8_pv_(unsigned port, const vvp_vector8_t&bit,
       for (unsigned idx = 0 ;  idx < base ;  idx += 1)
 	    res.set_bit(idx, vvp_scalar_t());
 
-      for (unsigned idx = 0 ;  idx < wid && idx+base < vwid;  idx += 1)
-	    res.set_bit(idx+base, bit.value(idx));
+	  res.set_vec(base, bit);
 
       for (unsigned idx = base+wid ;  idx < vwid ;  idx += 1)
 	    res.set_bit(idx, vvp_scalar_t());

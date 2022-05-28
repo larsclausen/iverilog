@@ -42,8 +42,7 @@ void vvp_fun_extend_signed::recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bi
 
       vvp_vector4_t res (width_);
 
-      for (unsigned idx = 0 ;  idx < bit.size() ;  idx += 1)
-	    res.set_bit(idx, bit.value(idx));
+      res.set_vec(0, bit);
 
       vvp_bit4_t pad = bit.size() > 0? bit.value(bit.size()-1) : BIT4_0;
       for (unsigned idx = bit.size() ;  idx < res.size() ;  idx += 1)

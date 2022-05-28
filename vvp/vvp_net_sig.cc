@@ -230,10 +230,7 @@ void vvp_fun_signal4_sa::recv_vec4_pv(vvp_net_ptr_t ptr, const vvp_vector4_t&bit
       switch (ptr.port()) {
 	  case 0: // Normal input
 	    if (assign_mask_.size() == 0) {
-                  for (unsigned idx = 0 ;  idx < wid ;  idx += 1) {
-			if (base+idx >= bits4_.size()) break;
-			bits4_.set_bit(base+idx, bit.value(idx));
-		  }
+		  bits4_.set_vec(base, bit);
 		  needs_init_ = false;
 		  ptr.ptr()->send_vec4(bits4_,0);
 	    } else {
@@ -397,11 +394,8 @@ void vvp_fun_signal4_aa::recv_vec4_pv(vvp_net_ptr_t ptr, const vvp_vector4_t&bit
       vvp_vector4_t*bits4 = static_cast<vvp_vector4_t*>
             (vvp_get_context_item(context, context_idx_));
 
-      unsigned wid = bit.size();
-      for (unsigned idx = 0 ;  idx < wid ;  idx += 1) {
-            if (base+idx >= bits4->size()) break;
-            bits4->set_bit(base+idx, bit.value(idx));
-      }
+	  bits4->set_vec(base, bit);
+
       ptr.ptr()->send_vec4(*bits4, context);
 }
 
