@@ -1624,8 +1624,8 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 
       if (base < 0) {
 	    wid -= (unsigned) -base;
+	    value = value.subvalue(-base, wid);
 	    base = 0;
-	    value.resize(wid);
       }
 
       if (base+wid > sig->value_size()) {
