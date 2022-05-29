@@ -3468,77 +3468,10 @@ bool of_IX_MOV(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
-bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
+static uint64_t vec4_to_index(vthread_t thr, const vvp_vector4_t &val, bool signed_flag)
 {
-      unsigned index = cp->bit_idx[0];
-      vvp_net_t*net = cp->net;
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
-      if (sig == 0) {
-	    assert(net->fil);
-	    cerr << thr->get_fileline()
-	         << "%%ix/getv error: Net arg not a vector signal? "
-		 << typeid(*net->fil).name() << endl;
-      }
-      assert(sig);
-
-      vvp_vector4_t vec;
-      sig->vec4_value(vec);
-      bool overflow_flag;
-      uint64_t val;
-      bool known_flag = vector4_to_value(vec, overflow_flag, val);
-
-      if (known_flag)
-	    thr->words[index].w_uint = val;
-      else
-	    thr->words[index].w_uint = 0;
-
-	/* Set bit 4 as a flag if the input is unknown. */
-      thr->flags[4] = known_flag ? (overflow_flag ? BIT4_X : BIT4_0) : BIT4_1;
-
-      return true;
-}
-
-bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
-{
-      unsigned index = cp->bit_idx[0];
-      vvp_net_t*net = cp->net;
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
-      if (sig == 0) {
-	    assert(net->fil);
-	    cerr << thr->get_fileline()
-	         << "%%ix/getv/s error: Net arg not a vector signal? "
-		 << "fun=" << typeid(*net->fil).name()
-		 << ", fil=" << (net->fil? typeid(*net->fil).name() : "<>")
-		 << endl;
-      }
-      assert(sig);
-
-      vvp_vector4_t vec;
-      sig->vec4_value(vec);
-      int64_t val;
-      bool known_flag = vector4_to_value(vec, val, true, true);
-
-      if (known_flag)
-	    thr->words[index].w_int = val;
-      else
-	    thr->words[index].w_int = 0;
-
-	/* Set bit 4 as a flag if the input is unknown. */
-      thr->flags[4] = known_flag? BIT4_0 : BIT4_1;
-
-      return true;
-}
-
-static uint64_t vec4_to_index(vthread_t thr, bool signed_flag)
-{
-	// Get all the information we need about the vec4 vector, then
-	// pop it away. We only need the bool bits and the length.
-      const vvp_vector4_t&val = thr->peek_vec4();
       unsigned val_size = val.size();
       unsigned long*bits = val.subarray(0, val_size, false);
-      thr->pop_vec4(1);
 
 	// If there are X/Z bits, then the subarray will give us a nil
 	// pointer. Set a flag to indicate the error, and give up.
@@ -3584,13 +3517,60 @@ static uint64_t vec4_to_index(vthread_t thr, bool signed_flag)
       return v;
 }
 
+bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
+{
+      unsigned index = cp->bit_idx[0];
+      vvp_net_t*net = cp->net;
+
+      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
+      if (sig == 0) {
+	    assert(net->fil);
+	    cerr << thr->get_fileline()
+	         << "%%ix/getv error: Net arg not a vector signal? "
+		 << typeid(*net->fil).name() << endl;
+      }
+      assert(sig);
+
+      vvp_vector4_t vec;
+      sig->vec4_value(vec);
+
+      thr->words[index].w_uint = vec4_to_index(thr, vec, false);
+
+      return true;
+}
+
+bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
+{
+      unsigned index = cp->bit_idx[0];
+      vvp_net_t*net = cp->net;
+
+      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
+      if (sig == 0) {
+	    assert(net->fil);
+	    cerr << thr->get_fileline()
+	         << "%%ix/getv/s error: Net arg not a vector signal? "
+		 << "fun=" << typeid(*net->fil).name()
+		 << ", fil=" << (net->fil? typeid(*net->fil).name() : "<>")
+		 << endl;
+      }
+      assert(sig);
+
+      vvp_vector4_t vec;
+      sig->vec4_value(vec);
+
+      thr->words[index].w_uint = vec4_to_index(thr, vec, true);
+
+      return true;
+}
+
 /*
  * %ix/vec4 <idx>
  */
 bool of_IX_VEC4(vthread_t thr, vvp_code_t cp)
 {
       unsigned use_idx = cp->number;
-      thr->words[use_idx].w_uint = vec4_to_index(thr, false);
+      thr->words[use_idx].w_uint = vec4_to_index(thr, thr->peek_vec4(), false);
+      thr->pop_vec4(1);
       return true;
 }
 
@@ -3600,7 +3580,8 @@ bool of_IX_VEC4(vthread_t thr, vvp_code_t cp)
 bool of_IX_VEC4_S(vthread_t thr, vvp_code_t cp)
 {
       unsigned use_idx = cp->number;
-      thr->words[use_idx].w_uint = vec4_to_index(thr, true);
+      thr->words[use_idx].w_uint = vec4_to_index(thr, thr->peek_vec4(), true);
+      thr->pop_vec4(1);
       return true;
 }
 
