@@ -3253,9 +3253,8 @@ bool of_FORCE_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*net = cp->net;
       unsigned base_idx = cp->bit_idx[0];
-      long base = thr->words[base_idx].w_int;
+      int64_t base = thr->words[base_idx].w_int;
       vvp_vector4_t value = thr->pop_vec4();
-      unsigned wid = value.size();
 
       assert(net->fil);
 
@@ -3265,18 +3264,13 @@ bool of_FORCE_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 	// This is the width of the target vector.
       unsigned use_size = net->fil->filter_size();
 
-      if (base >= (long)use_size)
+      if (!resize_rval_vec(value, base, use_size))
 	    return true;
-      if (base < -(long)use_size)
-	    return true;
-
-      if ((base + wid) > use_size)
-	    wid = use_size - base;
 
 	// Make a mask of which bits are to be forced, 0 for unforced
 	// bits and 1 for forced bits.
       vvp_vector2_t mask (vvp_vector2_t::FILL0, use_size);
-      for (unsigned idx = 0 ; idx < wid ; idx += 1)
+      for (unsigned idx = 0 ; idx < value.size(); idx += 1)
 	    mask.set_bit(base+idx, 1);
 
       vvp_vector4_t tmp (use_size, BIT4_Z);
@@ -3317,9 +3311,7 @@ bool of_FORCE_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
 	// This is the width of the target vector.
       unsigned use_size = net->fil->filter_size();
 
-      if (base >= (long)use_size)
-	    return true;
-      if (base < -(long)use_size)
+      if (!resize_rval_vec(value, base, use_size))
 	    return true;
 
       schedule_force_vector(net, base, use_size, value, delay);

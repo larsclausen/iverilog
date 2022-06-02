@@ -1561,7 +1561,7 @@ static int show_stmt_release(ivl_statement_t net)
 	    unsigned long use_word = 0;
 	    unsigned use_wid;
 	    ivl_expr_t part_off_ex;
-	    unsigned part_off;
+	    int part_off;
 
 	    assert(lsig != 0);
 
@@ -1569,13 +1569,17 @@ static int show_stmt_release(ivl_statement_t net)
 	    part_off_ex = ivl_lval_part_off(lval);
 	    part_off = 0;
 	    if (part_off_ex != 0) {
-		  assert(number_is_immediate(part_off_ex, 64, 0));
+		  assert(number_is_immediate(part_off_ex, 64, 1));
 		    /* An out-of-range or undefined offset will have been
 		       converted to a canonical offset of 1'bx. Skip the
 		       assignment in this case. */
 		  if (number_is_unknown(part_off_ex))
 			return 0;
 		  part_off = get_number_immediate(part_off_ex);
+		  if (part_off < 0) {
+			use_wid += part_off;
+			part_off = 0;
+		  }
 	    }
 
 	    switch (ivl_signal_type(lsig)) {
