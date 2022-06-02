@@ -1603,9 +1603,8 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_t*net = cp->net;
       unsigned base_idx = cp->bit_idx[0];
-      long base = thr->words[base_idx].w_int;
+      int64_t base = thr->words[base_idx].w_int;
       vvp_vector4_t value = thr->pop_vec4();
-      unsigned wid = value.size();
 
       if (thr->flags[4] == BIT4_1)
 	    return true;
@@ -1616,22 +1615,8 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
       vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (net->fil);
       assert(sig);
 
-      if (base < 0 && (wid <= (unsigned)-base))
+      if (!resize_rval_vec(value, base, sig->value_size()))
 	    return true;
-
-      if (base >= (long)sig->value_size())
-	    return true;
-
-      if (base < 0) {
-	    wid -= (unsigned) -base;
-	    value = value.subvalue(-base, wid);
-	    base = 0;
-      }
-
-      if (base+wid > sig->value_size()) {
-	    wid = sig->value_size() - base;
-	    value.resize(wid);
-      }
 
       vvp_net_ptr_t ptr (net, 1);
       vvp_send_vec4_pv(ptr, value, base, sig->value_size(), 0);
