@@ -405,7 +405,6 @@ NetEvWait::~NetEvWait()
 			tmp->next = tmp->next->next;
 			delete tmp;
 		  }
-		  delete tgt;
 	    }
 	    events_.clear();
       }
