@@ -581,9 +581,8 @@ template <class T> T coerce_to_width(const T&that, unsigned width)
 	    return that;
 
       assert(that.size() > width);
-      T res (width);
-      for (unsigned idx = 0 ;  idx < width ;  idx += 1)
-	    res.set_bit(idx, that.value(idx));
+      T res = that;
+	  res.resize(width);
 
       return res;
 }
@@ -1659,18 +1658,7 @@ bool of_CASSIGN_WR(vthread_t thr, vvp_code_t cp)
 bool of_CAST2(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-      unsigned wid = val.size();
-
-      for (unsigned idx = 0 ; idx < wid ; idx += 1) {
-	    switch (val.value(idx)) {
-		case BIT4_0:
-		case BIT4_1:
-		  break;
-		default:
-		  val.set_bit(idx, BIT4_0);
-		  break;
-	    }
-      }
+	  val.change_xz_to_0();
 
       return true;
 }
@@ -4559,24 +4547,8 @@ bool of_NOOP(vthread_t, vvp_code_t)
  */
 bool of_NORR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
-
-      vvp_bit4_t lb = BIT4_1;
-
-      for (unsigned idx = 0 ;  idx < val.size() ;  idx += 1) {
-
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_1) {
-		  lb = BIT4_0;
-		  break;
-	    }
-
-	    if (rb != BIT4_0)
-		  lb = BIT4_X;
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
+      vvp_vector4_t&val = thr->peek_vec4();
+	  val = vvp_vector4_t(1, ~val.reduce_or());
 
       return true;
 }
@@ -4596,23 +4568,8 @@ bool of_NULL(vthread_t thr, vvp_code_t)
  */
 bool of_ANDR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
-
-      vvp_bit4_t lb = BIT4_1;
-
-      for (unsigned idx = 0 ; idx < val.size() ; idx += 1) {
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_0) {
-		  lb = BIT4_0;
-		  break;
-	    }
-
-	    if (rb != 1)
-		  lb = BIT4_X;
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
+      vvp_vector4_t&val = thr->peek_vec4();
+	  val = vvp_vector4_t(1, val.reduce_and());
 
       return true;
 }
@@ -4622,23 +4579,8 @@ bool of_ANDR(vthread_t thr, vvp_code_t)
  */
 bool of_NANDR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
-
-      vvp_bit4_t lb = BIT4_0;
-      for (unsigned idx = 0 ; idx < val.size() ; idx += 1) {
-
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_0) {
-		  lb = BIT4_1;
-		  break;
-	    }
-
-	    if (rb != BIT4_1)
-		  lb = BIT4_X;
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
+      vvp_vector4_t&val = thr->peek_vec4();
+	  val = vvp_vector4_t(1, ~val.reduce_and());
 
       return true;
 }
@@ -4648,22 +4590,9 @@ bool of_NANDR(vthread_t thr, vvp_code_t)
  */
 bool of_ORR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
+      vvp_vector4_t&val = thr->peek_vec4();
+	  val = vvp_vector4_t(1, val.reduce_or());
 
-      vvp_bit4_t lb = BIT4_0;
-      for (unsigned idx = 0 ; idx < val.size() ; idx += 1) {
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_1) {
-		  lb = BIT4_1;
-		  break;
-	    }
-
-	    if (rb != BIT4_0)
-		  lb = BIT4_X;
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
       return true;
 }
 
@@ -4672,22 +4601,9 @@ bool of_ORR(vthread_t thr, vvp_code_t)
  */
 bool of_XORR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
+      vvp_vector4_t&val = thr->peek_vec4();
+	  val = vvp_vector4_t(1, val.reduce_xor());
 
-      vvp_bit4_t lb = BIT4_0;
-      for (unsigned idx = 0 ; idx < val.size() ; idx += 1) {
-
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_1)
-		  lb = ~lb;
-	    else if (rb != BIT4_0) {
-		  lb = BIT4_X;
-		  break;
-	    }
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
       return true;
 }
 
@@ -4696,22 +4612,9 @@ bool of_XORR(vthread_t thr, vvp_code_t)
  */
 bool of_XNORR(vthread_t thr, vvp_code_t)
 {
-      vvp_vector4_t val = thr->pop_vec4();
+      vvp_vector4_t&val = thr->peek_vec4();
+	  val = vvp_vector4_t(1, ~val.reduce_xor());
 
-      vvp_bit4_t lb = BIT4_1;
-      for (unsigned idx = 0 ; idx < val.size() ; idx += 1) {
-
-	    vvp_bit4_t rb = val.value(idx);
-	    if (rb == BIT4_1)
-		  lb = ~lb;
-	    else if (rb != BIT4_0) {
-		  lb = BIT4_X;
-		  break;
-	    }
-      }
-
-      vvp_vector4_t res (1, lb);
-      thr->push_vec4(res);
       return true;
 }
 
@@ -6552,14 +6455,8 @@ bool of_XOR(vthread_t thr, vvp_code_t)
       vvp_vector4_t valr = thr->pop_vec4();
       vvp_vector4_t&vall = thr->peek_vec4();
       assert(vall.size() == valr.size());
-      unsigned wid = vall.size();
 
-      for (unsigned idx = 0 ;  idx < wid ;  idx += 1) {
-
-	    vvp_bit4_t lb = vall.value(idx);
-	    vvp_bit4_t rb = valr.value(idx);
-	    vall.set_bit(idx, lb ^ rb);
-      }
+	  vall ^= valr;
 
       return true;
 }

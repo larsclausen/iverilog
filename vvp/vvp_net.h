@@ -312,6 +312,9 @@ class vvp_vector4_t {
 	// Change all Z bits to X bits.
       void change_z2x();
 
+	// Change all Z or X bits to 0.
+      void change_xz_to_0();
+
 	// Change all bits to X bits.
       void set_to_x();
 
@@ -321,7 +324,12 @@ class vvp_vector4_t {
       void invert();
       vvp_vector4_t& operator &= (const vvp_vector4_t&that);
       vvp_vector4_t& operator |= (const vvp_vector4_t&that);
+      vvp_vector4_t& operator ^= (const vvp_vector4_t&that);
       vvp_vector4_t& operator += (int64_t);
+
+	  vvp_bit4_t reduce_or() const;
+	  vvp_bit4_t reduce_and() const;
+	  vvp_bit4_t reduce_xor() const;
 
     private:
 	// Number of vvp_bit4_t bits that can be shoved into a word.
