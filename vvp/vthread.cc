@@ -1199,7 +1199,7 @@ bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
       if (!resize_rval_vec(val, off, cp->array->get_word_size()))
@@ -1225,7 +1225,7 @@ bool of_ASSIGN_VEC4_A_E(vthread_t thr, vvp_code_t cp)
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
       if (!resize_rval_vec(val, off, cp->array->get_word_size()))
@@ -1255,7 +1255,7 @@ bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
       vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
@@ -1281,7 +1281,7 @@ bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
       vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
@@ -1611,7 +1611,7 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
       vvp_vector4_t value = thr->pop_vec4();
       unsigned wid = value.size();
 
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
 	/* Remove any previous continuous assign to this net. */
@@ -2501,6 +2501,13 @@ bool of_DELETE_ELEM(vthread_t thr, vvp_code_t cp)
 	         << endl;
 	    return true;
       }
+      if (thr->flags[4] == BIT4_X) {
+	    cerr << thr->get_fileline()
+	         << "Warning: skipping queue delete() with out of range index"
+	         << endl;
+	    return true;
+      }
+
       if (idx_val < 0) {
 	    cerr << thr->get_fileline()
 	         << "Warning: skipping queue delete() with negative index."
@@ -3278,7 +3285,7 @@ bool of_FORCE_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 
       assert(net->fil);
 
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
 	// This is the width of the target vector.
@@ -3330,7 +3337,7 @@ bool of_FORCE_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
 
       assert(net->fil);
 
-      if (thr->flags[4] == BIT4_1)
+      if (thr->flags[4] != BIT4_0)
 	    return true;
 
 	// This is the width of the target vector.
@@ -3799,7 +3806,7 @@ bool of_LOAD_AR(vthread_t thr, vvp_code_t cp)
       double word;
 
 	/* The result is 0.0 if the address is undefined. */
-      if (thr->flags[4] == BIT4_1) {
+      if (thr->flags[4] != BIT4_0) {
 	    word = 0.0;
       } else {
 	    word = cp->array->get_word_r(adr);
@@ -3874,7 +3881,7 @@ bool of_LOAD_OBJ(vthread_t thr, vvp_code_t cp)
 /*
  * %load/obja <index>
  *    Loads the object from array, using index <index> as the index
- *    value. If flags[4] == 1, the calculation of <index> may have
+ *    value. If flags[4] != 0, the calculation of <index> may have
  *    failed, so push nil.
  */
 bool of_LOAD_OBJA(vthread_t thr, vvp_code_t cp)
@@ -3883,10 +3890,8 @@ bool of_LOAD_OBJA(vthread_t thr, vvp_code_t cp)
       unsigned adr = thr->words[idx].w_int;
       vvp_object_t word;
 
-	/* The result is 0.0 if the address is undefined. */
-      if (thr->flags[4] == BIT4_1) {
-	    ; // Return nil
-      } else {
+	/* The result is null if the address is undefined. */
+      if (thr->flags[4] == BIT4_0) {
 	    cp->array->get_word_obj(adr, word);
       }
 
@@ -3933,7 +3938,7 @@ bool of_LOAD_STRA(vthread_t thr, vvp_code_t cp)
       unsigned adr = thr->words[idx].w_int;
       string word;
 
-      if (thr->flags[4] == BIT4_1) {
+      if (thr->flags[4] != BIT4_0) {
 	    word = "";
       } else {
 	    word = cp->array->get_word_str(adr);
@@ -3986,10 +3991,10 @@ bool of_LOAD_VEC4A(vthread_t thr, vvp_code_t cp)
 
       long adr = thr->words[adr_index].w_int;
 
-	// If flag[3] is set, then the calculation of the address
+	// If flag[4] is not 0, then the calculation of the address
 	// failed, and this load should return X instead of the actual
 	// value.
-      if (thr->flags[4] == BIT4_1) {
+      if (thr->flags[4] != BIT4_0) {
 	    vvp_vector4_t tmp (cp->array->get_word_size(), BIT4_X);
 	    thr->push_vec4(tmp);
 	    return true;
@@ -5451,7 +5456,7 @@ bool of_RET_VEC4(vthread_t thr, vvp_code_t cp)
       int64_t off = off_index ? thr->words[off_index].w_int : 0;
       unsigned int sig_value_size = fun_thr->parent->peek_vec4(depth).size();
 
-      if (off_index!=0 && thr->flags[4] == BIT4_1) {
+      if (off_index != 0 && thr->flags[4] != BIT4_0) {
 	    thr->pop_vec4(1);
 	    return true;
       }
@@ -6131,7 +6136,7 @@ static bool storea(vthread_t thr, vvp_code_t cp)
       ELEM val;
       pop_value(thr, val, 0);
 
-      if (thr->flags[4] != BIT4_1)
+      if (thr->flags[4] == BIT4_0)
 	    cp->array->set_word(adr, val);
 
       return true;
@@ -6217,7 +6222,7 @@ bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
 
 	// If there is a problem loading the index register, flags-4
 	// will be set to 1, and we know here to skip the actual assignment.
-      if (off_index!=0 && thr->flags[4] == BIT4_1) {
+      if (off_index!=0 && thr->flags[4] != BIT4_0) {
 	    thr->pop_vec4(1);
 	    return true;
       }
@@ -6248,7 +6253,7 @@ bool of_STORE_VEC4A(vthread_t thr, vvp_code_t cp)
       int64_t off = off_index ? thr->words[off_index].w_int : 0;
 
 	// Suppress action if flags-4 is true.
-      if (thr->flags[4] == BIT4_1) {
+      if (thr->flags[4] != BIT4_0) {
 	    thr->pop_vec4(1);
 	    return true;
       }
@@ -6410,7 +6415,7 @@ bool of_TEST_NUL_A(vthread_t thr, vvp_code_t cp)
       vvp_object_t word;
 
 	/* If the address is undefined, return true. */
-      if (thr->flags[4] == BIT4_1) {
+      if (thr->flags[4] != BIT4_0) {
 	    return true;
       }
 
