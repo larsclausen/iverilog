@@ -554,6 +554,10 @@ NetEConst* NetEBComp::eval_eqeq_(bool ne_flag, const NetExpr*le, const NetExpr*r
           re->expr_type() == IVL_VT_REAL)
 	    return eval_eqeq_real_(ne_flag, le, re);
 
+      if (dynamic_cast<const NetENull*>(le) &&
+          dynamic_cast<const NetENull*>(re))
+	  return new NetEConst(verinum(ne_flag ? verinum::V0 : verinum::V1, 1));
+
       const NetEConst*lc = dynamic_cast<const NetEConst*>(le);
       const NetEConst*rc = dynamic_cast<const NetEConst*>(re);
       if (lc == 0 || rc == 0) return 0;
