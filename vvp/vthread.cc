@@ -6177,13 +6177,14 @@ bool of_SUBI(vthread_t thr, vvp_code_t cp)
 
       vvp_vector4_t&l = thr->peek_vec4();
 
+      if (!cp->vec)
 	// I expect that most of the bits of an immediate value are
 	// going to be zero, so start the result vector with all zero
 	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t r (wid, BIT4_0);
-      get_immediate_rval (cp, r);
+      cp->vec = (void*)new vvp_vector4_t(wid, BIT4_0);
+      get_immediate_rval (cp, *(vvp_vector4_t*)cp->vec);
 
-      l.sub(r);
+      l.sub(*(vvp_vector4_t*)cp->vec);
 
       return true;
 

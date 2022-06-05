@@ -134,8 +134,7 @@ static void get_vec_from_lval_slice(ivl_lval_t lval, struct vec_slice_info*slice
 	    } else {
 		  fprintf(vvp_out, "    %%load/vec4 v%p_%lu;\n", sig, use_word);
 	    }
-	    fprintf(vvp_out, "    %%pushi/vec4 %lu, 0, 32;\n", part_off);
-	    fprintf(vvp_out, "    %%part/u %u;\n", wid);
+	    fprintf(vvp_out, "    %%parti/u %u, %lu, 32;\n", wid, part_off);
 
       } else if (ivl_signal_dimensions(sig)==0 && part_off_ex!=0 && word_ix==0) {
 
@@ -526,6 +525,25 @@ static int show_stmt_assign_vector(ivl_statement_t net)
 
       } else {
 	    unsigned wid = ivl_stmt_lwidth(net);
+	    if (ivl_expr_width(rval) == wid && test_immediate_vec4_ok(rval)) {
+		  switch (ivl_stmt_opcode(net)) {
+		      case '+':
+			draw_immediate_vec4(rval, "%addi");
+			put_vec_to_lval(net, slices);
+			return 0;
+		      case '-':
+			draw_immediate_vec4(rval, "%subi");
+			put_vec_to_lval(net, slices);
+			return 0;
+		      case '*':
+			draw_immediate_vec4(rval, "%muli");
+			put_vec_to_lval(net, slices);
+			return 0;
+		      default:
+			break;
+		  }
+	    }
+
 	    draw_eval_vec4(rval);
 	    resize_vec4_wid(rval, wid);
       }

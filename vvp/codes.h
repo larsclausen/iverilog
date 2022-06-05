@@ -303,6 +303,7 @@ struct vvp_code_s {
 	    vvp_code_t   cptr2;
 	    class ufunc_core*ufunc_core_ptr;
       };
+      void *vec;
 };
 
 /*
