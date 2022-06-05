@@ -4548,7 +4548,9 @@ bool of_NOOP(vthread_t, vvp_code_t)
 bool of_NORR(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-	  val = vvp_vector4_t(1, ~val.reduce_or());
+      vvp_bit4_t res = ~val.reduce_or();
+      val.resize(1);
+      val.set_bit(0, res);
 
       return true;
 }
@@ -4569,7 +4571,9 @@ bool of_NULL(vthread_t thr, vvp_code_t)
 bool of_ANDR(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-	  val = vvp_vector4_t(1, val.reduce_and());
+      vvp_bit4_t res = val.reduce_and();
+      val.resize(1);
+      val.set_bit(0, res);
 
       return true;
 }
@@ -4580,7 +4584,9 @@ bool of_ANDR(vthread_t thr, vvp_code_t)
 bool of_NANDR(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-	  val = vvp_vector4_t(1, ~val.reduce_and());
+      vvp_bit4_t res = ~val.reduce_and();
+      val.resize(1);
+      val.set_bit(0, res);
 
       return true;
 }
@@ -4591,7 +4597,9 @@ bool of_NANDR(vthread_t thr, vvp_code_t)
 bool of_ORR(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-	  val = vvp_vector4_t(1, val.reduce_or());
+      vvp_bit4_t res = val.reduce_or();
+      val.resize(1);
+      val.set_bit(0, res);
 
       return true;
 }
@@ -4602,7 +4610,9 @@ bool of_ORR(vthread_t thr, vvp_code_t)
 bool of_XORR(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-	  val = vvp_vector4_t(1, val.reduce_xor());
+      vvp_bit4_t res = val.reduce_xor();
+      val.resize(1);
+      val.set_bit(0, res);
 
       return true;
 }
@@ -4613,7 +4623,9 @@ bool of_XORR(vthread_t thr, vvp_code_t)
 bool of_XNORR(vthread_t thr, vvp_code_t)
 {
       vvp_vector4_t&val = thr->peek_vec4();
-	  val = vvp_vector4_t(1, ~val.reduce_xor());
+      vvp_bit4_t res = ~val.reduce_xor();
+      val.resize(1);
+      val.set_bit(0, res);
 
       return true;
 }

@@ -1969,6 +1969,7 @@ vvp_bit4_t vvp_vector4_t::reduce_and() const
 
 static unsigned long parity(unsigned long val)
 {
+	return __builtin_parityl(val);
 	val ^= val >> 32;
 	val ^= val >> 16;
 	val ^= val >> 8;
@@ -1977,7 +1978,6 @@ static unsigned long parity(unsigned long val)
 	val ^= val >> 1;
 
 	return val & 1;
-	return __builtin_parityl(val);
 }
 
 vvp_bit4_t vvp_vector4_t::reduce_xor() const
