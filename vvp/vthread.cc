@@ -962,43 +962,7 @@ static void get_immediate_rval(vvp_code_t cp, vvp_vector4_t&val)
       uint32_t valb = cp->bit_idx[1];
       unsigned wid  = cp->number;
 
-      if (valb == 0) {
-	      // Special case: if the value is zero, we are done
-	      // before we start.
-	    if (vala == 0) return;
-
-	      // Special case: The value has no X/Z bits, so we can
-	      // use the setarray method to write the value all at once.
-	    unsigned use_wid = 8*sizeof(unsigned long);
-	    if (wid < use_wid)
-		  use_wid = wid;
-	    unsigned long tmp[1];
-	    tmp[0] = vala;
-	    val.setarray(0, use_wid, tmp);
-	    return;
-      }
-
-	// The immediate value can be values bigger then 32 bits, but
-	// only if the high bits are zero. So at most we need to run
-	// through the loop below 32 times. Maybe less, if the target
-	// width is less. We don't have to do anything special on that
-	// because vala/valb bits will shift away so (vala|valb) will
-	// turn to zero at or before 32 shifts.
-
-      for (unsigned idx = 0 ; idx < wid && (vala|valb) ; idx += 1) {
-	    uint32_t ba = 0;
-	      // Convert the vala/valb bits to a ba number that
-	      // matches the encoding of the vvp_bit4_t enumeration.
-	    ba = (valb & 1) << 1;
-	    ba |= vala & 1;
-
-	      // Note that the val is already pre-filled with BIT4_0
-	      // bits, os we only need to set non-zero bit values.
-	    if (ba) val.set_bit(idx, (vvp_bit4_t)ba);
-
-	    vala >>= 1;
-	    valb >>= 1;
-      }
+      val.set_ab(vala, valb);
 }
 
 /*

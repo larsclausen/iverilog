@@ -331,6 +331,16 @@ class vvp_vector4_t {
 	  vvp_bit4_t reduce_and() const;
 	  vvp_bit4_t reduce_xor() const;
 
+      void set_ab(unsigned long a, unsigned long b) {
+	    if (size_ <= BITS_PER_WORD) {
+		  abits_val_= a;
+		  bbits_val_ = b;
+	    } else {
+		  abits_ptr_[0] = a;
+		  bbits_ptr_[0] = b;
+	    }
+      }
+
     private:
 	// Number of vvp_bit4_t bits that can be shoved into a word.
       enum { BITS_PER_WORD = 8*sizeof(unsigned long) };
