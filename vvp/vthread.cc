@@ -128,7 +128,12 @@ struct vthread_s {
       }
       inline void alloc_vec4()
       {
-	    stack_vec4_.push_back(vvp_vector4_t());
+	    stack_vec4_.emplace_back();
+      }
+
+      inline void alloc_vec4(unsigned int size, vvp_bit4_t init)
+      {
+	    stack_vec4_.emplace_back(size, init);
       }
 
       inline const vvp_vector4_t& peek_vec4(unsigned depth)
@@ -4853,10 +4858,10 @@ bool of_PUSHI_VEC4(vthread_t thr, vvp_code_t cp)
 	// I expect that most of the bits of an immediate value are
 	// going to be zero, so start the result vector with all zero
 	// bits. Then we only need to replace the bits that are different.
-      vvp_vector4_t val (wid, BIT4_0);
+      thr->alloc_vec4(wid, BIT4_0);
+      vvp_vector4_t &val = thr->peek_vec4();
       get_immediate_rval (cp, val);
 
-      thr->push_vec4(val);
 
       return true;
 }
