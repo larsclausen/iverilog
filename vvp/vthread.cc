@@ -126,18 +126,20 @@ struct vthread_s {
       {
 	    stack_vec4_.push_back(val);
       }
+      inline void alloc_vec4()
+      {
+	    stack_vec4_.push_back(vvp_vector4_t());
+      }
+
       inline const vvp_vector4_t& peek_vec4(unsigned depth)
       {
-	    unsigned size = stack_vec4_.size();
-	    assert(depth < size);
-	    unsigned use_index = size-1-depth;
-	    return stack_vec4_[use_index];
+	    assert(depth < stack_vec4_.size());
+	    return *(stack_vec4_.rbegin()+depth);
       }
       inline vvp_vector4_t& peek_vec4(void)
       {
-	    unsigned use_index = stack_vec4_.size();
-	    assert(use_index >= 1);
-	    return stack_vec4_[use_index-1];
+//	    assert(!stack_vec4_.empty());
+	    return stack_vec4_.back();
       }
       inline void poke_vec4(unsigned depth, const vvp_vector4_t&val)
       {
@@ -168,7 +170,7 @@ struct vthread_s {
       {
 	    stack_real_.push_back(val);
       }
-      inline double peek_real(unsigned depth)
+      inline double peek_real(unsigned depth = 0)
       {
 	    assert(depth < stack_real_.size());
 	    unsigned use_index = stack_real_.size()-1-depth;
@@ -207,7 +209,7 @@ struct vthread_s {
       {
 	    stack_str_.push_back(val);
       }
-      inline string&peek_str(unsigned depth)
+      inline string&peek_str(unsigned depth = 0)
       {
 	    assert(depth<stack_str_.size());
 	    unsigned use_index = stack_str_.size()-1-depth;
@@ -1750,7 +1752,7 @@ bool of_CMPE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPE(thr, lval, rval);
@@ -1764,7 +1766,7 @@ bool of_CMPNE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPE(thr, lval, rval);
@@ -1902,7 +1904,7 @@ bool of_CMPS(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPS(thr, lval, rval);
@@ -2038,7 +2040,7 @@ static void do_CMPU(vthread_t thr, const vvp_vector4_t&lval, const vvp_vector4_t
 bool of_CMPU(vthread_t thr, vvp_code_t)
 {
 
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPU(thr, lval, rval);
@@ -2136,7 +2138,7 @@ bool of_CMPWE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPWE(thr, lval, rval);
@@ -2150,7 +2152,7 @@ bool of_CMPWNE(vthread_t thr, vvp_code_t)
 	// We are going to pop these and push nothing in their
 	// place, but for now it is more efficient to use a constant
 	// reference. When we finish, pop the stack without copies.
-      const vvp_vector4_t&rval = thr->peek_vec4(0);
+      const vvp_vector4_t&rval = thr->peek_vec4();
       const vvp_vector4_t&lval = thr->peek_vec4(1);
 
       do_CMPWE(thr, lval, rval);
@@ -2206,7 +2208,7 @@ bool of_CMPZ(vthread_t thr, vvp_code_t)
 bool of_CONCAT_STR(vthread_t thr, vvp_code_t)
 {
       string text = thr->pop_str();
-      thr->peek_str(0).append(text);
+      thr->peek_str().append(text);
       return true;
 }
 
@@ -2216,7 +2218,7 @@ bool of_CONCAT_STR(vthread_t thr, vvp_code_t)
 bool of_CONCATI_STR(vthread_t thr, vvp_code_t cp)
 {
       const char*text = cp->text;
-      thr->peek_str(0).append(filter_string(text));
+      thr->peek_str().append(filter_string(text));
       return true;
 }
 
@@ -2225,7 +2227,7 @@ bool of_CONCATI_STR(vthread_t thr, vvp_code_t cp)
  */
 bool of_CONCAT_VEC4(vthread_t thr, vvp_code_t)
 {
-      const vvp_vector4_t&lsb = thr->peek_vec4(0);
+      const vvp_vector4_t&lsb = thr->peek_vec4();
       const vvp_vector4_t&msb = thr->peek_vec4(1);
 
 	// The result is the size of the top two vectors in the stack.
@@ -2956,13 +2958,13 @@ bool of_DUP_OBJ(vthread_t thr, vvp_code_t)
 
 bool of_DUP_REAL(vthread_t thr, vvp_code_t)
 {
-      thr->push_real(thr->peek_real(0));
+      thr->push_real(thr->peek_real());
       return true;
 }
 
 bool of_DUP_VEC4(vthread_t thr, vvp_code_t)
 {
-      thr->push_vec4(thr->peek_vec4(0));
+      thr->push_vec4(thr->peek_vec4());
       return true;
 }
 
@@ -3878,7 +3880,7 @@ bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
 	// Push a placeholder onto the stack in order to reserve the
 	// stack space. Use a reference for the stack top as a target
 	// for the load.
-      thr->push_vec4(vvp_vector4_t());
+      thr->alloc_vec4();
       vvp_vector4_t&sig_value = thr->peek_vec4();
 
       vvp_signal_value*sig = cp->sig; 
@@ -5393,17 +5395,17 @@ bool of_SCOPY(vthread_t thr, vvp_code_t)
 
 static void thread_peek(vthread_t thr, double&value)
 {
-      value = thr->peek_real(0);
+      value = thr->peek_real();
 }
 
 static void thread_peek(vthread_t thr, string&value)
 {
-      value = thr->peek_str(0);
+      value = thr->peek_str();
 }
 
 static void thread_peek(vthread_t thr, vvp_vector4_t&value)
 {
-      value = thr->peek_vec4(0);
+      value = thr->peek_vec4();
 }
 
 template <typename ELEM>
@@ -6054,6 +6056,7 @@ bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
       vvp_vector4_t&val = thr->peek_vec4();
       unsigned val_size = val.size();
 
+#if 0
       if (val_size < wid) {
 	    cerr << thr->get_fileline()
 	         << "XXXX Internal error: val.size()=" << val_size
@@ -6063,7 +6066,7 @@ bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
       if (val_size > wid) {
 	    val.resize(wid);
       }
-
+#endif
 	// If there is a problem loading the index register, flags-4
 	// will be set to 1, and we know here to skip the actual assignment.
       if (off_index!=0 && thr->flags[4] == BIT4_1) {
@@ -6173,7 +6176,7 @@ bool of_SUBSTR(vthread_t thr, vvp_code_t cp)
 {
       int32_t first = thr->words[cp->bit_idx[0]].w_int;
       int32_t last = thr->words[cp->bit_idx[1]].w_int;
-      string&val = thr->peek_str(0);
+      string&val = thr->peek_str();
 
       if (first < 0 || last < first || last >= (int32_t)val.size()) {
 	    val = string("");
@@ -6193,7 +6196,7 @@ bool of_SUBSTR_VEC4(vthread_t thr, vvp_code_t cp)
       unsigned wid = cp->bit_idx[1];
 
       int32_t sel = thr->words[sel_idx].w_int;
-      string&val = thr->peek_str(0);
+      string&val = thr->peek_str();
 
       assert(wid%8 == 0);
 

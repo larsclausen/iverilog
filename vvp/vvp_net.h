@@ -249,7 +249,8 @@ class vvp_vector4_t {
       static const vvp_vector4_t nil;
 
     public:
-      explicit vvp_vector4_t(unsigned size =0, vvp_bit4_t bits =BIT4_X);
+      explicit vvp_vector4_t() : size_(0), abits_val_(WORD_0_ABITS), bbits_val_(WORD_0_ABITS) {}
+      explicit vvp_vector4_t(unsigned size, vvp_bit4_t bits =BIT4_X);
 
       explicit vvp_vector4_t(unsigned size, double val);
 
