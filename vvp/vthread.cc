@@ -1209,7 +1209,7 @@ bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
       unsigned del_index = cp->bit_idx[1];
       vvp_vector4_t val = thr->pop_vec4();
 
-      int64_t off = thr->words[off_index].w_int;
+      int64_t off = off_index ? thr->words[off_index].w_int : 0;
       vvp_time64_t del = thr->words[del_index].w_uint;
 
 	// Abort if flags[4] is set. This can happen if the calculation
@@ -1236,7 +1236,7 @@ bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
       unsigned off_index = cp->bit_idx[0];
       vvp_vector4_t val = thr->pop_vec4();
 
-      int64_t off = thr->words[off_index].w_int;
+      int64_t off = off_index ? thr->words[off_index].w_int : 0;
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.

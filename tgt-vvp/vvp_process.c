@@ -113,7 +113,7 @@ static void assign_to_array_word(ivl_signal_t lsig, ivl_expr_t word_ix,
 {
       int word_ix_reg = 3;
       int part_off_reg = 0;
-      int delay_index;
+      int delay_index = 0;
       unsigned long part_off = 0;
 
       int error_flag = allocate_flag();
@@ -189,9 +189,11 @@ static void assign_to_array_word(ivl_signal_t lsig, ivl_expr_t word_ix,
 	    unsigned long low_d = delay % UINT64_C(0x100000000);
 	    unsigned long hig_d = delay / UINT64_C(0x100000000);
 
-	    delay_index = allocate_word();
-	    fprintf(vvp_out, "    %%ix/load %d, %lu, %lu; Constant delay\n",
-		    delay_index, low_d, hig_d);
+		if (low_d != 0 && hig_d != 0) {
+			delay_index = allocate_word();
+			fprintf(vvp_out, "    %%ix/load %d, %lu, %lu; Constant delay\n",
+				delay_index, low_d, hig_d);
+		}
 	    if (word_ix_reg != 3) {
 		  fprintf(vvp_out, "    %%ix/mov 3, %d;\n", word_ix_reg);
 		  clr_word(word_ix_reg);
@@ -284,11 +286,14 @@ static void assign_to_lvector(ivl_lval_t lval,
 
 	    } else {
 		  int offset_index = allocate_word();
-		  int delay_index = allocate_word();
+		  int delay_index = 0;
 
-		    /* Constant delay... */
-		  fprintf(vvp_out, "    %%ix/load %d, %lu, %lu;\n",
-			  delay_index, low_d, hig_d);
+		  if (low_d != 0 || hig_d != 0) {
+			delay_index = allocate_word();
+				/* Constant delay... */
+			  fprintf(vvp_out, "    %%ix/load %d, %lu, %lu;\n",
+				  delay_index, low_d, hig_d);
+		  }
 		    /* Calculated part offset. This will leave flag
 		       bit 4 set to 1 if the copy into the index
 		       detected xz values. The %assign will use that
@@ -318,13 +323,16 @@ static void assign_to_lvector(ivl_lval_t lval,
 		    // assignment delay. Use the %assign/vec4/off/d
 		    // instruction to handle this case.
 		  int offset_index = allocate_word();
-		  int delay_index = allocate_word();
+		  int delay_index = 0;
 		  fprintf(vvp_out, "    %%ix/load %d, %lu, 0;\n", offset_index, part_off);
 		  if (dexp) {
 			draw_eval_expr_into_integer(dexp,delay_index);
 		  } else {
-			fprintf(vvp_out, "    %%ix/load %d, %lu, %lu;\n",
-				delay_index, low_d, hig_d);
+		    if (low_d != 0 || hig_d != 0) {
+				delay_index = allocate_word();
+				fprintf(vvp_out, "    %%ix/load %d, %lu, %lu;\n",
+					delay_index, low_d, hig_d);
+			}
 			fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
 		  }
 		  fprintf(vvp_out, "    %s/vec4/off/d v%p_%lu, %d, %d;\n",
