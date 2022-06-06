@@ -1217,13 +1217,13 @@ bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
       if (thr->flags[4] == BIT4_1)
 	    return true;
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      auto*sig =cp->net->fil;
       assert(sig);
 
-      if (!resize_rval_vec(val, off, sig->value_size()))
+      if (!resize_rval_vec(val, off, sig->filter_size()))
 	    return true;
 
-      schedule_assign_vector(ptr, off, sig->value_size(), val, del);
+      schedule_assign_vector(ptr, off, sig->filter_size(), val, del);
       return true;
 }
 
@@ -1243,16 +1243,15 @@ bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
       if (thr->flags[4] == BIT4_1)
 	    return true;
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
-      assert(sig);
+      auto*sig = cp->net->fil;
 
-      if (!resize_rval_vec(val, off, sig->value_size()))
+      if (!resize_rval_vec(val, off, sig->filter_size()))
 	    return true;
 
       if (thr->ecount == 0) {
-	    schedule_assign_vector(ptr, off, sig->value_size(), val, 0);
+	    schedule_assign_vector(ptr, off, sig->filter_size(), val, 0);
       } else {
-	    schedule_evctl(ptr, val, off, sig->value_size(), thr->event, thr->ecount);
+	    schedule_evctl(ptr, val, off, sig->filter_size(), thr->event, thr->ecount);
       }
 
       return true;
@@ -1269,10 +1268,9 @@ bool of_ASSIGN_VEC4D(vthread_t thr, vvp_code_t cp)
 
       vvp_vector4_t value = thr->pop_vec4();
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
-      assert(sig);
+      auto*sig = cp->net->fil;
 
-      schedule_assign_vector(ptr, 0, sig->value_size(), value, del);
+      schedule_assign_vector(ptr, 0, sig->filter_size(), value, del);
 
       return true;
 }
@@ -1285,13 +1283,13 @@ bool of_ASSIGN_VEC4E(vthread_t thr, vvp_code_t cp)
       vvp_net_ptr_t ptr (cp->net, 0);
       vvp_vector4_t value = thr->pop_vec4();
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      auto*sig = cp->net->fil;
       assert(sig);
 
       if (thr->ecount == 0) {
-	    schedule_assign_vector(ptr, 0, sig->value_size(), value, 0);
+	    schedule_assign_vector(ptr, 0, sig->filter_size(), value, 0);
       } else {
-	    schedule_evctl(ptr, value, 0, sig->value_size(), thr->event, thr->ecount);
+	    schedule_evctl(ptr, value, 0, sig->filter_size(), thr->event, thr->ecount);
       }
 
       return true;
@@ -1576,13 +1574,13 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 	/* Remove any previous continuous assign to this net. */
       cassign_unlink(net);
 
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (net->fil);
+      auto*sig = net->fil;
       assert(sig);
 
       if (base < 0 && (wid <= (unsigned)-base))
 	    return true;
 
-      if (base >= (long)sig->value_size())
+      if (base >= (long)sig->filter_size())
 	    return true;
 
       if (base < 0) {
@@ -1591,13 +1589,13 @@ bool of_CASSIGN_VEC4_OFF(vthread_t thr, vvp_code_t cp)
 	    value.resize(wid);
       }
 
-      if (base+wid > sig->value_size()) {
-	    wid = sig->value_size() - base;
+      if (base+wid > sig->filter_size()) {
+	    wid = sig->filter_size() - base;
 	    value.resize(wid);
       }
 
       vvp_net_ptr_t ptr (net, 1);
-      vvp_send_vec4_pv(ptr, value, base, sig->value_size(), 0);
+      vvp_send_vec4_pv(ptr, value, base, sig->filter_size(), 0);
       return true;
 }
 
@@ -3412,16 +3410,7 @@ bool of_IX_MOV(vthread_t thr, vvp_code_t cp)
 bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
 {
       unsigned index = cp->bit_idx[0];
-      vvp_net_t*net = cp->net;
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
-      if (sig == 0) {
-	    assert(net->fil);
-	    cerr << thr->get_fileline()
-	         << "%%ix/getv error: Net arg not a vector signal? "
-		 << typeid(*net->fil).name() << endl;
-      }
-      assert(sig);
+      vvp_signal_value*sig = cp->sig;
 
       vvp_vector4_t vec;
       sig->vec4_value(vec);
@@ -3443,18 +3432,7 @@ bool of_IX_GETV(vthread_t thr, vvp_code_t cp)
 bool of_IX_GETV_S(vthread_t thr, vvp_code_t cp)
 {
       unsigned index = cp->bit_idx[0];
-      vvp_net_t*net = cp->net;
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*>(net->fil);
-      if (sig == 0) {
-	    assert(net->fil);
-	    cerr << thr->get_fileline()
-	         << "%%ix/getv/s error: Net arg not a vector signal? "
-		 << "fun=" << typeid(*net->fil).name()
-		 << ", fil=" << (net->fil? typeid(*net->fil).name() : "<>")
-		 << endl;
-      }
-      assert(sig);
+      vvp_signal_value*sig = cp->sig;
 
       vvp_vector4_t vec;
       sig->vec4_value(vec);
@@ -3903,20 +3881,7 @@ bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
       thr->push_vec4(vvp_vector4_t());
       vvp_vector4_t&sig_value = thr->peek_vec4();
 
-      vvp_net_t*net = cp->net;
-
-	// For the %load to work, the functor must actually be a
-	// signal functor. Only signals save their vector value.
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (net->fil);
-      if (sig == 0) {
-	    cerr << thr->get_fileline()
-	         << "%load/v error: Net arg not a signal? "
-		 << (net->fil ? typeid(*net->fil).name() :
-	                        typeid(*net->fun).name())
-	         << endl;
-	    assert(sig);
-	    return true;
-      }
+      vvp_signal_value*sig = cp->sig; 
 
 	// Extract the value from the signal and directly into the
 	// target stack position.
@@ -6079,12 +6044,12 @@ bool of_STORE_STRA(vthread_t thr, vvp_code_t cp)
 bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
 {
       vvp_net_ptr_t ptr(cp->net, 0);
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      auto*sig = cp->net->fil;
       unsigned off_index = cp->bit_idx[0];
       unsigned int wid = cp->bit_idx[1];
 
-      int64_t off = off_index ? thr->words[off_index].w_int : 0;
-      unsigned int sig_value_size = sig->value_size();
+      int64_t off = off_index? thr->words[off_index].w_int : 0;
+      unsigned int sig_value_size = sig->filter_size();
 
       vvp_vector4_t&val = thr->peek_vec4();
       unsigned val_size = val.size();
@@ -6371,8 +6336,7 @@ bool of_WAIT(vthread_t thr, vvp_code_t cp)
       thr->waiting_for_event = 1;
 
 	/* Add this thread to the list in the event. */
-      waitable_hooks_s*ep = dynamic_cast<waitable_hooks_s*> (cp->net->fun);
-      assert(ep);
+      waitable_hooks_s*ep = cp->wait;
       thr->wait_next = ep->add_waiting_thread(thr);
 
 	/* Return false to suspend this thread. */

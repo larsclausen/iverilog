@@ -22,6 +22,7 @@
 # include  "delay.h"
 # include  "arith.h"
 # include  "compile.h"
+# include  "event.h"
 # include  "logic.h"
 # include  "resolv.h"
 # include  "udp.h"
@@ -29,6 +30,7 @@
 # include  "codes.h"
 # include  "schedule.h"
 # include  "vpi_priv.h"
+# include  "vvp_net_sig.h"
 # include  "parse_misc.h"
 # include  "statistics.h"
 # include  "schedule.h"
@@ -70,6 +72,10 @@ enum operand_e {
       OA_FUNC_PTR,
 	/* The operand is a second functor pointer */
       OA_FUNC_PTR2,
+	/* */
+	  OA_SIG_PTR,
+	/* */
+	  OA_WAIT_PTR,
 	/* The operand is a VPI handle */
       OA_VPI_PTR,
 	/* String */
@@ -183,8 +189,8 @@ static const struct opcode_table_s opcode_table[] = {
       { "%free",   of_FREE,   1,  {OA_VPI_PTR,  OA_NONE,     OA_NONE} },
       { "%inv",    of_INV,    0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%ix/add", of_IX_ADD, 3,  {OA_NUMBER,   OA_BIT1,     OA_BIT2} },
-      { "%ix/getv",of_IX_GETV,2,  {OA_BIT1,     OA_FUNC_PTR, OA_NONE} },
-      { "%ix/getv/s",of_IX_GETV_S,2, {OA_BIT1,   OA_FUNC_PTR, OA_NONE} },
+      { "%ix/getv",of_IX_GETV,2,  {OA_BIT1,     OA_SIG_PTR, OA_NONE} },
+      { "%ix/getv/s",of_IX_GETV_S,2, {OA_BIT1,   OA_SIG_PTR, OA_NONE} },
       { "%ix/load",of_IX_LOAD,3,  {OA_NUMBER,   OA_BIT1,     OA_BIT2} },
       { "%ix/mov", of_IX_MOV, 2,  {OA_BIT1,     OA_BIT2,     OA_NONE} },
       { "%ix/mul", of_IX_MUL, 3,  {OA_NUMBER,   OA_BIT1,     OA_BIT2} },
@@ -207,7 +213,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%load/real",  of_LOAD_REAL, 1,{OA_VPI_PTR, OA_NONE, OA_NONE} },
       { "%load/str",   of_LOAD_STR,  1,{OA_FUNC_PTR,OA_NONE, OA_NONE} },
       { "%load/stra",  of_LOAD_STRA, 2,{OA_ARR_PTR, OA_BIT1, OA_NONE} },
-      { "%load/vec4",  of_LOAD_VEC4, 1,{OA_FUNC_PTR,OA_NONE,  OA_NONE} },
+      { "%load/vec4",  of_LOAD_VEC4, 1,{OA_SIG_PTR,OA_NONE,  OA_NONE} },
       { "%load/vec4a", of_LOAD_VEC4A,2,{OA_ARR_PTR, OA_BIT1, OA_NONE} },
       { "%max/wr", of_MAX_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%min/wr", of_MIN_WR, 0,  {OA_NONE,     OA_NONE,     OA_NONE} },
@@ -312,7 +318,7 @@ static const struct opcode_table_s opcode_table[] = {
       { "%test_nul/a",   of_TEST_NUL_A,   2,{OA_ARR_PTR, OA_BIT1,    OA_NONE} },
       { "%test_nul/obj", of_TEST_NUL_OBJ, 0,{OA_NONE,    OA_NONE,    OA_NONE} },
       { "%test_nul/prop",of_TEST_NUL_PROP,2,{OA_NUMBER,  OA_BIT1,    OA_NONE} },
-      { "%wait",   of_WAIT,   1,  {OA_FUNC_PTR, OA_NONE,     OA_NONE} },
+      { "%wait",   of_WAIT,   1,  {OA_WAIT_PTR, OA_NONE,     OA_NONE} },
       { "%wait/fork",of_WAIT_FORK,0,{OA_NONE,   OA_NONE,     OA_NONE} },
       { "%xnor",   of_XNOR,   0,  {OA_NONE,     OA_NONE,     OA_NONE} },
       { "%xnor/r", of_XNORR,  0,  {OA_NONE,     OA_NONE,     OA_NONE} },
@@ -573,6 +579,76 @@ void functor_ref_lookup(vvp_net_t**ref, char*lab)
 
       resolv_submit(res);
 }
+
+struct signal_gen_resolv_list_s: public resolv_list_s {
+      explicit signal_gen_resolv_list_s(char*txt) : resolv_list_s(txt) {
+	    ref = 0;
+      }
+      vvp_signal_value**ref;
+      virtual bool resolve(bool mes);
+};
+
+bool signal_gen_resolv_list_s::resolve(bool mes)
+{
+      vvp_net_t*tmp = vvp_net_lookup(label());
+
+      if (tmp) {
+	    *ref = dynamic_cast<vvp_signal_value*>(tmp->fil);
+	    if (*ref)
+		  return true;
+      }
+
+      if (mes)
+	    fprintf(stderr, "unresolved signal reference: %s\n", label());
+
+      return false;
+}
+
+void signal_ref_lookup(vvp_signal_value**ref, char*lab)
+{
+      struct signal_gen_resolv_list_s*res =
+	    new struct signal_gen_resolv_list_s(lab);
+
+      res->ref    = ref;
+
+      resolv_submit(res);
+}
+
+struct wait_gen_resolv_list_s: public resolv_list_s {
+      explicit wait_gen_resolv_list_s(char*txt) : resolv_list_s(txt) {
+	    ref = 0;
+      }
+      waitable_hooks_s**ref;
+      virtual bool resolve(bool mes);
+};
+
+bool wait_gen_resolv_list_s::resolve(bool mes)
+{
+      vvp_net_t*tmp = vvp_net_lookup(label());
+
+      if (tmp) {
+	    *ref = dynamic_cast<waitable_hooks_s*>(tmp->fun);
+	    if (*ref)
+		  return true;
+      }
+
+      if (mes)
+	    fprintf(stderr, "unresolved wait reference: %s\n", label());
+
+      return false;
+}
+
+void wait_ref_lookup(waitable_hooks_s**ref, char*lab)
+{
+      struct wait_gen_resolv_list_s*res =
+	    new struct wait_gen_resolv_list_s(lab);
+
+      res->ref    = ref;
+
+      resolv_submit(res);
+}
+
+
 
 /*
  *  vpiHandle lookup
@@ -1848,6 +1924,28 @@ void compile_code(char*label, char*mnem, comp_operands_t opa)
 		  }
 
 		  functor_ref_lookup(&code->net2, opa->argv[idx].symb.text);
+		  break;
+		case OA_SIG_PTR:
+		    /* The operand is a functor. Resolve the label to
+		       a functor pointer, or postpone the resolution
+		       if it is not defined yet. */
+		  if (opa->argv[idx].ltype != L_SYMB) {
+			yyerror("operand format");
+			break;
+		  }
+
+		  signal_ref_lookup(&code->sig, opa->argv[idx].symb.text);
+		  break;
+		case OA_WAIT_PTR:
+		    /* The operand is a functor. Resolve the label to
+		       a functor pointer, or postpone the resolution
+		       if it is not defined yet. */
+		  if (opa->argv[idx].ltype != L_SYMB) {
+			yyerror("operand format");
+			break;
+		  }
+
+		  wait_ref_lookup(&code->wait, opa->argv[idx].symb.text);
 		  break;
 
 		case OA_NUMBER:

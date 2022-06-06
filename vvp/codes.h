@@ -281,6 +281,9 @@ extern bool of_REAP_UFUNC(vthread_t thr, vvp_code_t code);
 
 extern bool of_CHUNK_LINK(vthread_t thr, vvp_code_t code);
 
+class vvp_signal_value;
+struct waitable_hooks_s;
+
 /*
  * This is the format of a machine code instruction.
  */
@@ -290,6 +293,8 @@ struct vvp_code_s {
       union {
 	    unsigned long number;
 	    vvp_net_t    *net;
+	    vvp_signal_value *sig;
+		waitable_hooks_s *wait;
 	    vvp_code_t   cptr;
 	    vvp_array_t array;
 	    class __vpiHandle*handle;
