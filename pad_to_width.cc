@@ -60,6 +60,7 @@ NetExpr*pad_to_width(NetExpr*expr, unsigned wid, bool signed_flag,
 NetExpr*cast_to_width(NetExpr*expr, unsigned wid, bool signed_flag,
 		      const LineInfo&info)
 {
+      assert(0);
         /* If the expression is a const, then replace it with a new
            const. This is a more efficient result. */
       if (NetEConst*tmp = dynamic_cast<NetEConst*>(expr)) {

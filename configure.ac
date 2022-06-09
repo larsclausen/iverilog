@@ -78,12 +78,12 @@ AC_SUBST(WARNING_FLAGS_CXX, [""])
 else
 # Check to see if -Wextra is supported.
 iverilog_temp_cflags="$CFLAGS"
-CFLAGS="-Wextra $CFLAGS"
+CFLAGS="-fprofile-arcs -ftest-coverage -Wextra $CFLAGS"
 AC_MSG_CHECKING(if gcc supports -Wextra)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
    [[iverilog_wextra_flag="-Wextra";] AC_MSG_RESULT(yes)],
    [[iverilog_wextra_flag="-W";] AC_MSG_RESULT(no)])
-CFLAGS="$iverilog_temp_cflags"
+CFLAGS="-fprofile-arcs -ftest-coverage $iverilog_temp_cflags"
 
 AC_SUBST(DEPENDENCY_FLAG, [-MD])
 AC_SUBST(WARNING_FLAGS, ["-Wall $iverilog_wextra_flag -Wshadow"])
@@ -103,9 +103,9 @@ AS_IF( [test "x$with_m32" = xyes],
     ],
     [])
 
-CFLAGS="$CTARGETFLAGS $CFLAGS"
-CXXFLAGS="$CTARGETFLAGS $CXXFLAGS"
-LDFLAGS="$CTARGETFLAGS $LDFLAGS"
+CFLAGS="$CTARGETFLAGS --coverage $CFLAGS"
+CXXFLAGS="$CTARGETFLAGS --coverage  $CXXFLAGS"
+LDFLAGS="$CTARGETFLAGS --coverage $LDFLAGS"
 
 # Check that we are using either the GNU compilers or the Sun compilers
 # but not a mixture of the two (not currently supported).

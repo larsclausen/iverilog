@@ -656,16 +656,19 @@ NetExpr* normalize_variable_unpacked(const LineInfo&loc, const vector<netrange_t
 	      // Account for that we are doing arithmetic and should
 	      // have a proper width to make sure there are no
 	      // losses. So calculate a min_wid width.
-	    unsigned tmp_wid;
-	    unsigned min_wid = tmp->expr_width();
-	    if (use_base != 0 && ((tmp_wid = num_bits(use_base)) >= min_wid))
-		  min_wid = tmp_wid + 1;
-	    if ((tmp_wid = num_bits(dims[idx].width()+1)) >= min_wid)
-		  min_wid = tmp_wid + 1;
-	    if (use_stride != 1)
-		  min_wid += num_bits(use_stride);
+	    if (tmp->expr_type() != IVL_VT_REAL) {
+		  unsigned tmp_wid;
+		  unsigned min_wid = tmp->expr_width();
+		  if (use_base != 0 && ((tmp_wid = num_bits(use_base)) >= min_wid))
+			min_wid = tmp_wid + 1;
+		  if ((tmp_wid = num_bits(dims[idx].width()+1)) >= min_wid)
+			min_wid = tmp_wid + 1;
+		  if (use_stride != 1)
+			min_wid += num_bits(use_stride);
 
-	    tmp = pad_to_width(tmp, min_wid, loc);
+		  printf("wid: %d %d\n", min_wid, tmp->expr_width());
+		  tmp = pad_to_width(tmp, min_wid, loc);
+	    }
 
 	      // Now generate the math to calculate the canonical address.
 	    NetExpr*tmp_scaled = 0;

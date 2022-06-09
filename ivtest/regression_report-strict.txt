@@ -1541,6 +1541,12 @@ parameter_override_invalid6: Passed - CE.
                 pullupdown2: Passed.
                 pullupdown3: Passed.
            pv_undef_sig_sel: Passed.
+                 pv_wr_vec4: Passed.
+              pv_wr_vec4_nb: Passed.
+           pv_wr_vec4_nb_ec: Passed.
+                pv_wr_vec4a: Passed.
+             pv_wr_vec4a_nb: Passed.
+          pv_wr_vec4a_nb_ec: Passed.
                       qmark: Passed.
                      qmark1: Passed.
                      qmark3: Passed.
@@ -2239,6 +2245,12 @@ parameter_override_invalid8: Passed - CE.
                   program5b: Passed - CE.
               program_hello: Passed.
              program_hello2: Passed - CE.
+                 pv_wr_vec2: Passed.
+              pv_wr_vec2_nb: Passed.
+           pv_wr_vec2_nb_ec: Passed.
+                pv_wr_vec2a: Passed.
+             pv_wr_vec2a_nb: Passed.
+          pv_wr_vec2a_nb_ec: Passed.
             recursive_func2: Passed.
       recursive_func_const2: Passed.
                  sbyte_test: Passed.
@@ -2531,7 +2543,6 @@ parameter_override_invalid8: Passed - CE.
   packed_dims_invalid_class: Passed - CE.
  packed_dims_invalid_module: Passed - CE.
              ushortint_test: Passed.
-           vvp_recv_vec4_pv: Passed.
                   wait_fork: Passed.
                      sf1289: Passed.
              wild_cmp_const: Passed.
@@ -2773,4 +2784,4 @@ parameter_override_invalid8: Passed - CE.
                 ufuncsynth1: Passed.
 ============================================================================
 Test results:
-  Total=2771, Passed=2765, Failed=0, Not Implemented=3, Expected Fail=3
+  Total=2782, Passed=2776, Failed=0, Not Implemented=3, Expected Fail=3

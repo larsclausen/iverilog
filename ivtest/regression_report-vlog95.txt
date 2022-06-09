@@ -926,7 +926,7 @@ Running vlog95 compiler/VVP tests for Icarus Verilog version: 12.
                 nb_array_pv: Passed.
                 nb_ec_array: Passed.
              nb_ec_array_pv: Passed.
-            nb_ec_array_pv2: ==> Failed - running vvp.
+            nb_ec_array_pv2: Passed.
                    nb_ec_pv: Passed.
                   nb_ec_pv2: Passed.
                  nb_ec_real: Passed.
@@ -2065,6 +2065,12 @@ parameter_override_invalid6: Passed - CE.
                 pullupdown2: Passed.
                 pullupdown3: Passed.
            pv_undef_sig_sel: Passed.
+                 pv_wr_vec4: Passed.
+              pv_wr_vec4_nb: Passed.
+           pv_wr_vec4_nb_ec: Passed.
+                pv_wr_vec4a: Passed.
+             pv_wr_vec4a_nb: Passed.
+          pv_wr_vec4a_nb_ec: Passed.
                       qmark: Passed.
                      qmark1: Passed.
                      qmark3: Passed.
@@ -2551,6 +2557,12 @@ parameter_override_invalid8: Passed - CE.
                   program5a: Passed - CE.
                   program5b: Passed - CE.
              program_hello2: Passed - CE.
+                 pv_wr_vec2: Passed.
+              pv_wr_vec2_nb: Passed.
+           pv_wr_vec2_nb_ec: Passed.
+                pv_wr_vec2a: Passed.
+             pv_wr_vec2a_nb: Passed.
+          pv_wr_vec2a_nb_ec: Passed.
               scalar_vector: Passed.
                   size_cast: Passed.
                  size_cast2: Passed.
@@ -2778,4 +2790,4 @@ parameter_override_invalid8: Passed - CE.
            synth_if_no_else: Passed.
 ============================================================================
 Test results:
-  Total=2776, Passed=2735, Failed=3, Not Implemented=4, Expected Fail=34
+  Total=2788, Passed=2748, Failed=2, Not Implemented=4, Expected Fail=34
