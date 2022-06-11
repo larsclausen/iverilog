@@ -1285,29 +1285,6 @@ static int show_stmt_delay(ivl_statement_t net, ivl_scope_t sscope)
       return rc;
 }
 
-static void draw_expr_into_idx(ivl_expr_t expr, int use_idx)
-{
-      switch (ivl_expr_value(expr)) {
-
-	  case IVL_VT_BOOL:
-	  case IVL_VT_LOGIC: {
-		draw_eval_vec4(expr);
-		fprintf(vvp_out, "    %%ix/vec4 %d;\n", use_idx);
-		break;
-	  }
-
-	  case IVL_VT_REAL: {
-		draw_eval_real(expr);
-		fprintf(vvp_out, "    %%cvt/ur %d;\n", use_idx);
-		break;
-	  }
-
-	  default:
-	    assert(0);
-      }
-}
-
-
 /*
  * The delayx statement is slightly more complex in that it is
  * necessary to calculate the delay first. Load the calculated delay
@@ -1323,7 +1300,7 @@ static int show_stmt_delayx(ivl_statement_t net, ivl_scope_t sscope)
       show_stmt_file_line(net, "Delay statement.");
 
       int use_idx = allocate_word();
-      draw_expr_into_idx(expr, use_idx);
+      draw_eval_expr_into_integer(expr, use_idx);
 
       fprintf(vvp_out, "    %%delayx %d;\n", use_idx);
       clr_word(use_idx);
@@ -1673,7 +1650,7 @@ static int show_stmt_nb_trigger(ivl_statement_t net)
       ivl_expr_t expr = ivl_stmt_delay_expr(net);
       int use_idx = allocate_word();
       if (expr) {
-	    draw_expr_into_idx(expr, use_idx);
+	    draw_eval_expr_into_integer(expr, use_idx);
       } else {
 	    fprintf(vvp_out, "    %%ix/load %d, 0, 0;\n", use_idx);
       }
