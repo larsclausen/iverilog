@@ -1747,6 +1747,74 @@ bool vvp_vector4_t::eeq(const vvp_vector4_t&that) const
       return true;
 }
 
+#if 0
+bool vvp_vector4_t::cmp(const vvp_vector4_t&that, vvp_bit4_t &eq,
+						vvp_bit4_t &lt) const
+{
+	eq = BIT_1;
+	lt = BIT_1;
+	eeq = true;
+
+      if (size_ != that.size_)
+	    return false;
+
+      if (size_ <= BITS_PER_WORD) {
+	    unsigned long mask = (1UL << size_) - 1;
+		if ((bbits_val_ & mask) || (that.bbits_val_ & mask)) {
+			if ((((abits_val_ | bbits_val_) & mask) ==
+				 ((that.abits_val | that.bbits_val_) & mask)) ||
+			    ((bbits_val_ & mask) != (that.bbits_val_ & mask))
+				eq = BIT_X;
+			else
+				eq = BIT_0;
+			le = BIT_X;
+		} else {
+			if ((abits_val_&mask) != (that.abits_val_&mask))
+				eq = BIT_0;
+
+			if ((abits_val_&mask) < (that.abits_val_&mask))
+				lt = BIT_1;
+			else
+				lt = BIT_0;
+		}
+	    return (abits_val_&mask) == (that.abits_val_&mask)
+		  && (bbits_val_&mask) == (that.bbits_val_&mask);
+      }
+
+      unsigned words = size_ / BITS_PER_WORD;
+      for (unsigned idx = 0 ;  idx < words ;  idx += 1) {
+		if ((bbits_ptr_[idx] & mask) || (that.bbits_val_ & mask)) {
+			if (((abits_ptr_[idx] | bbits_ptr_[idx]) & mask) ==
+				((that.abits_val | that.bbits_ptr_[idx]) & mask))
+				eq = BIT_X;
+			else
+				eq = BIT_0;
+			le = BIT_X;
+		} else {
+			if (abits_ptr_[idx] != that.abits_ptr_[idx]) {
+				eq = BIT_0;
+				if (abits_ptr_[idx] < that.abits_ptr_[idx])
+					lt = BIT_1;
+				else
+					lt = BIT_0;
+				}
+			}
+		}
+		eeq &= abits_ptr_[idx] == that.abits_ptr_[idx]
+		eeq &= bbits_ptr_[idx] == that.bbits_ptr_[idx]
+      }
+
+      unsigned long mask = size_%BITS_PER_WORD;
+      if (mask > 0) {
+	    mask = (1UL << mask) - 1;
+	    return (abits_ptr_[words]&mask) == (that.abits_ptr_[words]&mask)
+		  && (bbits_ptr_[words]&mask) == (that.bbits_ptr_[words]&mask);
+      }
+
+      return true;
+}
+#endif
+
 bool vvp_vector4_t::eq_xz(const vvp_vector4_t&that) const
 {
       if (size_ != that.size_)
