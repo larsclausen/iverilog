@@ -95,21 +95,6 @@ class evctl_array_r : public evctl {
       double value_;
 };
 
-extern void schedule_evctl(class __vpiHandle*handle, double value,
-                           vvp_net_t*event, unsigned long ecount);
-
-extern void schedule_evctl(vvp_net_ptr_t ptr, const vvp_vector4_t&value,
-                           unsigned offset, unsigned wid,
-                           vvp_net_t*event, unsigned long ecount);
-
-extern void schedule_evctl(vvp_array_t memory, unsigned index,
-                           const vvp_vector4_t&value, unsigned offset,
-                           vvp_net_t*event, unsigned long ecount);
-
-extern void schedule_evctl(vvp_array_t memory, unsigned index,
-                           double value,
-                           vvp_net_t*event, unsigned long ecount);
-
 /*
  *  Event / edge detection functors
  */
@@ -132,6 +117,21 @@ struct waitable_hooks_s {
     protected:
       void run_waiting_threads_(vthread_t&threads);
 };
+
+extern void schedule_evctl(class __vpiHandle*handle, double value,
+                           waitable_hooks_s*event, unsigned long ecount);
+
+extern void schedule_evctl(vvp_net_ptr_t ptr, const vvp_vector4_t&value,
+                           unsigned offset, unsigned wid,
+                           waitable_hooks_s*event, unsigned long ecount);
+
+extern void schedule_evctl(vvp_array_t memory, unsigned index,
+                           const vvp_vector4_t&value, unsigned offset,
+                           waitable_hooks_s*event, unsigned long ecount);
+
+extern void schedule_evctl(vvp_array_t memory, unsigned index,
+                           double value,
+                           waitable_hooks_s*event, unsigned long ecount);
 
 /*
  * This is the base object for storing state information for each instance

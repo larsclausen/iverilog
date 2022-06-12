@@ -86,14 +86,11 @@ void evctl_real::run_run()
 }
 
 void schedule_evctl(__vpiHandle*handle, double value,
-                    vvp_net_t*event, unsigned long ecount)
+                    waitable_hooks_s*event, unsigned long ecount)
 {
-	// Get the functor we are going to wait on.
-      waitable_hooks_s*ep = dynamic_cast<waitable_hooks_s*> (event->fun);
-      assert(ep);
 	// Now add this call to the end of the event list.
-      *(ep->last) = new evctl_real(handle, value, ecount);
-      ep->last = &((*(ep->last))->next);
+      *(event->last) = new evctl_real(handle, value, ecount);
+      event->last = &((*(event->last))->next);
 }
 
 evctl_vector::evctl_vector(vvp_net_ptr_t ptr, const vvp_vector4_t&value,
@@ -115,14 +112,11 @@ void evctl_vector::run_run()
 
 void schedule_evctl(vvp_net_ptr_t ptr, const vvp_vector4_t&value,
                     unsigned offset, unsigned wid,
-                    vvp_net_t*event, unsigned long ecount)
+                    waitable_hooks_s*event, unsigned long ecount)
 {
-	// Get the functor we are going to wait on.
-      waitable_hooks_s*ep = dynamic_cast<waitable_hooks_s*> (event->fun);
-      assert(ep);
 	// Now add this call to the end of the event list.
-      *(ep->last) = new evctl_vector(ptr, value, offset, wid, ecount);
-      ep->last = &((*(ep->last))->next);
+      *(event->last) = new evctl_vector(ptr, value, offset, wid, ecount);
+      event->last = &((*(event->last))->next);
 }
 
 evctl_array::evctl_array(vvp_array_t memory, unsigned index,
@@ -142,14 +136,11 @@ void evctl_array::run_run()
 
 void schedule_evctl(vvp_array_t memory, unsigned index,
                     const vvp_vector4_t&value, unsigned offset,
-                    vvp_net_t*event, unsigned long ecount)
+                    waitable_hooks_s*event, unsigned long ecount)
 {
-	// Get the functor we are going to wait on.
-      waitable_hooks_s*ep = dynamic_cast<waitable_hooks_s*> (event->fun);
-      assert(ep);
 	// Now add this call to the end of the event list.
-      *(ep->last) = new evctl_array(memory, index, value, offset, ecount);
-      ep->last = &((*(ep->last))->next);
+      *(event->last) = new evctl_array(memory, index, value, offset, ecount);
+      event->last = &((*(event->last))->next);
 }
 
 evctl_array_r::evctl_array_r(vvp_array_t memory, unsigned index,
@@ -168,14 +159,11 @@ void evctl_array_r::run_run()
 
 void schedule_evctl(vvp_array_t memory, unsigned index,
                     double value,
-                    vvp_net_t*event, unsigned long ecount)
+                    waitable_hooks_s*event, unsigned long ecount)
 {
-	// Get the functor we are going to wait on.
-      waitable_hooks_s*ep = dynamic_cast<waitable_hooks_s*> (event->fun);
-      assert(ep);
 	// Now add this call to the end of the event list.
-      *(ep->last) = new evctl_array_r(memory, index, value, ecount);
-      ep->last = &((*(ep->last))->next);
+      *(event->last) = new evctl_array_r(memory, index, value, ecount);
+      event->last = &((*(event->last))->next);
 }
 
 inline vvp_fun_edge::edge_t VVP_EDGE(vvp_bit4_t from, vvp_bit4_t to)

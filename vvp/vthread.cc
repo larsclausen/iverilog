@@ -293,7 +293,7 @@ struct vthread_s {
 	/* These are used to access automatically allocated items. */
       vvp_context_t wt_context, rd_context;
 	/* These are used to pass non-blocking event control information. */
-      vvp_net_t*event;
+	  waitable_hooks_s*event;
       uint64_t ecount;
 	/* Save the file/line information when available. */
     private:
@@ -3071,7 +3071,7 @@ bool of_EVENT_NB(vthread_t thr, vvp_code_t cp)
 bool of_EVCTL(vthread_t thr, vvp_code_t cp)
 {
       assert(thr->event == 0 && thr->ecount == 0);
-      thr->event = cp->net;
+      thr->event = cp->wait;
       thr->ecount = thr->words[cp->bit_idx[0]].w_uint;
       return true;
 }
@@ -3085,7 +3085,7 @@ bool of_EVCTLC(vthread_t thr, vvp_code_t)
 bool of_EVCTLI(vthread_t thr, vvp_code_t cp)
 {
       assert(thr->event == 0 && thr->ecount == 0);
-      thr->event = cp->net;
+      thr->event = cp->wait;
       thr->ecount = cp->bit_idx[0];
       return true;
 }
@@ -3093,7 +3093,7 @@ bool of_EVCTLI(vthread_t thr, vvp_code_t cp)
 bool of_EVCTLS(vthread_t thr, vvp_code_t cp)
 {
       assert(thr->event == 0 && thr->ecount == 0);
-      thr->event = cp->net;
+      thr->event = cp->wait;
       int64_t val = thr->words[cp->bit_idx[0]].w_int;
       if (val < 0) val = 0;
       thr->ecount = val;
