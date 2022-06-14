@@ -258,14 +258,14 @@ void compile_ufunc_real(char*label, char*code, unsigned wid,
 	   the output value to the destination net functor. */
 
       vvp_code_t exec_code = codespace_allocate();
-      exec_code->opcode = of_EXEC_UFUNC_REAL;
+      exec_code->opcode = OP_EXEC_UFUNC_REAL;
       code_label_lookup(exec_code, code, false);
 
       vvp_code_t reap_code = codespace_allocate();
-      reap_code->opcode = of_REAP_UFUNC;
+      reap_code->opcode = OP_REAP_UFUNC;
 
       vvp_code_t end_code = codespace_allocate();
-      end_code->opcode = &of_END;
+      end_code->opcode = OP_END;
 
 	/* Run through the function ports (which are related to but
 	   not the same as the input ports) and arrange for their
@@ -329,14 +329,14 @@ void compile_ufunc_vec4(char*label, char*code, unsigned wid,
 	   the output value to the destination net functor. */
 
       vvp_code_t exec_code = codespace_allocate();
-      exec_code->opcode = of_EXEC_UFUNC_VEC4;
+      exec_code->opcode = OP_EXEC_UFUNC_VEC4;
       code_label_lookup(exec_code, code, false);
 
       vvp_code_t reap_code = codespace_allocate();
-      reap_code->opcode = of_REAP_UFUNC;
+      reap_code->opcode = OP_REAP_UFUNC;
 
       vvp_code_t end_code = codespace_allocate();
-      end_code->opcode = &of_END;
+      end_code->opcode = OP_END;
 
 	/* Run through the function ports (which are related to but
 	   not the same as the input ports) and arrange for their

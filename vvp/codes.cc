@@ -49,9 +49,9 @@ void codespace_init(void)
       first_chunk = new struct vvp_code_s [code_chunk_size];
       current_chunk = first_chunk;
 
-      current_chunk[0].opcode = &of_ZOMBIE;
+      current_chunk[0].opcode = OP_ZOMBIE;
 
-      current_chunk[code_chunk_size-1].opcode = &of_CHUNK_LINK;
+      current_chunk[code_chunk_size-1].opcode = OP_CHUNK_LINK;
       current_chunk[code_chunk_size-1].cptr = 0;
 
       current_within_chunk = 1;
@@ -68,7 +68,7 @@ vvp_code_t codespace_next(void)
 	    current_chunk = current_chunk[code_chunk_size-1].cptr;
 
 	      /* Put a link opcode on the end of the chunk. */
-	    current_chunk[code_chunk_size-1].opcode = &of_CHUNK_LINK;
+	    current_chunk[code_chunk_size-1].opcode = OP_CHUNK_LINK;
 	    current_chunk[code_chunk_size-1].cptr   = 0;
 
 	    current_within_chunk = 0;
