@@ -559,19 +559,19 @@ inline static void print_queue_value(const vvp_vector4_t&value)
 /*
  * The following are used to get a darray/queue default value.
  */
-inline static void dq_default(double&value, unsigned)
+inline static void dq_default(vvp_darray *, double&value)
 {
       value = 0.0;
 }
 
-inline static void dq_default(string&value, unsigned)
+inline static void dq_default(vvp_darray *, string&value)
 {
       value = "";
 }
 
-inline static void dq_default(vvp_vector4_t&value, unsigned wid)
+inline static void dq_default(vvp_darray *darray, vvp_vector4_t&value)
 {
-      value = vvp_vector4_t(wid);
+	  darray->default_word(value);
 }
 
 
@@ -3822,7 +3822,7 @@ static bool load_dar(vthread_t thr, vvp_code_t cp)
           (adr >= 0) && (thr->flags[4] == BIT4_0)) // A defined address >= 0
 	    darray->get_word(adr, word);
       else
-	    dq_default(word, obj->size());
+	    dq_default(darray, word);
 
       vthread_push(thr, word);
       return true;
@@ -5182,7 +5182,7 @@ static bool q_pop(vthread_t thr, vvp_code_t cp,
       if (size) {
 	    get_val_func(queue, value);
       } else {
-	    dq_default(value, wid);
+	    dq_default(queue, value);
 	    cerr << thr->get_fileline()
 	         << "Warning: pop_" << loc << "() on empty "
 	         << get_queue_type(value) << "." << endl;

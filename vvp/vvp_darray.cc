@@ -52,6 +52,11 @@ void vvp_darray::get_word(unsigned, vvp_vector4_t&)
       cerr << "XXXX get_word(vvp_vector4_t) not implemented for " << typeid(*this).name() << endl;
 }
 
+void vvp_darray::default_word(vvp_vector4_t&)
+{
+      cerr << "XXXX default_word(vvp_vector4_t) not implemented for " << typeid(*this).name() << endl;
+}
+
 void vvp_darray::get_word(unsigned, double&)
 {
       cerr << "XXXX get_word(double) not implemented for " << typeid(*this).name() << endl;
@@ -94,7 +99,7 @@ template <class TYPE> void vvp_darray_atom<TYPE>::set_word(unsigned adr, const v
 template <class TYPE> void vvp_darray_atom<TYPE>::get_word(unsigned adr, vvp_vector4_t&value)
 {
       if (adr >= array_.size()) {
-	    value = vvp_vector4_t(8*sizeof(TYPE), BIT4_X);
+		default_word(value);
 	    return;
       }
 
@@ -105,6 +110,11 @@ template <class TYPE> void vvp_darray_atom<TYPE>::get_word(unsigned adr, vvp_vec
 	    word >>= 1;
       }
       value = tmp;
+}
+
+template <class TYPE> void vvp_darray_atom<TYPE>::default_word(vvp_vector4_t&value)
+{
+	  value = vvp_vector4_t(8*sizeof(TYPE), BIT4_0);
 }
 
 template <class TYPE> void vvp_darray_atom<TYPE>::shallow_copy(const vvp_object*obj)
@@ -179,11 +189,16 @@ void vvp_darray_vec4::get_word(unsigned adr, vvp_vector4_t&value)
 	 * value has not been written yet (has a size of zero).
 	 */
       if ((adr >= array_.size()) || (array_[adr].size() == 0)) {
-	    value = vvp_vector4_t(word_wid_, BIT4_X);
+		default_word(value);
 	    return;
       }
       value = array_[adr];
       assert(value.size() == word_wid_);
+}
+
+void vvp_darray_vec4::default_word(vvp_vector4_t&value)
+{
+	value = vvp_vector4_t(word_wid_, BIT4_X);
 }
 
 void vvp_darray_vec4::shallow_copy(const vvp_object*obj)
@@ -248,7 +263,7 @@ void vvp_darray_vec2::get_word(unsigned adr, vvp_vector4_t&value)
 	 * value has not been written yet (has a size of zero).
 	 */
       if ((adr >= array_.size()) || (array_[adr].size() == 0)) {
-	    value = vvp_vector4_t(word_wid_, BIT4_0);
+		default_word(value);
 	    return;
       }
       assert(array_[adr].size() == word_wid_);
@@ -256,6 +271,11 @@ void vvp_darray_vec2::get_word(unsigned adr, vvp_vector4_t&value)
       for (unsigned idx = 0; idx < word_wid_; idx += 1) {
 	    value.set_bit(idx, array_[adr].value4(idx));
       }
+}
+
+void vvp_darray_vec2::default_word(vvp_vector4_t&value)
+{
+      value = vvp_vector4_t(word_wid_, BIT4_0);
 }
 
 void vvp_darray_vec2::shallow_copy(const vvp_object*obj)
@@ -819,9 +839,14 @@ void vvp_queue_vec4::set_word(unsigned adr, const vvp_vector4_t&value)
 void vvp_queue_vec4::get_word(unsigned adr, vvp_vector4_t&value)
 {
       if (adr >= queue.size())
-	    value = vvp_vector4_t(queue[0].size());
+		default_word(value);
       else
 	    value = queue[adr];
+}
+
+void vvp_queue_vec4::default_word(vvp_vector4_t&value)
+{
+	  value = vvp_vector4_t(queue[0].size());
 }
 
 void vvp_queue_vec4::insert(unsigned idx, const vvp_vector4_t&value, unsigned max_size)

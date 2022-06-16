@@ -35,6 +35,7 @@ class vvp_darray : public vvp_object {
 
       virtual void set_word(unsigned adr, const vvp_vector4_t&value);
       virtual void get_word(unsigned adr, vvp_vector4_t&value);
+	  virtual void default_word(vvp_vector4_t &value);
 
       virtual void set_word(unsigned adr, double value);
       virtual void get_word(unsigned adr, double&value);
@@ -57,6 +58,7 @@ template <class TYPE> class vvp_darray_atom : public vvp_darray {
       size_t get_size(void) const;
       void set_word(unsigned adr, const vvp_vector4_t&value);
       void get_word(unsigned adr, vvp_vector4_t&value);
+	  void default_word(vvp_vector4_t &value);
       void shallow_copy(const vvp_object*obj);
       vvp_object* duplicate(void) const;
       vvp_vector4_t get_bitstream(bool as_vec4);
@@ -75,6 +77,7 @@ class vvp_darray_vec4 : public vvp_darray {
       size_t get_size(void) const;
       void set_word(unsigned adr, const vvp_vector4_t&value);
       void get_word(unsigned adr, vvp_vector4_t&value);
+	  void default_word(vvp_vector4_t &value);
       void shallow_copy(const vvp_object*obj);
       vvp_object* duplicate(void) const;
       vvp_vector4_t get_bitstream(bool as_vec4);
@@ -94,6 +97,7 @@ class vvp_darray_vec2 : public vvp_darray {
       size_t get_size(void) const;
       void set_word(unsigned adr, const vvp_vector4_t&value);
       void get_word(unsigned adr, vvp_vector4_t&value);
+	  void default_word(vvp_vector4_t &value);
       void shallow_copy(const vvp_object*obj);
       vvp_vector4_t get_bitstream(bool as_vec4);
 
@@ -235,6 +239,7 @@ class vvp_queue_vec4 : public vvp_queue {
       void set_word_max(unsigned adr, const vvp_vector4_t&value, unsigned max_size);
       void set_word(unsigned adr, const vvp_vector4_t&value);
       void get_word(unsigned adr, vvp_vector4_t&value);
+	  void default_word(vvp_vector4_t &value);
       void insert(unsigned idx, const vvp_vector4_t&value, unsigned max_size);
       void push_back(const vvp_vector4_t&value, unsigned max_size);
       void push_front(const vvp_vector4_t&value, unsigned max_size);
