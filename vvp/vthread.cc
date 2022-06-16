@@ -443,6 +443,11 @@ void vthread_push(struct vthread_s*thr, const vvp_vector4_t&val)
       thr->push_vec4(val);
 }
 
+static void vthread_push(struct vthread_s*thr, const vvp_object_t&val)
+{
+      thr->push_object(val);
+}
+
 void vthread_pop_real(struct vthread_s*thr, unsigned depth)
 {
       thr->pop_real(depth);
@@ -564,17 +569,14 @@ inline static void print_queue_value(const vvp_vector4_t&value)
 /*
  * The following are used to get a darray/queue default value.
  */
-inline static void dq_default(double&value, unsigned)
+template<typename T>
+inline static void dq_default(T&value, unsigned)
 {
-      value = 0.0;
+      value = T();
 }
 
-inline static void dq_default(string&value, unsigned)
-{
-      value = "";
-}
-
-inline static void dq_default(vvp_vector4_t&value, unsigned wid)
+template<>
+inline void dq_default(vvp_vector4_t&value, unsigned wid)
 {
       value = vvp_vector4_t(wid);
 }
@@ -3777,24 +3779,58 @@ bool of_JOIN_DETACH(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
+template <typename ELEM>
+static ELEM get_array_word(vvp_array_t array,  unsigned adr);
+
+template <>
+string get_array_word(vvp_array_t array, unsigned adr)
+{
+	return array->get_word_str(adr);
+}
+
+template <>
+double get_array_word(vvp_array_t array, unsigned adr)
+{
+	return array->get_word_r(adr);
+}
+
+template <>
+vvp_vector4_t get_array_word(vvp_array_t array, unsigned adr)
+{
+	return array->get_word(adr);
+}
+
+template <>
+vvp_object_t get_array_word(vvp_array_t array, unsigned adr)
+{
+	vvp_object_t tmp;
+	array->get_word_obj(adr, tmp);
+	return tmp;
+}
+
+template <typename ELEM>
+static bool loada(vthread_t thr, vvp_code_t cp)
+{
+      unsigned idx = cp->bit_idx[0];
+      long adr = thr->words[idx].w_int;
+      ELEM word;
+
+      if (thr->flags[4] == BIT4_0)
+	    word = get_array_word<ELEM>(cp->array, adr);
+      else
+	    dq_default(word, cp->array->get_word_size());
+
+      vthread_push(thr, word);
+
+      return true;
+}
+
 /*
  * %load/ar <array-label>, <index>;
 */
 bool of_LOAD_AR(vthread_t thr, vvp_code_t cp)
 {
-      unsigned idx = cp->bit_idx[0];
-      unsigned adr = thr->words[idx].w_int;
-      double word;
-
-	/* The result is 0.0 if the address is undefined. */
-      if (thr->flags[4] != BIT4_0) {
-	    word = 0.0;
-      } else {
-	    word = cp->array->get_word_r(adr);
-      }
-
-      thr->push_real(word);
-      return true;
+      return loada<double>(thr, cp);
 }
 
 template <typename ELEM>
@@ -3867,17 +3903,7 @@ bool of_LOAD_OBJ(vthread_t thr, vvp_code_t cp)
  */
 bool of_LOAD_OBJA(vthread_t thr, vvp_code_t cp)
 {
-      unsigned idx = cp->bit_idx[0];
-      unsigned adr = thr->words[idx].w_int;
-      vvp_object_t word;
-
-	/* The result is null if the address is undefined. */
-      if (thr->flags[4] == BIT4_0) {
-	    cp->array->get_word_obj(adr, word);
-      }
-
-      thr->push_object(word);
-      return true;
+      return loada<vvp_object_t>(thr, cp);
 }
 
 /*
@@ -3915,20 +3941,8 @@ bool of_LOAD_STR(vthread_t thr, vvp_code_t cp)
 
 bool of_LOAD_STRA(vthread_t thr, vvp_code_t cp)
 {
-      unsigned idx = cp->bit_idx[0];
-      unsigned adr = thr->words[idx].w_int;
-      string word;
-
-      if (thr->flags[4] != BIT4_0) {
-	    word = "";
-      } else {
-	    word = cp->array->get_word_str(adr);
-      }
-
-      thr->push_str(word);
-      return true;
+      return loada<string>(thr, cp);
 }
-
 
 /*
  * %load/vec4 <net>
@@ -3968,22 +3982,7 @@ bool of_LOAD_VEC4(vthread_t thr, vvp_code_t cp)
  */
 bool of_LOAD_VEC4A(vthread_t thr, vvp_code_t cp)
 {
-      int adr_index = cp->bit_idx[0];
-
-      long adr = thr->words[adr_index].w_int;
-
-	// If flag[4] is not 0, then the calculation of the address
-	// failed, and this load should return X instead of the actual
-	// value.
-      if (thr->flags[4] != BIT4_0) {
-	    vvp_vector4_t tmp (cp->array->get_word_size(), BIT4_X);
-	    thr->push_vec4(tmp);
-	    return true;
-      }
-
-      vvp_vector4_t tmp (cp->array->get_word(adr));
-      thr->push_vec4(tmp);
-      return true;
+      return loada<vvp_vector4_t>(thr, cp);
 }
 
 static void do_verylong_mod(vvp_vector4_t&vala, const vvp_vector4_t&valb,
