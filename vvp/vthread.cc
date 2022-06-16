@@ -1065,6 +1065,23 @@ bool of_ADD_WR(vthread_t thr, vvp_code_t)
       return true;
 }
 
+template <bool has_event>
+bool assign_real_array(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
+{
+      long adr = thr->words[3].w_int;
+      double value = thr->pop_real();
+
+      if (adr < 0)
+	    return true;
+
+      if (!has_event || thr->ecount == 0)
+	    schedule_assign_array_word(cp->array, adr, value, delay);
+      else
+	    schedule_evctl(cp->array, adr, value, thr->event, thr->ecount);
+
+      return true;
+}
+
 /* %assign/ar <array>, <delay>
  * Generate an assignment event to a real array. Index register 3
  * contains the canonical address of the word in the memory. <delay>
@@ -1073,15 +1090,9 @@ bool of_ADD_WR(vthread_t thr, vvp_code_t)
  */
 bool of_ASSIGN_AR(vthread_t thr, vvp_code_t cp)
 {
-      long adr = thr->words[3].w_int;
       unsigned delay = cp->bit_idx[0];
-      double value = thr->pop_real();
 
-      if (adr >= 0) {
-	    schedule_assign_array_word(cp->array, adr, value, delay);
-      }
-
-      return true;
+      return assign_real_array<false>(thr, cp, delay);
 }
 
 /* %assign/ar/d <array>, <delay_idx>
@@ -1091,15 +1102,9 @@ bool of_ASSIGN_AR(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_ARD(vthread_t thr, vvp_code_t cp)
 {
-      long adr = thr->words[3].w_int;
       vvp_time64_t delay = thr->words[cp->bit_idx[0]].w_uint;
-      double value = thr->pop_real();
 
-      if (adr >= 0) {
-	    schedule_assign_array_word(cp->array, adr, value, delay);
-      }
-
-      return true;
+      return assign_real_array<false>(thr, cp, delay);
 }
 
 /* %assign/ar/e <array>
@@ -1111,19 +1116,7 @@ bool of_ASSIGN_ARD(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_ARE(vthread_t thr, vvp_code_t cp)
 {
-      long adr = thr->words[3].w_int;
-      double value = thr->pop_real();
-
-      if (adr >= 0) {
-	    if (thr->ecount == 0) {
-		  schedule_assign_array_word(cp->array, adr, value, 0);
-	    } else {
-		  schedule_evctl(cp->array, adr, value, thr->event,
-		                 thr->ecount);
-	    }
-      }
-
-      return true;
+      return assign_real_array<true>(thr, cp, 0);
 }
 
 /*
