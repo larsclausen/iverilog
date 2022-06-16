@@ -697,7 +697,11 @@ void NetScope::evaluate_parameter_real_(Design*des, param_ref_t cur)
       NetScope*val_scope = (*cur).second.val_scope;
       ivl_type_t param_type = cur->second.ivl_type;
 
-      ivl_assert(*val_expr, param_type);
+      if (param_type == 0) {
+	    param_type = &netreal_t::type_real;
+	    cur->second.ivl_type = param_type;
+      }
+
       NetExpr*expr = elab_and_eval(des, val_scope, val_expr, -1, true,
                                    cur->second.is_annotatable,
                                    param_type->base_type());
@@ -795,8 +799,12 @@ void NetScope::evaluate_parameter_string_(Design*des, param_ref_t cur)
       NetScope*val_scope = (*cur).second.val_scope;
       ivl_type_t param_type = cur->second.ivl_type;
 
+      if (param_type == 0) {
+	    param_type = &netstring_t::type_string;
+	    cur->second.ivl_type = param_type;
+      }
+
       ivl_assert(cur->second, val_expr);
-      ivl_assert(cur->second, param_type);
 
       NetExpr*expr = elab_and_eval(des, val_scope, val_expr, param_type, true);
       if (! expr)
