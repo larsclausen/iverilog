@@ -747,7 +747,7 @@ void vvp_vector4_t::copy_inverted_from_(const vvp_vector4_t&that)
 /* Make sure to set size_ before calling this routine. */
 void vvp_vector4_t::allocate_words_(unsigned long inita, unsigned long initb)
 {
-      if (size_ > BITS_PER_WORD) {
+      if (__builtin_expect(size_ > BITS_PER_WORD, 0)) {
 	    unsigned cnt = (size_ + BITS_PER_WORD - 1) / BITS_PER_WORD;
 	    abits_ptr_ = new unsigned long[2*cnt];
 	    bbits_ptr_ = abits_ptr_ + cnt;

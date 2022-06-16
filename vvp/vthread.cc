@@ -865,7 +865,7 @@ void vthread_run(vthread_t thr)
 		       the opcode returns false, then the thread is meant to
 		       be paused, so break out of the loop. */
 		  bool rc = (cp->opcode)(thr, cp);
-		  if (rc == false)
+		  if (__builtin_expect(rc == false, 0))
 			break;
 	    }
 

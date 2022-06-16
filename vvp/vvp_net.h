@@ -423,7 +423,13 @@ inline vvp_vector4_t::vvp_vector4_t(unsigned size__, vvp_bit4_t val)
 	    WORD_Z_BBITS,
 	    WORD_X_BBITS };
 
-      allocate_words_(init_atable[val], init_btable[val]);
+      if (__builtin_expect(size__ > BITS_PER_WORD, 0))
+	    allocate_words_(init_atable[val], init_btable[val]);
+      else {
+	    abits_val_ = init_atable[val];
+	    bbits_val_ = init_btable[val];
+      }
+
 }
 
 inline vvp_vector4_t::~vvp_vector4_t()
