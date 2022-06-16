@@ -1120,20 +1120,6 @@ bool of_ASSIGN_ARE(vthread_t thr, vvp_code_t cp)
 }
 
 /*
- * %assign/vec4 <var>, <delay>
- */
-bool of_ASSIGN_VEC4(vthread_t thr, vvp_code_t cp)
-{
-      vvp_net_ptr_t ptr (cp->net, 0);
-      unsigned delay = cp->bit_idx[0];
-      const vvp_vector4_t&val = thr->peek_vec4();
-
-      schedule_assign_vector(ptr, 0, 0, val, delay);
-      thr->pop_vec4(1);
-      return true;
-}
-
-/*
  * Resizes a vector value for a partial assignment so that the value is fully
  * in-bounds of the target signal. Both `val` and `off` will be updated if
  * necessary.
@@ -1177,17 +1163,13 @@ static bool resize_rval_vec(vvp_vector4_t &val, int64_t &off,
       return true;
 }
 
-/*
- * %assign/vec4/a/d <arr>, <offx>, <delx>
- */
-bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
+template <bool has_event>
+bool assign_vec4_array(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
 {
       int off_idx = cp->bit_idx[0];
-      int del_idx = cp->bit_idx[1];
       int adr_idx = 3;
 
       int64_t  off = off_idx ? thr->words[off_idx].w_int : 0;
-      vvp_time64_t del = del_idx? thr->words[del_idx].w_uint : 0;
       long     adr = thr->words[adr_idx].w_int;
 
       vvp_vector4_t val = thr->pop_vec4();
@@ -1200,9 +1182,24 @@ bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
       if (!resize_rval_vec(val, off, cp->array->get_word_size()))
 	    return true;
 
-      schedule_assign_array_word(cp->array, adr, off, val, del);
+      if (!has_event || thr->ecount == 0) {
+	    schedule_assign_array_word(cp->array, adr, off, val, delay);
+      } else {
+	    schedule_evctl(cp->array, adr, val, off, thr->event, thr->ecount);
+      }
 
       return true;
+}
+
+/*
+ * %assign/vec4/a/d <arr>, <offx>, <delx>
+ */
+bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
+{
+      int del_idx = cp->bit_idx[1];
+      vvp_time64_t delay = del_idx ? thr->words[del_idx].w_uint : 0;
+
+      return assign_vec4_array<false>(thr, cp, delay);
 }
 
 /*
@@ -1210,27 +1207,36 @@ bool of_ASSIGN_VEC4_A_D(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_VEC4_A_E(vthread_t thr, vvp_code_t cp)
 {
-      int off_idx = cp->bit_idx[0];
-      int adr_idx = 3;
+      return assign_vec4_array<true>(thr, cp, 0);
+}
+
+template <bool has_event>
+bool assign_vec4_off(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
+{
+      vvp_net_ptr_t ptr (cp->net, 0);
+      unsigned off_idx = cp->bit_idx[0];
 
       int64_t  off = off_idx ? thr->words[off_idx].w_int : 0;
-      long     adr = thr->words[adr_idx].w_int;
-
-      vvp_vector4_t val = thr->pop_vec4();
 
 	// Abort if flags[4] is set. This can happen if the calculation
 	// into an index register failed.
       if (thr->flags[4] != BIT4_0)
 	    return true;
 
-      if (!resize_rval_vec(val, off, cp->array->get_word_size()))
+      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
+      assert(sig);
+
+      vvp_vector4_t&val = thr->peek_vec4();
+      if (!resize_rval_vec(val, off, sig->value_size()))
 	    return true;
 
-      if (thr->ecount == 0) {
-	    schedule_assign_array_word(cp->array, adr, off, val, 0);
+      if (!has_event || thr->ecount == 0) {
+	    schedule_assign_vector(ptr, off, sig->value_size(), val, delay);
       } else {
-	    schedule_evctl(cp->array, adr, val, off, thr->event, thr->ecount);
+	    schedule_evctl(ptr, val, off, sig->value_size(), thr->event, thr->ecount);
       }
+
+      thr->pop_vec4(1);
 
       return true;
 }
@@ -1240,27 +1246,10 @@ bool of_ASSIGN_VEC4_A_E(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
 {
-      vvp_net_ptr_t ptr (cp->net, 0);
-      unsigned off_index = cp->bit_idx[0];
       unsigned del_index = cp->bit_idx[1];
-      vvp_vector4_t val = thr->pop_vec4();
-
-      int64_t off = thr->words[off_index].w_int;
       vvp_time64_t del = thr->words[del_index].w_uint;
 
-	// Abort if flags[4] is set. This can happen if the calculation
-	// into an index register failed.
-      if (thr->flags[4] != BIT4_0)
-	    return true;
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
-      assert(sig);
-
-      if (!resize_rval_vec(val, off, sig->value_size()))
-	    return true;
-
-      schedule_assign_vector(ptr, off, sig->value_size(), val, del);
-      return true;
+	  return assign_vec4_off<false>(thr, cp, del);
 }
 
 /*
@@ -1268,30 +1257,34 @@ bool of_ASSIGN_VEC4_OFF_D(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
 {
+	  return assign_vec4_off<true>(thr, cp, 0);
+}
+
+template <bool has_event>
+bool assign_vec4(vthread_t thr, vvp_code_t cp, vvp_time64_t delay)
+{
       vvp_net_ptr_t ptr (cp->net, 0);
-      unsigned off_index = cp->bit_idx[0];
-      vvp_vector4_t val = thr->pop_vec4();
+      const vvp_vector4_t&val = thr->peek_vec4();
 
-      int64_t off = thr->words[off_index].w_int;
-
-	// Abort if flags[4] is set. This can happen if the calculation
-	// into an index register failed.
-      if (thr->flags[4] != BIT4_0)
-	    return true;
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
-      assert(sig);
-
-      if (!resize_rval_vec(val, off, sig->value_size()))
-	    return true;
-
-      if (thr->ecount == 0) {
-	    schedule_assign_vector(ptr, off, sig->value_size(), val, 0);
+      if (!has_event || thr->ecount == 0) {
+	    schedule_assign_vector(ptr, 0, 0, val, delay);
       } else {
-	    schedule_evctl(ptr, val, off, sig->value_size(), thr->event, thr->ecount);
+	    schedule_evctl(ptr, val, 0, 0, thr->event, thr->ecount);
       }
 
+      thr->pop_vec4(1);
+
       return true;
+}
+
+/*
+ * %assign/vec4 <var>, <delay>
+ */
+bool of_ASSIGN_VEC4(vthread_t thr, vvp_code_t cp)
+{
+      unsigned delay = cp->bit_idx[0];
+
+	  return assign_vec4<false>(thr, cp, delay);
 }
 
 /*
@@ -1299,18 +1292,10 @@ bool of_ASSIGN_VEC4_OFF_E(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_VEC4D(vthread_t thr, vvp_code_t cp)
 {
-      vvp_net_ptr_t ptr (cp->net, 0);
       unsigned del_index = cp->bit_idx[0];
       vvp_time64_t del = thr->words[del_index].w_int;
 
-      vvp_vector4_t value = thr->pop_vec4();
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
-      assert(sig);
-
-      schedule_assign_vector(ptr, 0, sig->value_size(), value, del);
-
-      return true;
+	  return assign_vec4<false>(thr, cp, del);
 }
 
 /*
@@ -1318,19 +1303,7 @@ bool of_ASSIGN_VEC4D(vthread_t thr, vvp_code_t cp)
  */
 bool of_ASSIGN_VEC4E(vthread_t thr, vvp_code_t cp)
 {
-      vvp_net_ptr_t ptr (cp->net, 0);
-      vvp_vector4_t value = thr->pop_vec4();
-
-      vvp_signal_value*sig = dynamic_cast<vvp_signal_value*> (cp->net->fil);
-      assert(sig);
-
-      if (thr->ecount == 0) {
-	    schedule_assign_vector(ptr, 0, sig->value_size(), value, 0);
-      } else {
-	    schedule_evctl(ptr, value, 0, sig->value_size(), thr->event, thr->ecount);
-      }
-
-      return true;
+	  return assign_vec4<true>(thr, cp, 0);
 }
 
 /*
