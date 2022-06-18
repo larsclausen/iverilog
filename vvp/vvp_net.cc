@@ -565,8 +565,7 @@ void vvp_send_vec8(vvp_net_ptr_t ptr, const vvp_vector8_t&val)
       while (vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_vec8(ptr, val);
+		cur->fun->recv_vec8(ptr, val);
 
 	    ptr = next_val;
       }
@@ -577,8 +576,7 @@ void vvp_send_real(vvp_net_ptr_t ptr, double val, vvp_context_t context)
       while (vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_real(ptr, val, context);
+		cur->fun->recv_real(ptr, val, context);
 
 	    ptr = next_val;
       }

@@ -1634,8 +1634,7 @@ inline void vvp_send_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&val, vvp_contex
       while (class vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_vec4(ptr, val, context);
+		cur->fun->recv_vec4(ptr, val, context);
 
 	    ptr = next_val;
       }
@@ -1653,8 +1652,7 @@ inline void vvp_send_string(vvp_net_ptr_t ptr, const std::string&val, vvp_contex
       while (vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_string(ptr, val, context);
+		cur->fun->recv_string(ptr, val, context);
 
 	    ptr = next_val;
       }
@@ -1665,8 +1663,7 @@ inline void vvp_send_object(vvp_net_ptr_t ptr, vvp_object_t val, vvp_context_t c
       while (vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_object(ptr, val, context);
+		cur->fun->recv_object(ptr, val, context);
 
 	    ptr = next_val;
       }
@@ -1697,8 +1694,7 @@ inline void vvp_send_vec4_pv(vvp_net_ptr_t ptr, const vvp_vector4_t&val,
       while (class vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_vec4_pv(ptr, val, base, vwid, context);
+		cur->fun->recv_vec4_pv(ptr, val, base, vwid, context);
 
 	    ptr = next_val;
       }
@@ -1710,8 +1706,7 @@ inline void vvp_send_vec8_pv(vvp_net_ptr_t ptr, const vvp_vector8_t&val,
       while (class vvp_net_t*cur = ptr.ptr()) {
 	    vvp_net_ptr_t next_val = cur->port[ptr.port()];
 
-	    if (cur->fun)
-		  cur->fun->recv_vec8_pv(ptr, val, base, vwid);
+		cur->fun->recv_vec8_pv(ptr, val, base, vwid);
 
 	    ptr = next_val;
       }
