@@ -565,39 +565,22 @@ vpiHandle sysfunc_no::vpi_put_value(p_vpi_value, int)
  * by name using the vpi_find_systf function, and they can be
  * collected into an iterator using the vpip_make_systf_iterator function.
  */
-static struct __vpiUserSystf**def_table = 0;
-static unsigned def_count = 0;
+static std::vector<struct __vpiUserSystf*>def_table;
 
 static struct __vpiUserSystf* allocate_def(void)
 {
-      if (def_table == 0) {
-	    def_table = (struct __vpiUserSystf**)
-		  malloc(sizeof (struct __vpiUserSystf*));
-
-	    def_table[0] = new __vpiUserSystf;
-
-	    def_count = 1;
-	    return def_table[0];
-      }
-
-      def_table = (struct __vpiUserSystf**)
-	    realloc(def_table, (def_count+1)*sizeof (struct __vpiUserSystf*));
-
-      def_table[def_count] = new __vpiUserSystf;
-
-      return def_table[def_count++];
+      def_table.push_back(new __vpiUserSystf);
+      return def_table.back();
 }
 
 #ifdef CHECK_WITH_VALGRIND
 void def_table_delete(void)
 {
-      for (unsigned idx = 0; idx < def_count; idx += 1) {
+      for (unsigned idx = 0; idx < def_table.size(); idx += 1) {
 	    free(const_cast<char *>(def_table[idx]->info.tfname));
 	    delete def_table[idx];
       }
-      free(def_table);
-      def_table = 0;
-      def_count = 0;
+      def_table.clear()
 }
 #endif
 
@@ -615,7 +598,7 @@ static vpiHandle systf_iterator_scan(vpiHandle ref, int)
 {
       __vpiSystfIterator*obj = dynamic_cast<__vpiSystfIterator*>(ref);
 
-      if (obj->next >= def_count) {
+      if (obj->next >= def_table.size()) {
 	    vpi_free_object(ref);
 	    return 0;
       }
@@ -624,7 +607,7 @@ static vpiHandle systf_iterator_scan(vpiHandle ref, int)
       while (!def_table[use_index]->is_user_defn) {
 	    obj->next += 1;
 	    use_index = obj->next;
-	    if (obj->next >= def_count) {
+	    if (obj->next >= def_table.size()) {
 		  vpi_free_object(ref);
 		  return 0;
 	    }
@@ -657,7 +640,7 @@ vpiHandle vpip_make_systf_iterator(void)
 	/* Check to see if there are any user defined functions. */
       bool have_user_defn = false;
       unsigned idx;
-      for (idx = 0; idx < def_count; idx += 1) {
+      for (idx = 0; idx < def_table.size(); idx += 1) {
 	    if (def_table[idx]->is_user_defn) {
 		  have_user_defn = true;
 		  break;
@@ -672,7 +655,7 @@ vpiHandle vpip_make_systf_iterator(void)
 
 struct __vpiUserSystf* vpip_find_systf(const char*name)
 {
-      for (unsigned idx = 0 ;  idx < def_count ;  idx += 1)
+      for (unsigned idx = 0 ;  idx < def_table.size();  idx += 1)
 	    if (strcmp(def_table[idx]->info.tfname, name) == 0)
 		  return def_table[idx];
 

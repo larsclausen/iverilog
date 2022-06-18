@@ -247,19 +247,16 @@ void island_collect_node(list<vvp_branch_ptr_t>&conn, vvp_branch_ptr_t cur)
 * island memory at EOS.
 */
 static symbol_map_s<vvp_island>* island_table = 0;
-static vvp_island** island_list = 0;
-static unsigned island_count = 0;
+static std::vector<vvp_island*> island_list;
 
 #ifdef CHECK_WITH_VALGRIND
 void island_delete()
 {
       at_EOS = true;
-      for (unsigned idx = 0; idx < island_count; idx += 1) {
+      for (unsigned idx = 0; idx < island_list.size(); idx += 1) {
 	    delete island_list[idx];
       }
-      free(island_list);
-      island_list = 0;
-      island_count = 0;
+      island_list.clear()
 }
 #endif
 
@@ -269,10 +266,7 @@ void compile_island_base(char*label, vvp_island*use_island)
 	    island_table = new symbol_map_s<vvp_island>;
 
       island_table->sym_set_value(label, use_island);
-      island_count += 1;
-      island_list = (vvp_island **)realloc(island_list,
-                                           island_count*sizeof(vvp_island **));
-      island_list[island_count-1] = use_island;
+      island_list.push_back(use_island);
       free(label);
 }
 
@@ -361,15 +355,13 @@ void compile_island_import(char*label, char*island, char*src)
 void compile_island_cleanup(void)
 {
 	// Call the per-island cleanup to get rid of local symbol tables.
-      for (unsigned idx = 0; idx < island_count; idx += 1) {
+      for (unsigned idx = 0; idx < island_list.size(); idx += 1) {
 	    island_list[idx]->compile_cleanup();
       }
 
 	// If we are not doing valgrind checking then free the list.
 #ifndef CHECK_WITH_VALGRIND
-      free(island_list);
-      island_list = 0;
-      island_count = 0;
+      island_list.clear();
 #endif
 
 	// Remove the island symbol table itself.

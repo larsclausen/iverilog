@@ -1063,8 +1063,7 @@ static void initialize_path_term(struct __vpiModPathTerm&obj)
  */
 
 #ifdef CHECK_WITH_VALGRIND
-static struct __vpiModPath**mp_list = 0;
-static unsigned mp_count = 0;
+static std::vector<struct __vpiModPath*>*mp_list;
 #endif
 
 struct __vpiModPath* vpip_make_modpath(vvp_net_t *net)
@@ -1076,10 +1075,7 @@ struct __vpiModPath* vpip_make_modpath(vvp_net_t *net)
       obj->input_net = net ;
 
 #ifdef CHECK_WITH_VALGRIND
-      mp_count += 1;
-      mp_list = (struct __vpiModPath **) realloc(mp_list,
-                mp_count*sizeof(struct __vpiModPath **));
-      mp_list[mp_count-1] = obj;
+      mp_list.push_back(obj);
 #endif
       return obj;
 }
@@ -1087,12 +1083,10 @@ struct __vpiModPath* vpip_make_modpath(vvp_net_t *net)
 #ifdef CHECK_WITH_VALGRIND
 void modpath_delete()
 {
-      for (unsigned idx = 0; idx < mp_count; idx += 1) {
+      for (unsigned idx = 0; idx < mp_list.size(); idx += 1) {
 	    delete mp_list[idx];
       }
-      free(mp_list);
-      mp_list = 0;
-      mp_count = 0;
+      mp_list.clear();
 }
 #endif
 

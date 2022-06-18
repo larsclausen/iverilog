@@ -52,8 +52,7 @@ void vpip_make_root_iterator(__vpiHandle**&table, unsigned&ntable)
 void port_delete(__vpiHandle*handle);
 
 /* Class definitions need to be cleaned up at the end. */
-static class_type **class_list = 0;
-static unsigned class_list_count = 0;
+static std::vector<class_type> *class_list;
 
 static void delete_sub_scopes(__vpiScope *scope)
 {
@@ -141,10 +140,7 @@ static void delete_sub_scopes(__vpiScope *scope)
       map<std::string, class_type*>::iterator citer;
       for (citer = scope->classes.begin();
            citer != scope->classes.end(); ++ citer ) {
-	    class_list_count += 1;
-	    class_list = (class_type **) realloc(class_list,
-	                 class_list_count*sizeof(class_type **));
-	    class_list[class_list_count-1] = citer->second;
+	    class_list.push_back(citer->second);
       }
 }
 
@@ -160,12 +156,10 @@ void root_table_delete(void)
       vpip_root_table.clear();
 
 	/* Clean up all the class definitions. */
-      for (unsigned idx = 0; idx < class_list_count; idx += 1) {
+      for (unsigned idx = 0; idx < class_list.size(); idx += 1) {
             class_def_delete(class_list[idx]);
       }
-      free(class_list);
-      class_list = 0;
-      class_list_count = 0;
+      class_list.clear();
 }
 #endif
 
@@ -553,8 +547,6 @@ compile_scope_decl(char*label, char*type, char*name, char*tname,
       scope->lineno  = (unsigned) lineno;
       scope->def_file_idx = (unsigned) def_file_idx;
       scope->def_lineno  = (unsigned) def_lineno;
-      scope->item = 0;
-      scope->nitem = 0;
       scope->live_contexts = 0;
       scope->free_contexts = 0;
 
@@ -643,19 +635,10 @@ unsigned vpip_add_item_to_context(automatic_hooks_s*item,
       assert(scope);
       assert(scope->is_automatic());
 
-      unsigned idx = scope->nitem++;
-
-      if (scope->item == 0)
-	    scope->item = (automatic_hooks_s**)
-		  malloc(sizeof(automatic_hooks_s*));
-      else
-	    scope->item = (automatic_hooks_s**)
-		  realloc(scope->item, sizeof(automatic_hooks_s*)*scope->nitem);
-
-      scope->item[idx] = item;
+      scope->item.push_back(item);
 
         /* Offset the context index by 2 to leave space for the list links. */
-      return 2 + idx;
+      return 2 + scope->item.size();
 }
 
 

@@ -285,8 +285,7 @@ class __vpiScope : public __vpiHandle {
 	/* Set of types */
       std::map<std::string,class_type*> classes;
         /* Keep an array of items to be automatically allocated */
-      struct automatic_hooks_s**item;
-      unsigned nitem;
+      std::vector<automatic_hooks_s*> item;
         /* Keep a list of live contexts. */
       vvp_context_t live_contexts;
         /* Keep a list of freed contexts. */

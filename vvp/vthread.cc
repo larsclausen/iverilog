@@ -624,12 +624,12 @@ static vvp_context_t vthread_alloc_context(__vpiScope*scope)
       vvp_context_t context = scope->free_contexts;
       if (context) {
             scope->free_contexts = vvp_get_next_context(context);
-            for (unsigned idx = 0 ; idx < scope->nitem ; idx += 1) {
+            for (unsigned idx = 0 ; idx < scope->item.size() ; idx += 1) {
                   scope->item[idx]->reset_instance(context);
             }
       } else {
-            context = vvp_allocate_context(scope->nitem);
-            for (unsigned idx = 0 ; idx < scope->nitem ; idx += 1) {
+            context = vvp_allocate_context(scope->item.size());
+            for (unsigned idx = 0 ; idx < scope->item.size() ; idx += 1) {
                   scope->item[idx]->alloc_instance(context);
             }
       }
@@ -672,7 +672,7 @@ void contexts_delete(struct __vpiScope*scope)
 
       while (context) {
 	    scope->free_contexts = vvp_get_next_context(context);
-	    for (unsigned idx = 0; idx < scope->nitem; idx += 1) {
+	    for (unsigned idx = 0; idx < scope->item.size(); idx += 1) {
 		  scope->item[idx]->free_instance(context);
 	    }
 	    free(context);
