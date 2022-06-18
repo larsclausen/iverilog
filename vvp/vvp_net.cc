@@ -1713,22 +1713,8 @@ void vvp_vector4_t::mul(const vvp_vector4_t&that)
 
 }
 
-bool vvp_vector4_t::eeq(const vvp_vector4_t&that) const
+bool vvp_vector4_t::eeq_(const vvp_vector4_t&that) const
 {
-      if (size_ != that.size_)
-	    return false;
-
-      if (size_ < BITS_PER_WORD) {
-	    unsigned long mask = (1UL << size_) - 1;
-	    return (abits_val_&mask) == (that.abits_val_&mask)
-		  && (bbits_val_&mask) == (that.bbits_val_&mask);
-      }
-
-      if (size_ == BITS_PER_WORD) {
-	    return (abits_val_ == that.abits_val_)
-		  && (bbits_val_ == that.bbits_val_);
-      }
-
       unsigned words = size_ / BITS_PER_WORD;
       for (unsigned idx = 0 ;  idx < words ;  idx += 1) {
 	    if (abits_ptr_[idx] != that.abits_ptr_[idx])
