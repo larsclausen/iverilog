@@ -278,7 +278,7 @@ struct vthread_s {
       unsigned i_have_ended      :1;
       unsigned i_was_disabled    :1;
       unsigned waiting_for_event :1;
-      unsigned is_scheduled      :1;
+      unsigned is_not_scheduled  :1;
       unsigned delay_delete      :1;
 	/* This points to the children of the thread. */
       set<struct vthread_s*>children;
@@ -706,7 +706,7 @@ vthread_t vthread_new(vvp_code_t pc, __vpiScope*scope)
       thr->i_am_detached = 0;
       thr->i_am_waiting  = 0;
       thr->i_am_in_function = 0;
-      thr->is_scheduled  = 0;
+      thr->is_not_scheduled  = 1;
       thr->i_have_ended  = 0;
       thr->i_was_disabled = 0;
       thr->delay_delete  = 0;
@@ -810,7 +810,7 @@ static void vthread_reap(vthread_t thr)
 	/* If this thread is not scheduled, then is it safe to delete
 	   it now. Otherwise, let the schedule event (which will
 	   execute the thread at of_ZOMBIE) delete the object. */
-      if ((thr->is_scheduled == 0) && (thr->waiting_for_event == 0)) {
+      if ((thr->is_not_scheduled == 1) && (thr->waiting_for_event == 0)) {
 	    assert(thr->children.empty());
 	    assert(thr->wait_next == 0);
 	    if (thr->delay_delete)
@@ -829,8 +829,9 @@ void vthread_delete(vthread_t thr)
 void vthread_mark_scheduled(vthread_t thr)
 {
       while (thr != 0) {
-	    assert(thr->is_scheduled == 0);
-	    thr->is_scheduled = 1;
+	    assert(!thr->is_not_scheduled == 0);
+	    thr->is_not_scheduled = 0;
+	    thr->waiting_for_event = 0;
 	    thr = thr->wait_next;
       }
 }
@@ -852,8 +853,8 @@ void vthread_run(vthread_t thr)
 	    vthread_t tmp = thr->wait_next;
 	    thr->wait_next = 0;
 
-	    assert(thr->is_scheduled);
-	    thr->is_scheduled = 0;
+	    assert(!thr->is_not_scheduled);
+	    thr->is_not_scheduled = 1;
 
             running_thread = thr;
 
@@ -892,11 +893,6 @@ bool of_CHUNK_LINK(vthread_t thr, vvp_code_t code)
  */
 void vthread_schedule_list(vthread_t thr)
 {
-      for (vthread_t cur = thr ;  cur ;  cur = cur->wait_next) {
-	    assert(cur->waiting_for_event);
-	    cur->waiting_for_event = 0;
-      }
-
       schedule_vthread(thr, 0);
 }
 
@@ -1423,7 +1419,7 @@ static bool do_callf_void(vthread_t thr, vthread_t child)
         // Execute the function. This SHOULD run the function to completion,
         // but there are some exceptional situations where it won't.
       assert(child->parent_scope->get_type_code() == vpiFunction);
-      child->is_scheduled = 1;
+      child->is_not_scheduled = 0;
       child->i_am_in_function = 1;
       vthread_run(child);
       running_thread = thr;
@@ -3329,7 +3325,7 @@ bool of_FORK(vthread_t thr, vvp_code_t cp)
       thr->children.insert(child);
 
       if (thr->i_am_in_function) {
-	    child->is_scheduled = 1;
+	    child->is_not_scheduled = 0;
 	    child->i_am_in_function = 1;
 	    vthread_run(child);
 	    running_thread = thr;
@@ -6466,7 +6462,7 @@ static bool do_exec_ufunc(vthread_t thr, vvp_code_t cp, vthread_t child)
 	// This should be the only child
       assert(thr->children.size()==1);
 
-      child->is_scheduled = 1;
+      child->is_not_scheduled = 0;
       child->i_am_in_function = 1;
       vthread_run(child);
       running_thread = thr;

@@ -809,7 +809,6 @@ void schedule_vthread(vthread_t thr, vvp_time64_t delay, bool push_flag)
       struct vthread_event_s*cur = new vthread_event_s;
 
       cur->thr = thr;
-      vthread_mark_scheduled(thr);
 
       if (push_flag && (delay == 0)) {
 	      /* Special case: If the delay is 0, the push_flag means
