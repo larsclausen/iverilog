@@ -6089,6 +6089,18 @@ bool of_STORE_VEC4(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
+bool of_STOREI_VEC4(vthread_t thr, vvp_code_t cp)
+{
+      vvp_net_ptr_t ptr(cp->net, 0);
+      auto*sig = cp->net->fil;
+
+      vvp_vector4_t val (sig->filter_size(), BIT4_0);
+      get_immediate_rval (cp, val);
+	  vvp_send_vec4(ptr, val, thr->wt_context);
+
+      return true;
+}
+
 /*
  * %store/vec4a <var-label>, <addr>, <offset>
  */

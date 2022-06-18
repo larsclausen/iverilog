@@ -251,6 +251,7 @@ extern void show_stmt_file_line(ivl_statement_t net, const char*desc);
  */
 extern int test_immediate_vec4_ok(ivl_expr_t expr);
 extern void draw_immediate_vec4(ivl_expr_t expr, const char*opcode);
+extern void draw_storei_vec4(ivl_expr_t re, ivl_lval_t lval);
 
 /*
  * Draw a delay statement.

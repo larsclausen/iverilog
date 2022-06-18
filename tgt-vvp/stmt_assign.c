@@ -527,6 +527,15 @@ static int show_stmt_assign_vector(ivl_statement_t net)
 	    unsigned wid = ivl_stmt_lwidth(net);
 	    if (ivl_expr_width(rval) == wid && test_immediate_vec4_ok(rval)) {
 		  switch (ivl_stmt_opcode(net)) {
+			  case 0:
+				if (ivl_stmt_lvals(net) == 1) {
+				ivl_lval_t lval = ivl_stmt_lval(net,0 );
+				if (ivl_lval_part_off(lval) == 0 && ivl_lval_idx(lval) == 0) {
+					draw_storei_vec4(rval, lval);	
+					return 0;
+				}
+				}
+				break;
 		      case '+':
 			draw_immediate_vec4(rval, "%addi");
 			put_vec_to_lval(net, slices);

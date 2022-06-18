@@ -693,6 +693,14 @@ static int show_stmt_case(ivl_statement_t net, ivl_scope_t sscope)
 		 instructions below do not completely erase the
 		 value. Do this in front of each compare. */
 	    fprintf(vvp_out, "    %%dup/vec4;\n");
+
+	    if (ivl_statement_type(net) == IVL_ST_CASE &&
+	        test_immediate_vec4_ok(cex)) {
+		  draw_immediate_vec4(cex, "%cmpi/e");
+		  fprintf(vvp_out, "    %%jmp/1 T_%u.%u, 6;\n",
+			  thread_count, local_base+idx);
+
+	    } else {
 	    draw_eval_vec4(cex);
 
 	    switch (ivl_statement_type(net)) {
@@ -717,6 +725,7 @@ static int show_stmt_case(ivl_statement_t net, ivl_scope_t sscope)
 
 		default:
 		  assert(0);
+	    }
 	    }
       }
 

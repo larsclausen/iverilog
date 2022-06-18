@@ -108,6 +108,20 @@ void draw_immediate_vec4(ivl_expr_t re, const char*opcode)
       fprintf(vvp_out, "    %s %lu, %lu, %u;\n", opcode, val0, valx, wid);
 }
 
+void draw_storei_vec4(ivl_expr_t re, ivl_lval_t lval)
+{
+	  ivl_signal_t lsig = ivl_lval_sig(lval);
+      unsigned long val0, valx;
+      unsigned wid;
+
+      make_immediate_vec4_words(re, &val0, &valx, &wid);
+      fprintf(vvp_out, "    %%storei/vec4 v%p_0, %lu, %lu;\n",
+						lsig, val0, valx);
+
+}
+
+
+
 static void draw_binary_vec4_arith(ivl_expr_t expr)
 {
       ivl_expr_t le = ivl_expr_oper1(expr);
