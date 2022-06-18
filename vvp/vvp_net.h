@@ -286,9 +286,6 @@ class vvp_vector4_t {
       void set_bit(unsigned idx, vvp_bit4_t val);
       bool set_vec(unsigned idx, const vvp_vector4_t&that);
 
-        // Get the bits from another vector, but keep my size.
-      void copy_bits(const vvp_vector4_t&that);
-
 	// Move bits within this vector.
       void mov(unsigned dst, unsigned src, unsigned cnt);
 
