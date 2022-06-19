@@ -199,8 +199,6 @@ class vvp_fun_signal_real : public vvp_fun_signal_base {
 
 	// Get information about the vector value.
       virtual double real_unfiltered_value() const = 0;
-
-      unsigned size() const { return 1; }
 };
 
 /*
@@ -264,12 +262,7 @@ class vvp_fun_signal_string : public vvp_fun_signal_base {
     public:
       explicit vvp_fun_signal_string() {};
 
-      unsigned size() const { return 1; }
-
       virtual const std::string& get_string() const =0;
-
-    protected:
-      std::string value_;
 };
 
 /*
