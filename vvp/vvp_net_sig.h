@@ -114,9 +114,11 @@ class vvp_fun_signal_vec : public vvp_fun_signal_base {
       virtual const vvp_vector4_t& vec4_unfiltered_value() const =0;
 };
 
-class automatic_signal_base : public vvp_signal_value, public vvp_net_fil_t {
+class automatic_signal_base : public vvp_signal_value, public vvp_net_fil_t, public automatic_hooks_s {
 
     public:
+	  automatic_signal_base();
+
 	// Automatic variables cannot be forced or released. Provide
 	// stubs that assert.
       virtual void release(vvp_net_ptr_t ptr, bool net_flag);
@@ -127,6 +129,8 @@ class automatic_signal_base : public vvp_signal_value, public vvp_net_fil_t {
       virtual void force_fil_vec8(const vvp_vector8_t&val, const vvp_vector2_t&mask);
       virtual void force_fil_real(double val, const vvp_vector2_t&mask);
       virtual void get_value(struct t_vpi_value*value);
+    protected:
+      unsigned context_idx_;
 };
 
 /*
@@ -157,7 +161,7 @@ class vvp_fun_signal4_sa : public vvp_fun_signal_vec {
 /*
  * Automatically allocated vvp_fun_signal4.
  */
-class vvp_fun_signal4_aa : public vvp_fun_signal_vec, public automatic_signal_base, public automatic_hooks_s {
+class vvp_fun_signal4_aa : public vvp_fun_signal_vec, public automatic_signal_base {
 
     public:
       explicit vvp_fun_signal4_aa(unsigned wid, vvp_bit4_t init=BIT4_X);
@@ -188,7 +192,6 @@ class vvp_fun_signal4_aa : public vvp_fun_signal_vec, public automatic_signal_ba
       static void operator delete(void*obj);
 
     private:
-      unsigned context_idx_;
       unsigned size_;
 };
 
@@ -222,7 +225,7 @@ class vvp_fun_signal_real_sa : public vvp_fun_signal_real {
 /*
  * Automatically allocated vvp_fun_signal_real.
  */
-class vvp_fun_signal_real_aa : public vvp_fun_signal_real, public automatic_signal_base, public automatic_hooks_s {
+class vvp_fun_signal_real_aa : public vvp_fun_signal_real, public automatic_signal_base {
 
     public:
       explicit vvp_fun_signal_real_aa();
@@ -251,9 +254,6 @@ class vvp_fun_signal_real_aa : public vvp_fun_signal_real, public automatic_sign
     public: // These objects are only permallocated.
       static void* operator new(std::size_t size);
       static void operator delete(void*obj);
-
-    private:
-      unsigned context_idx_;
 };
 
 
@@ -285,7 +285,7 @@ class vvp_fun_signal_string_sa : public vvp_fun_signal_string {
 /*
  * Automatically allocated vvp_fun_signal_real.
  */
-class vvp_fun_signal_string_aa : public vvp_fun_signal_string, public automatic_signal_base, public automatic_hooks_s {
+class vvp_fun_signal_string_aa : public vvp_fun_signal_string, public automatic_signal_base {
 
     public:
       explicit vvp_fun_signal_string_aa();
@@ -311,9 +311,6 @@ class vvp_fun_signal_string_aa : public vvp_fun_signal_string, public automatic_
     public: // These objects are only permallocated.
       static void* operator new(std::size_t size);
       static void operator delete(void*obj);
-
-    private:
-      unsigned context_idx_;
 };
 
 class vvp_fun_signal_object : public vvp_fun_signal_base {
@@ -347,7 +344,7 @@ class vvp_fun_signal_object_sa : public vvp_fun_signal_object {
 /*
  * Automatically allocated vvp_fun_signal_real.
  */
-class vvp_fun_signal_object_aa : public vvp_fun_signal_object, public automatic_signal_base, public automatic_hooks_s {
+class vvp_fun_signal_object_aa : public vvp_fun_signal_object, public automatic_signal_base {
 
     public:
       explicit vvp_fun_signal_object_aa(unsigned size);
@@ -375,9 +372,6 @@ class vvp_fun_signal_object_aa : public vvp_fun_signal_object, public automatic_
     public: // These objects are only permallocated.
       static void* operator new(std::size_t size);
       static void operator delete(void*obj);
-
-    private:
-      unsigned context_idx_;
 };
 
 

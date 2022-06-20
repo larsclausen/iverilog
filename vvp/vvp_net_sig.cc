@@ -294,6 +294,11 @@ void vvp_fun_signal_base::deassign_pv(unsigned base, unsigned wid)
       }
 }
 
+automatic_signal_base::automatic_signal_base()
+{
+      context_idx_ = vpip_add_item_to_context(this, vpip_peek_context_scope());
+}
+
 void automatic_signal_base::release(vvp_net_ptr_t,bool)
 {
       assert(0);
@@ -337,7 +342,6 @@ vvp_fun_signal4_aa::vvp_fun_signal4_aa(unsigned wid, vvp_bit4_t init)
 	 * saved value when we ran reset_instance(). For now just make
 	 * sure it matches the value we use in reset_instance(). */
       assert(init == BIT4_X);
-      context_idx_ = vpip_add_item_to_context(this, vpip_peek_context_scope());
       size_ = wid;
 }
 
@@ -496,7 +500,6 @@ void vvp_fun_signal_real_sa::recv_real(vvp_net_ptr_t ptr, double bit,
 
 vvp_fun_signal_real_aa::vvp_fun_signal_real_aa()
 {
-      context_idx_ = vpip_add_item_to_context(this, vpip_peek_context_scope());
 }
 
 vvp_fun_signal_real_aa::~vvp_fun_signal_real_aa()
@@ -615,7 +618,6 @@ const string& vvp_fun_signal_string_sa::get_string() const
 
 vvp_fun_signal_string_aa::vvp_fun_signal_string_aa()
 {
-      context_idx_ = vpip_add_item_to_context(this, vpip_peek_context_scope());
 }
 
 vvp_fun_signal_string_aa::~vvp_fun_signal_string_aa()
@@ -744,7 +746,6 @@ vvp_object_t vvp_fun_signal_object_sa::get_object() const
 vvp_fun_signal_object_aa::vvp_fun_signal_object_aa(unsigned size)
 : vvp_fun_signal_object(size)
 {
-      context_idx_ = vpip_add_item_to_context(this, vpip_peek_context_scope());
 }
 
 vvp_fun_signal_object_aa::~vvp_fun_signal_object_aa()

@@ -947,23 +947,4 @@ void vvp_wire_string::get_signal_value(struct t_vpi_value*vp)
       assert(0);
 }
 #endif
-void vvp_wire_vec4::get_value(struct t_vpi_value*val)
-{
-      get_signal_value(val);
-}
 
-void vvp_wire_vec8::get_value(struct t_vpi_value*val)
-{
-      get_signal_value(val);
-}
-
-void vvp_wire_real::get_value(struct t_vpi_value*val)
-{
-      get_signal_value(val);
-}
-#if 0
-void vvp_wire_string::get_value(struct t_vpi_value*val)
-{
-      assert(0);
-}
-#endif
