@@ -1163,7 +1163,7 @@ static bool resize_vec(const vvp_vector4_t &src, vvp_vector4_t &dst,
       if ((uint64_t)off + wid > sig_wid)
 	    wid = sig_wid - (uint64_t)off;
 
-      dst = src.subvalue(base, wid);
+      dst = src.subvalue(off, wid);
 
       return true;
 }
@@ -4313,8 +4313,12 @@ static bool of_PART_common(vthread_t thr, vvp_code_t cp, int64_t base,
 
       vvp_vector4_t res (wid, init);
       vvp_vector4_t part;
+      uint64_t vbase = 0;
+      if (base < 0)
+	    vbase = -base;
+      printf("%lld %d %d\n", vbase, wid, value.size());
       if (resize_vec(value, part, base, wid, value.size()))
-	    res.set_vec(base, part);
+	    res.set_vec(vbase, part);
       value = res;
 
       return true;
