@@ -4305,13 +4305,13 @@ bool of_PAD_U(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
-static bool of_PART_common(vthread_t thr, vvp_code_t cp, bool signed_flag,
-			   int64_t base)
+static bool of_PART_common(vthread_t thr, vvp_code_t cp, int64_t base,
+			   vvp_bit4_t init)
 {
       unsigned int wid = cp->number;
       vvp_vector4_t&value = thr->peek_vec4();
 
-      vvp_vector4_t res (wid, BIT4_X);
+      vvp_vector4_t res (wid, init);
       vvp_vector4_t part;
       if (resize_vec(value, part, base, wid, value.size()))
 	    res.set_vec(base, part);
@@ -4327,7 +4327,8 @@ static bool of_PART_common(vthread_t thr, vvp_code_t cp, bool signed_flag,
  * index of the part select, and second is the value to be
  * selected. The result is pushed back to the stack.
  */
-static bool of_PART_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
+static bool of_PART_base(vthread_t thr, vvp_code_t cp, bool signed_flag,
+			 vvp_bit4_t init)
 {
       vvp_vector4_t base4 = thr->pop_vec4();
       unsigned int wid = cp->number;
@@ -4337,21 +4338,31 @@ static bool of_PART_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
       bool value_ok = vector4_to_value(base4, base, signed_flag);
       if (! value_ok) {
 	    vvp_vector4_t&value = thr->peek_vec4();
-	    value = vvp_vector4_t(wid, BIT4_X);
+	    value = vvp_vector4_t(wid, init);
 	    return true;
       }
 
-      return of_PART_common(thr, cp, signed_flag, base);
+      return of_PART_common(thr, cp, base, init);
 }
 
 bool of_PART_S(vthread_t thr, vvp_code_t cp)
 {
-      return of_PART_base(thr, cp, true);
+      return of_PART_base(thr, cp, true, BIT4_X);
 }
 
 bool of_PART_U(vthread_t thr, vvp_code_t cp)
 {
-      return of_PART_base(thr, cp, false);
+      return of_PART_base(thr, cp, false, BIT4_X);
+}
+
+bool of_PART2_S(vthread_t thr, vvp_code_t cp)
+{
+      return of_PART_base(thr, cp, true, BIT4_0);
+}
+
+bool of_PART2_U(vthread_t thr, vvp_code_t cp)
+{
+      return of_PART_base(thr, cp, false, BIT4_0);
 }
 
 /*
@@ -4360,7 +4371,8 @@ bool of_PART_U(vthread_t thr, vvp_code_t cp)
  *
  * Pop the value to be selected. The result is pushed back to the stack.
  */
-static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
+static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag,
+			  vvp_bit4_t init)
 {
       uint32_t base = cp->bit_idx[0];
       uint32_t bwid = cp->bit_idx[1];
@@ -4371,17 +4383,27 @@ static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
 	    use_base |= -1UL << bwid;
       }
 
-      return of_PART_common(thr, cp, signed_flag, base);
+      return of_PART_common(thr, cp, base, init);
 }
 
 bool of_PARTI_S(vthread_t thr, vvp_code_t cp)
 {
-      return of_PARTI_base(thr, cp, true);
+      return of_PARTI_base(thr, cp, true, BIT4_X);
 }
 
 bool of_PARTI_U(vthread_t thr, vvp_code_t cp)
 {
-      return of_PARTI_base(thr, cp, false);
+      return of_PARTI_base(thr, cp, false, BIT4_X);
+}
+
+bool of_PART2I_S(vthread_t thr, vvp_code_t cp)
+{
+      return of_PARTI_base(thr, cp, true, BIT4_0);
+}
+
+bool of_PART2I_U(vthread_t thr, vvp_code_t cp)
+{
+      return of_PARTI_base(thr, cp, false, BIT4_0);
 }
 
 /*
