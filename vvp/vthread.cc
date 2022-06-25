@@ -1134,19 +1134,9 @@ bool of_ASSIGN_VEC4(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
-/*
- * Resizes a vector value for a partial assignment so that the value is fully
- * in-bounds of the target signal. Both `val` and `off` will be updated if
- * necessary.
- *
- * Returns false if the value is fully out-of-bounds and the assignment should
- * be skipped. Otherwise returns true.
- */
-static bool resize_rval_vec(vvp_vector4_t &val, int64_t &off,
-			    unsigned int sig_wid)
+static bool resize_vec(const vvp_vector4_t &src, vvp_vector4_t &dst,
+                       int64_t &off, unsigned int wid, unsigned int sig_wid)
 {
-      unsigned int wid = val.size();
-
         // Fully in bounds, most likely case
       if (off >= 0 && (uint64_t)off + wid <= sig_wid)
 	    return true;
@@ -1165,7 +1155,7 @@ static bool resize_rval_vec(vvp_vector4_t &val, int64_t &off,
 	      // bits that overlap with the target
 	    base = -off;
 	    wid += off;
-		off = 0;
+	    off = 0;
       }
 
 	// If the value is partly above the target, then only assign
@@ -1173,9 +1163,23 @@ static bool resize_rval_vec(vvp_vector4_t &val, int64_t &off,
       if ((uint64_t)off + wid > sig_wid)
 	    wid = sig_wid - (uint64_t)off;
 
-      val = val.subvalue(base, wid);
+      dst = src.subvalue(base, wid);
 
       return true;
+}
+
+/*
+ * Resizes a vector value for a partial assignment so that the value is fully
+ * in-bounds of the target signal. Both `val` and `off` will be updated if
+ * necessary.
+ *
+ * Returns false if the value is fully out-of-bounds and the assignment should
+ * be skipped. Otherwise returns true.
+ */
+static bool resize_rval_vec(vvp_vector4_t &val, int64_t &off,
+			    unsigned int sig_wid)
+{
+      return resize_vec(val, val, off, val.size(), sig_wid);
 }
 
 /*
@@ -4301,6 +4305,21 @@ bool of_PAD_U(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
+static bool of_PART_common(vthread_t thr, vvp_code_t cp, bool signed_flag,
+			   int64_t base)
+{
+      unsigned int wid = cp->number;
+      vvp_vector4_t&value = thr->peek_vec4();
+
+      vvp_vector4_t res (wid, BIT4_X);
+      vvp_vector4_t part;
+      if (resize_vec(value, part, base, wid, value.size()))
+	    res.set_vec(base, part);
+      value = res;
+
+      return true;
+}
+
 /*
  * %part/s <wid>
  * %part/u <wid>
@@ -4310,46 +4329,19 @@ bool of_PAD_U(vthread_t thr, vvp_code_t cp)
  */
 static bool of_PART_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
 {
-      unsigned wid = cp->number;
-
       vvp_vector4_t base4 = thr->pop_vec4();
-      vvp_vector4_t&value = thr->peek_vec4();
-
-      vvp_vector4_t res (wid, BIT4_X);
+      unsigned int wid = cp->number;
 
 	// NOTE: This is treating the vector as signed. Is that correct?
       int32_t base;
       bool value_ok = vector4_to_value(base4, base, signed_flag);
       if (! value_ok) {
-	    value = res;
+	    vvp_vector4_t&value = thr->peek_vec4();
+	    value = vvp_vector4_t(wid, BIT4_X);
 	    return true;
       }
 
-      if (base >= (int32_t)value.size()) {
-	    value = res;
-	    return true;
-      }
-
-      if ((base+(int)wid) <= 0) {
-	    value = res;
-	    return true;
-      }
-
-      long vbase = 0;
-      if (base < 0) {
-	    vbase = -base;
-	    wid -= vbase;
-	    base = 0;
-      }
-
-      if ((base+wid) > value.size()) {
-	    wid = value.size() - base;
-      }
-
-      res .set_vec(vbase, value.subvalue(base, wid));
-      value = res;
-
-      return true;
+      return of_PART_common(thr, cp, signed_flag, base);
 }
 
 bool of_PART_S(vthread_t thr, vvp_code_t cp)
@@ -4370,13 +4362,8 @@ bool of_PART_U(vthread_t thr, vvp_code_t cp)
  */
 static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
 {
-      unsigned wid = cp->number;
       uint32_t base = cp->bit_idx[0];
       uint32_t bwid = cp->bit_idx[1];
-
-      vvp_vector4_t&value = thr->peek_vec4();
-
-      vvp_vector4_t res (wid, BIT4_X);
 
 	// NOTE: This is treating the vector as signed. Is that correct?
       int32_t use_base = base;
@@ -4384,31 +4371,7 @@ static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
 	    use_base |= -1UL << bwid;
       }
 
-      if (use_base >= (int32_t)value.size()) {
-	    value = res;
-	    return true;
-      }
-
-      if ((use_base+(int32_t)wid) <= 0) {
-	    value = res;
-	    return true;
-      }
-
-      long vbase = 0;
-      if (use_base < 0) {
-	    vbase = -use_base;
-	    wid -= vbase;
-	    use_base = 0;
-      }
-
-      if ((use_base+wid) > value.size()) {
-	    wid = value.size() - use_base;
-      }
-
-      res .set_vec(vbase, value.subvalue(use_base, wid));
-      value = res;
-
-      return true;
+      return of_PART_common(thr, cp, signed_flag, base);
 }
 
 bool of_PARTI_S(vthread_t thr, vvp_code_t cp)
