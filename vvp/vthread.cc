@@ -4361,26 +4361,18 @@ bool of_PART_U(vthread_t thr, vvp_code_t cp)
 }
 
 /*
- * %parti/s <wid>, <basei>, <base_wid>
- * %parti/u <wid>, <basei>, <base_wid>
+ * %parti <wid>, <basei>
  *
  * Pop the value to be selected. The result is pushed back to the stack.
  */
-static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
+bool of_PARTI(vthread_t thr, vvp_code_t cp)
 {
       unsigned wid = cp->number;
-      uint32_t base = cp->bit_idx[0];
-      uint32_t bwid = cp->bit_idx[1];
+      int32_t use_base = cp->bit_idx[0];
 
       vvp_vector4_t&value = thr->peek_vec4();
 
       vvp_vector4_t res (wid, BIT4_X);
-
-	// NOTE: This is treating the vector as signed. Is that correct?
-      int32_t use_base = base;
-      if (signed_flag && bwid < 32 && (base&(1<<(bwid-1)))) {
-	    use_base |= -1UL << bwid;
-      }
 
       if (use_base >= (int32_t)value.size()) {
 	    value = res;
@@ -4407,16 +4399,6 @@ static bool of_PARTI_base(vthread_t thr, vvp_code_t cp, bool signed_flag)
       value = res;
 
       return true;
-}
-
-bool of_PARTI_S(vthread_t thr, vvp_code_t cp)
-{
-      return of_PARTI_base(thr, cp, true);
-}
-
-bool of_PARTI_U(vthread_t thr, vvp_code_t cp)
-{
-      return of_PARTI_base(thr, cp, false);
 }
 
 /*

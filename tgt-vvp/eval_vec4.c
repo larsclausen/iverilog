@@ -961,15 +961,10 @@ static void draw_select_vec4(ivl_expr_t expr)
 	    return;
       }
 
-      if (test_immediate_vec4_ok(base)) {
-	    unsigned long val0, valx;
-	    unsigned base_wid;
-	    make_immediate_vec4_words(base, &val0, &valx, &base_wid);
-	    assert(valx == 0);
-
+      if (!number_is_unknown(base) && number_is_immediate(base, 32, true)) {
 	    draw_eval_vec4(subexpr);
-	    fprintf(vvp_out, "    %%parti/%c %u, %lu, %u;\n",
-		    sign_suff, wid, val0, base_wid);
+	    fprintf(vvp_out, "    %%parti %u, %u;\n",
+		    wid, (uint32_t)get_number_immediate(base));
 
       } else {
 	    draw_eval_vec4(subexpr);
