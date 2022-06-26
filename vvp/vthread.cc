@@ -514,6 +514,11 @@ inline static void pop_value(vthread_t thr, string&value, unsigned)
       value = thr->pop_str();
 }
 
+inline static void pop_value(vthread_t thr, vvp_object_t &value, unsigned)
+{
+      thr->pop_object(value);
+}
+
 inline static void pop_value(vthread_t thr, vvp_vector4_t&value, unsigned wid)
 {
       value = thr->pop_vec4();
@@ -5829,23 +5834,6 @@ bool of_STORE_OBJ(vthread_t thr, vvp_code_t cp)
 }
 
 /*
- * %store/obja <array-label> <index>
- */
-bool of_STORE_OBJA(vthread_t thr, vvp_code_t cp)
-{
-      unsigned idx = cp->bit_idx[0];
-      unsigned adr = thr->words[idx].w_int;
-
-      vvp_object_t val;
-      thr->pop_object(val);
-
-      cp->array->set_word(adr, val);
-
-      return true;
-}
-
-
-/*
  * %store/prop/obj <pid>, <idx>
  *
  * Pop an object value from the object stack, and store the value into
@@ -6177,6 +6165,14 @@ bool of_STORE_STR(vthread_t thr, vvp_code_t cp)
 bool of_STORE_STRA(vthread_t thr, vvp_code_t cp)
 {
       return storea<string>(thr, cp);
+}
+
+/*
+ * %store/obja <array-label> <index>
+ */
+bool of_STORE_OBJA(vthread_t thr, vvp_code_t cp)
+{
+      return storea<vvp_object_t>(thr, cp);
 }
 
 /*
