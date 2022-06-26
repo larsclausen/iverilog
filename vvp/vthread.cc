@@ -579,7 +579,6 @@ inline static void dq_default(vvp_vector4_t&value, unsigned wid)
       value = vvp_vector4_t(wid);
 }
 
-
 template <class T> T coerce_to_width(const T&that, unsigned width)
 {
       if (that.size() == width)
@@ -5820,19 +5819,6 @@ bool of_STORE_DAR_VEC4(vthread_t thr, vvp_code_t cp)
       return store_dar<vvp_vector4_t>(thr, cp);
 }
 
-bool of_STORE_OBJ(vthread_t thr, vvp_code_t cp)
-{
-	/* set the value into port 0 of the destination. */
-      vvp_net_ptr_t ptr (cp->net, 0);
-
-      vvp_object_t val;
-      thr->pop_object(val);
-
-      vvp_send_object(ptr, val, thr->wt_context);
-
-      return true;
-}
-
 /*
  * %store/prop/obj <pid>, <idx>
  *
@@ -6116,6 +6102,11 @@ static void vvp_send(vthread_t thr, vvp_net_ptr_t ptr, const string&val)
       vvp_send_string(ptr, val, thr->wt_context);
 }
 
+static void vvp_send(vthread_t thr, vvp_net_ptr_t ptr, const vvp_object_t &obj)
+{
+      vvp_send_object(ptr, obj, thr->wt_context);
+}
+
 template <typename ELEM>
 static bool store(vthread_t thr, vvp_code_t cp)
 {
@@ -6165,6 +6156,14 @@ bool of_STORE_STR(vthread_t thr, vvp_code_t cp)
 bool of_STORE_STRA(vthread_t thr, vvp_code_t cp)
 {
       return storea<string>(thr, cp);
+}
+
+/*
+ * %store/obj <var-label>
+ */
+bool of_STORE_OBJ(vthread_t thr, vvp_code_t cp)
+{
+      return store<vvp_object_t>(thr, cp);
 }
 
 /*
