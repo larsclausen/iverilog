@@ -477,9 +477,7 @@ static PPackage*find_potential_import(const struct vlltype&loc, LexicalScope*sco
       assert(scope);
 
       PPackage*found_pkg = 0;
-      for (list<PPackage*>::const_iterator cur_pkg = scope->potential_imports.begin();
-	      cur_pkg != scope->potential_imports.end(); ++cur_pkg) {
-	    PPackage*search_pkg = *cur_pkg;
+      for (const auto search_pkg : scope->potential_imports) {
 	    map<perm_string,PNamedItem*>::const_iterator cur_sym
 		= search_pkg->local_symbols.find(name);
 	    if (cur_sym != search_pkg->local_symbols.end()) {
@@ -841,16 +839,15 @@ void pform_put_enum_type_in_scope(enum_type_t*enum_set)
 	    return;
 
       set<perm_string> enum_names;
-      list<named_pexpr_t>::const_iterator cur;
-      for (cur = enum_set->names->begin(); cur != enum_set->names->end(); ++cur) {
-	    if (enum_names.count(cur->name)) {
+      for (const auto& cur : *enum_set->names) {
+	    if (enum_names.count(cur.name)) {
 		  cerr << enum_set->get_fileline() << ": error: "
 			  "Duplicate enumeration name '"
-		       << cur->name << "'." << endl;
+		       << cur.name << "'." << endl;
 		  error_count += 1;
 	    } else {
-		  add_local_symbol(lexical_scope, cur->name, enum_set);
-		  enum_names.insert(cur->name);
+		  add_local_symbol(lexical_scope, cur.name, enum_set);
+		  enum_names.insert(cur.name);
 	    }
       }
 
@@ -978,10 +975,9 @@ void pform_make_foreach_declarations(const struct vlltype&loc,
 				     std::list<perm_string>*loop_vars)
 {
       list<decl_assignment_t*>assign_list;
-      for (list<perm_string>::const_iterator cur = loop_vars->begin()
-		 ; cur != loop_vars->end() ; ++ cur) {
+      for (const auto &cur : *loop_vars) {
 	    decl_assignment_t*tmp_assign = new decl_assignment_t;
-	    tmp_assign->name = lex_strings.make(*cur);
+	    tmp_assign->name = lex_strings.make(cur);
 	    assign_list.push_back(tmp_assign);
       }
 
@@ -1490,17 +1486,16 @@ void pform_endmodule(const char*name, bool inside_celldefine,
 
 void pform_genvars(const struct vlltype&li, list<perm_string>*names)
 {
-      list<perm_string>::const_iterator cur;
-      for (cur = names->begin(); cur != names->end() ; *cur++) {
+      for (const auto &cur : *names) {
 	    PGenvar*genvar = new PGenvar();
 	    FILE_NAME(genvar, li);
 
 	    if (pform_cur_generate) {
-		  add_local_symbol(pform_cur_generate, *cur, genvar);
-		  pform_cur_generate->genvars[*cur] = genvar;
+		  add_local_symbol(pform_cur_generate, cur, genvar);
+		  pform_cur_generate->genvars[cur] = genvar;
 	    } else {
-		  add_local_symbol(pform_cur_module.front(), *cur, genvar);
-		  pform_cur_module.front()->genvars[*cur] = genvar;
+		  add_local_symbol(pform_cur_module.front(), cur, genvar);
+		  pform_cur_module.front()->genvars[cur] = genvar;
 	    }
       }
 
@@ -2175,9 +2170,7 @@ static void pform_make_event(const struct vlltype&loc, perm_string name)
 
 void pform_make_events(const struct vlltype&loc, list<perm_string>*names)
 {
-      list<perm_string>::iterator cur;
-      for (cur = names->begin() ;  cur != names->end() ; ++ cur ) {
-	    perm_string txt = *cur;
+      for (const auto &txt : *names) {
 	    pform_make_event(loc, txt);
       }
 
@@ -2203,9 +2196,8 @@ static void pform_makegate(PGBuiltin::Type type,
       }
 
       if (info.parms) {
-	    for (list<PExpr*>::iterator cur = info.parms->begin()
-		       ; cur != info.parms->end() ; ++cur) {
-		  pform_declare_implicit_nets(*cur);
+	    for (const auto &cur : *info.parms) {
+		  pform_declare_implicit_nets(cur);
 	    }
       }
 
@@ -2280,9 +2272,8 @@ static void pform_make_modgate(perm_string type,
 			       const LineInfo&li,
 			       std::list<named_pexpr_t>*attr)
 {
-      for (list<PExpr*>::iterator idx = wires->begin()
-		 ; idx != wires->end() ; ++idx) {
-	    pform_declare_implicit_nets(*idx);
+      for (const auto &wire : *wires) {
+	    pform_declare_implicit_nets(wire);
       }
 
       PGModule*cur = new PGModule(type, name, wires);
@@ -2613,20 +2604,18 @@ void pform_module_define_port(const struct vlltype&li,
 			      data_type_t*vtype,
 			      list<named_pexpr_t>*attr)
 {
-      for (list<pform_port_t>::iterator cur = ports->begin()
-		 ; cur != ports->end() ; ++ cur ) {
-
+      for (const auto& port : *ports) {
 	    data_type_t*use_type = vtype;
-	    if (cur->udims)
-		  use_type = new uarray_type_t(vtype, cur->udims);
+	    if (port.udims)
+		  use_type = new uarray_type_t(vtype, port.udims);
 
-	    pform_module_define_port(li, cur->name, port_kind, type, use_type,
+	    pform_module_define_port(li, port.name, port_kind, type, use_type,
 				     attr, true);
-	    if (cur->udims)
+	    if (port.udims)
 		  delete use_type;
 
-	    if (cur->expr)
-		  pform_make_var_init(li, cur->name, cur->expr);
+	    if (port.expr)
+		  pform_make_var_init(li, port.name, port.expr);
       }
 
       delete ports;
@@ -2745,9 +2734,7 @@ void pform_makewire(const struct vlltype&li,
 
       std::vector<PWire*> *wires = new std::vector<PWire*>;
 
-      for (list<decl_assignment_t*>::iterator cur = assign_list->begin()
-		 ; cur != assign_list->end() ; ++ cur) {
-	    decl_assignment_t* curp = *cur;
+      for (const auto curp : *assign_list) {
 	    PWire *wire = pform_makewire(li, curp->name, type, IVL_VT_NO_TYPE,
 					 &curp->index);
 	    wires->push_back(wire);
@@ -2821,9 +2808,8 @@ static vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
       assert(pt != NetNet::PIMPLICIT && pt != NetNet::NOT_A_PORT);
       assert(ports);
       vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
-      for (list<pform_port_t>::iterator cur = ports->begin()
-		 ; cur != ports->end() ; ++ cur ) {
-	    perm_string &name = cur->name;
+      for (const auto &port : *ports) {
+	    const perm_string &name = port.name;
 
 	      /* Look for a preexisting wire. If it exists, set the
 		 port direction. If not, create it. */
@@ -2843,9 +2829,9 @@ static vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
 		  curw->set_range(*range, SR_PORT);
 	    }
 
-	    if (cur->udims) {
+	    if (port.udims) {
 		  if (pform_requires_sv(loc, "Task/function port with unpacked dimensions"))
-			curw->set_unpacked_idx(*cur->udims);
+			curw->set_unpacked_idx(*port.udims);
 	    }
 
 	    res->push_back(pform_tf_port_t(curw));
@@ -2865,9 +2851,8 @@ static vector<pform_tf_port_t>*do_make_task_ports(const struct vlltype&loc,
       assert(ports);
       vector<pform_tf_port_t>*res = new vector<pform_tf_port_t>(0);
 
-      for (list<pform_port_t>::iterator cur = ports->begin()
-		 ; cur != ports->end() ; ++cur) {
-	    perm_string &name = cur->name;
+      for (const auto &port : *ports) {
+	    const perm_string &name = port.name;
 
 	    PWire*curw = pform_get_wire_in_scope(name);
 	    if (curw) {
@@ -2879,9 +2864,9 @@ static vector<pform_tf_port_t>*do_make_task_ports(const struct vlltype&loc,
 		  pform_put_wire_in_scope(name, curw);
 	    }
 
-	    if (cur->udims) {
+	    if (port.udims) {
 		  if (pform_requires_sv(loc, "Task/function port with unpacked dimensions"))
-			curw->set_unpacked_idx(*cur->udims);
+			curw->set_unpacked_idx(*port.udims);
 	    }
 
 	    res->push_back(pform_tf_port_t(curw));
@@ -2936,9 +2921,8 @@ vector<pform_tf_port_t>*pform_make_task_ports(const struct vlltype&loc,
       }
 
       if (unpacked_dims) {
-	    for (list<pform_port_t>::iterator cur = ports->begin()
-                    ; cur != ports->end() ; ++ cur ) {
-		PWire*wire = pform_get_wire_in_scope(cur->name);
+	    for (const auto &port : *ports) {
+		PWire*wire = pform_get_wire_in_scope(port.name);
 		wire->set_unpacked_idx(*unpacked_dims);
 	    }
       }
@@ -3303,23 +3287,22 @@ void pform_set_port_type(const struct vlltype&li,
       }
 
       bool have_init_expr = false;
-      for (list<pform_port_t>::iterator cur = ports->begin()
-		 ; cur != ports->end() ; ++ cur ) {
+      for (const auto &port : *ports) {
 
-	    PWire *wire = pform_set_port_type(li, cur->name, pt);
+	    PWire *wire = pform_set_port_type(li, port.name, pt);
 	    pform_set_net_range(wire, range, signed_flag, SR_PORT, attr);
-	    if (cur->udims) {
+	    if (port.udims) {
 		  cerr << li << ": warning: "
 		       << "Array dimensions in incomplete port declarations "
 		       << "are currently ignored." << endl;
 		  cerr << li << ":        : "
 		       << "The dimensions specified in the net or variable "
 		       << "declaration will be used." << endl;
-		  delete cur->udims;
+		  delete port.udims;
 	    }
-	    if (cur->expr) {
+	    if (port.expr) {
 		  have_init_expr = true;
-		  delete cur->expr;
+		  delete port.expr;
 	    }
       }
       if (have_init_expr) {
@@ -3401,9 +3384,7 @@ vector<PWire*>* pform_make_udp_input_ports(list<perm_string>*names)
       vector<PWire*>*out = new vector<PWire*>(names->size());
 
       unsigned idx = 0;
-      for (list<perm_string>::iterator cur = names->begin()
-		 ; cur != names->end() ; ++ cur ) {
-	    perm_string txt = *cur;
+      for (const auto &txt : *names) {
 	    PWire*pp = new PWire(txt,
 				 NetNet::IMPLICIT,
 				 NetNet::PINPUT,
