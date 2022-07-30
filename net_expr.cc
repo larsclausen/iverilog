@@ -354,8 +354,7 @@ ivl_variable_type_t NetENew::expr_type() const
       return size_ ? IVL_VT_DARRAY : IVL_VT_CLASS;
 }
 
-NetENull::NetENull() = default
-
+NetENull::NetENull() = default;
 NetENull::~NetENull() = default;
 
 NetEProperty::NetEProperty(NetNet*net, perm_string pnam, NetExpr*idx)

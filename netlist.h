@@ -2074,6 +2074,13 @@ class NetExpr  : public LineInfo {
 	//                 the expression output.
       virtual NetNet*synthesize(Design*des, NetScope*scope, NetExpr*root);
 
+       // Variant of the function above with the root being the expression
+       // itself
+      NetNet* synthesize(Design*des, NetScope*scope)
+      {
+	    return synthesize(des, scope, this);
+      }
+
     protected:
       void expr_width(unsigned wid) { width_ = wid; }
       void cast_signed_base_(bool flag) { signed_flag_ = flag; }

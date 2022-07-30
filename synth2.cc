@@ -348,7 +348,7 @@ bool NetAssignBase::synth_async(Design*des, NetScope*scope,
       }
 
       assert(rval_);
-      NetNet*rsig = rval_->synthesize(des, scope, rval_);
+      NetNet*rsig = rval_->synthesize(des, scope);
       assert(rsig);
 
       if (lval_->word() && ! dynamic_cast<NetEConst*>(lval_->word())) {
@@ -769,7 +769,7 @@ bool NetCase::synth_async(Design*des, NetScope*scope,
       }
 
 	/* Synthesize the select expression. */
-      NetNet*esig = expr_->synthesize(des, scope, expr_);
+      NetNet*esig = expr_->synthesize(des, scope);
 
       unsigned sel_width = esig->vector_width();
       ivl_assert(*this, sel_width > 0);
@@ -1042,7 +1042,7 @@ bool NetCase::synth_async_casez_(Design*des, NetScope*scope,
       ivl_assert(*this, nex_map.size() == bitmasks.size());
 
 	/* Synthesize the select expression. */
-      NetNet*esig = expr_->synthesize(des, scope, expr_);
+      NetNet*esig = expr_->synthesize(des, scope);
 
       unsigned sel_width = esig->vector_width();
       ivl_assert(*this, sel_width > 0);
@@ -1137,7 +1137,7 @@ bool NetCase::synth_async_casez_(Design*des, NetScope*scope,
 	    ivl_assert(*this, stmt);
 
 	    NetExpr*guard_expr = items_[item].guard;
-	    NetNet*guard = guard_expr->synthesize(des, scope, guard_expr);
+	    NetNet*guard = guard_expr->synthesize(des, scope);
 
 	    NetCaseCmp*condit_dev = new NetCaseCmp(scope, scope->local_symbol(),
 						   sel_width, case_kind);
@@ -1233,7 +1233,7 @@ bool NetCondit::synth_async(Design*des, NetScope*scope,
 
 	// Synthesize the condition. This will act as a select signal
 	// for a binary mux.
-      NetNet*ssig = expr_->synthesize(des, scope, expr_);
+      NetNet*ssig = expr_->synthesize(des, scope);
       ivl_assert(*this, ssig);
 
 	// The incoming nex_out is taken as the input for this
@@ -1786,7 +1786,7 @@ bool NetCondit::synth_sync(Design*des, NetScope*scope,
 		  continue;
 
 	      // Synthesize the set/reset input expression.
-	    NetNet*rst = expr_->synthesize(des, scope, expr_);
+	    NetNet*rst = expr_->synthesize(des, scope);
 	    ivl_assert(*this, rst->pin_count() == 1);
 
 	      // Check that the edge used on the set/reset input is correct.

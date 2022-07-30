@@ -162,7 +162,7 @@ void PGAssign::elaborate(Design*des, NetScope*scope) const
 	    }
       }
 
-      NetNet*rval = rval_expr->synthesize(des, scope, rval_expr);
+      NetNet*rval = rval_expr->synthesize(des, scope);
 
       if (rval == 0) {
 	    cerr << get_fileline() << ": internal error: "
@@ -844,7 +844,7 @@ void PGBuiltin::elaborate(Design*des, NetScope*scope) const
                   if (!is_array() && tmp->expr_width() != 1)
                         tmp = new NetESelect(tmp, make_const_0(1), 1,
                                              IVL_SEL_IDX_UP);
-		  sig = tmp->synthesize(des, scope, tmp);
+		  sig = tmp->synthesize(des, scope);
 		  delete tmp;
 	    }
 
@@ -1516,7 +1516,7 @@ void PGModule::elaborate_mod_(Design*des, Module*rmod, NetScope*scope) const
 			     << "Elaborating INPUT port expression: " << *tmp_expr << endl;
 		  }
 
-		  sig = tmp_expr->synthesize(des, scope, tmp_expr);
+		  sig = tmp_expr->synthesize(des, scope);
 		  if (sig == 0) {
 			cerr << pins[idx]->get_fileline()
 			     << ": internal error: Port expression "
@@ -2145,7 +2145,7 @@ void PGModule::elaborate_udp_(Design*des, PUdp*udp, NetScope*scope) const
 			"for elaboration:" << *pins[idx] << endl;
 		  continue;
 	    }
-	    NetNet*sig = expr_tmp->synthesize(des, scope, expr_tmp);
+	    NetNet*sig = expr_tmp->synthesize(des, scope);
 	    ivl_assert(*this, sig);
 	    sig->set_line(*this);
 
@@ -4805,7 +4805,7 @@ cerr << endl;
 		  continue;
 	    }
 
-	    NetNet*expr = tmp->synthesize(des, scope, tmp);
+	    NetNet*expr = tmp->synthesize(des, scope);
 	    if (expr == 0) {
 		  expr_[idx]->dump(cerr);
 		  cerr << endl;
@@ -6015,7 +6015,7 @@ void PSpecPath::elaborate(Design*des, NetScope*scope) const
 	      // FIXME: Look for constant expressions here?
 
 	      // Get a net form.
-	    condit_sig = tmp->synthesize(des, scope, tmp);
+	    condit_sig = tmp->synthesize(des, scope);
 	    ivl_assert(*condition, condit_sig);
       }
 
