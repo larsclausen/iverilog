@@ -26,6 +26,7 @@
  * can be passed around in this form to the various stages and design
  * processors.
  */
+# include  <memory>
 # include  <string>
 # include  <map>
 # include  <list>
@@ -2904,7 +2905,7 @@ class NetAssign_ {
       NetAssign_*nest_;
       NetNet *sig_;
 	// Memory word index
-      NetExpr*word_;
+      std::unique_ptr<NetExpr> word_;
 	// member/property if signal is a class.
       perm_string member_;
 
@@ -2956,7 +2957,7 @@ class NetAssignBase : public NetProc {
 
     private:
       NetAssign_*lval_;
-      NetExpr   *rval_;
+      std::unique_ptr<NetExpr> rval_;
       NetExpr   *delay_;
 };
 
@@ -3214,9 +3215,9 @@ class NetCondit  : public NetProc {
 				     std::map<perm_string,LocalVar>&ctx) const;
 
     private:
-      NetExpr* expr_;
-      NetProc*if_;
-      NetProc*else_;
+      std::unique_ptr<NetExpr> expr_;
+      std::unique_ptr<NetProc> if_;
+      std::unique_ptr<NetProc> else_;
 };
 
 /*
@@ -3627,7 +3628,7 @@ class NetForever : public NetProc {
 				     std::map<perm_string,LocalVar>&ctx) const;
 
     private:
-      NetProc*statement_;
+      std::unique_ptr<NetProc> statement_;
 };
 
 class NetForLoop : public NetProc {
@@ -3658,10 +3659,10 @@ class NetForLoop : public NetProc {
 
     private:
       NetNet*index_;
-      NetExpr*init_expr_;
-      NetExpr*condition_;
-      NetProc*statement_;
-      NetProc*step_statement_;
+      std::unique_ptr<NetExpr> init_expr_;
+      std::unique_ptr<NetExpr> condition_;
+      std::unique_ptr<NetProc> statement_;
+      std::unique_ptr<NetProc> step_statement_;
 
 	// The code generator needs to see this rewritten as a while
 	// loop with synthetic statements. This is a hack that I
@@ -3766,7 +3767,7 @@ class NetPDelay  : public NetProc {
 
     private:
       uint64_t delay_;
-      NetExpr*expr_;
+      std::unique_ptr<NetExpr> expr_;
       NetProc*statement_;
 };
 
@@ -3793,8 +3794,8 @@ class NetRepeat : public NetProc {
 				     std::map<perm_string,LocalVar>&ctx) const;
 
     private:
-      NetExpr*expr_;
-      NetProc*statement_;
+      std::unique_ptr<NetExpr> expr_;
+      std::unique_ptr<NetProc> statement_;
 };
 
 /*
@@ -4147,8 +4148,8 @@ class NetEBinary  : public NetExpr {
       NetEBinary(char op, NetExpr*l, NetExpr*r, unsigned wid, bool signed_flag);
       ~NetEBinary();
 
-      const NetExpr*left() const { return left_; }
-      const NetExpr*right() const { return right_; }
+      const NetExpr*left() const { return left_.get(); }
+      const NetExpr*right() const { return right_.get(); }
 
       char op() const { return op_; }
 
@@ -4169,8 +4170,8 @@ class NetEBinary  : public NetExpr {
 
     protected:
       char op_;
-      NetExpr* left_;
-      NetExpr* right_;
+      std::unique_ptr<NetExpr> left_;
+      std::unique_ptr<NetExpr> right_;
 
       virtual NetExpr* eval_arguments_(const NetExpr*l, const NetExpr*r) const;
 };
@@ -4484,8 +4485,8 @@ class NetESelect  : public NetExpr {
       virtual void dump(std::ostream&) const;
 
     private:
-      NetExpr*expr_;
-      NetExpr*base_;
+      std::unique_ptr<NetExpr> expr_;
+      std::unique_ptr<NetExpr> base_;
       ivl_type_t use_type_;
       ivl_select_type_t sel_type_;
 };
@@ -4845,9 +4846,9 @@ class NetETernary  : public NetExpr {
     private:
       NetExpr* blended_arguments_(const NetExpr*t, const NetExpr*f) const;
 
-      NetExpr*cond_;
-      NetExpr*true_val_;
-      NetExpr*false_val_;
+      std::unique_ptr<NetExpr> cond_;
+      std::unique_ptr<NetExpr> true_val_;
+      std::unique_ptr<NetExpr> false_val_;
 };
 
 /*
@@ -4880,7 +4881,7 @@ class NetEUnary  : public NetExpr {
       ~NetEUnary();
 
       char op() const { return op_; }
-      const NetExpr* expr() const { return expr_; }
+      const NetExpr* expr() const { return expr_.get(); }
 
       virtual NetEUnary* dup_expr() const;
       virtual NetExpr* eval_tree();
@@ -4896,7 +4897,7 @@ class NetEUnary  : public NetExpr {
 
     protected:
       char op_;
-      NetExpr* expr_;
+      std::unique_ptr<NetExpr> expr_;
 
     private:
       virtual NetExpr* eval_arguments_(const NetExpr*ex) const;

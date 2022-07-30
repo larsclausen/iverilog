@@ -26,10 +26,6 @@ AContrib::AContrib(PExpr*lv, PExpr*rv)
 {
 }
 
-AContrib::~AContrib()
-{
-      delete lval_;
-      delete rval_;
-}
+AContrib::~AContrib() = default;
 
 AProcess::~AProcess() = default;

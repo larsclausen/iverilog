@@ -30,8 +30,8 @@ using namespace std;
 
 NetProc* AContrib::elaborate(Design*des, NetScope*scope) const
 {
-      NetExpr*lval = elab_and_eval(des, scope, lval_, -1);
-      NetExpr*rval = elab_and_eval(des, scope, rval_, -1);
+      NetExpr*lval = elab_and_eval(des, scope, lval_.get(), -1);
+      NetExpr*rval = elab_and_eval(des, scope, rval_.get(), -1);
 
       NetEAccess*lacc = dynamic_cast<NetEAccess*> (lval);
       if (lacc == 0) {

@@ -274,10 +274,7 @@ PEConcat::PEConcat(const list<PExpr*>&p, PExpr*r)
       repeat_count_ = 1;
 }
 
-PEConcat::~PEConcat()
-{
-      delete repeat_;
-}
+PEConcat::~PEConcat() = default;
 
 void PEConcat::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)
 {
@@ -329,10 +326,7 @@ PEFNumber::PEFNumber(verireal*v)
 {
 }
 
-PEFNumber::~PEFNumber()
-{
-      delete value_;
-}
+PEFNumber::~PEFNumber() = default;
 
 const verireal& PEFNumber::value() const
 {
@@ -435,14 +429,9 @@ PENewArray::PENewArray(PExpr*size_expr, PExpr*init_expr)
 {
 }
 
-PENewArray::~PENewArray()
-{
-      delete size_;
-}
+PENewArray::~PENewArray() = default;
 
-PENewClass::PENewClass(void)
-{
-}
+PENewClass::PENewClass() = default;
 
 PENewClass::PENewClass(const list<PExpr*>&p)
 : parms_(p.size())
@@ -469,10 +458,7 @@ PENumber::PENumber(verinum*vp)
       assert(vp);
 }
 
-PENumber::~PENumber()
-{
-      delete value_;
-}
+PENumber::~PENumber() = default;
 
 const verinum& PENumber::value() const
 {
@@ -493,10 +479,7 @@ PEString::PEString(char*s)
 {
 }
 
-PEString::~PEString()
-{
-      delete[]text_;
-}
+PEString::~PEString() = default;
 
 string PEString::value() const
 {

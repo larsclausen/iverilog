@@ -144,9 +144,9 @@ NexusSet* NetESelect::nex_input(bool rem_out, bool always_sens, bool nested_func
       NexusSet*tmp = expr_->nex_input(rem_out, always_sens, nested_func);
       bool const_select = result->size() == 0;
       if (always_sens && const_select) {
-	    if (NetEConst *val = dynamic_cast <NetEConst*> (base_)) {
+	    if (NetEConst *val = dynamic_cast <NetEConst*> (base_.get())) {
 		  assert(select_type() == IVL_SEL_OTHER);
-		  if (NetESignal *sig = dynamic_cast<NetESignal*> (expr_)) {
+		  if (NetESignal *sig = dynamic_cast<NetESignal*> (expr_.get())) {
 			delete tmp;
 			tmp = sig->nex_input_base(rem_out, always_sens, nested_func,
                                                   val->value().as_unsigned(), expr_width());

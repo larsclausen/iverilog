@@ -191,10 +191,7 @@ NetForever::NetForever(NetProc*p)
 {
 }
 
-NetForever::~NetForever()
-{
-      delete statement_;
-}
+NetForever::~NetForever() = default;
 
 NetForLoop::NetForLoop(NetNet*ind, NetExpr*iexpr, NetExpr*cond, NetProc*sub, NetProc*step)
 : index_(ind), init_expr_(iexpr), condition_(cond), statement_(sub), step_statement_(step)
@@ -208,17 +205,17 @@ void NetForLoop::wrap_up()
       top->set_line(*this);
 
       NetAssign_*lv = new NetAssign_(index_);
-      NetAssign*set_stmt = new NetAssign(lv, init_expr_);
+      NetAssign*set_stmt = new NetAssign(lv, init_expr_.get());
       set_stmt->set_line(*init_expr_);
       top->append(set_stmt);
 
       NetBlock*internal_block = new NetBlock(NetBlock::SEQU, 0);
       internal_block->set_line(*this);
 
-      if (statement_) internal_block->append(statement_);
-      internal_block->append(step_statement_);
+      if (statement_) internal_block->append(statement_.get());
+      internal_block->append(step_statement_.get());
 
-      NetWhile*wloop = new NetWhile(condition_, internal_block);
+      NetWhile*wloop = new NetWhile(condition_.get(), internal_block);
       wloop->set_line(*this);
 
       top->append(wloop);
@@ -226,16 +223,10 @@ void NetForLoop::wrap_up()
       as_block_ = top;
 }
 
-NetForLoop::~NetForLoop()
-{
-      delete init_expr_;
-      delete condition_;
-      delete statement_;
-      delete step_statement_;
-}
+NetForLoop::~NetForLoop() = default;
 
 NetPDelay::NetPDelay(uint64_t d, NetProc*st)
-: delay_(d), expr_(0), statement_(st)
+: delay_(d), statement_(st)
 {
 }
 
@@ -244,10 +235,7 @@ NetPDelay::NetPDelay(NetExpr*d, NetProc*st)
 {
 }
 
-NetPDelay::~NetPDelay()
-{
-      delete expr_;
-}
+NetPDelay::~NetPDelay() = default;
 
 uint64_t NetPDelay::delay() const
 {
@@ -257,7 +245,7 @@ uint64_t NetPDelay::delay() const
 
 const NetExpr* NetPDelay::expr() const
 {
-      return expr_;
+      return expr_.get();
 }
 
 NetRepeat::NetRepeat(NetExpr*e, NetProc*p)
@@ -265,13 +253,9 @@ NetRepeat::NetRepeat(NetExpr*e, NetProc*p)
 {
 }
 
-NetRepeat::~NetRepeat()
-{
-      delete expr_;
-      delete statement_;
-}
+NetRepeat::~NetRepeat() = default;
 
 const NetExpr* NetRepeat::expr() const
 {
-      return expr_;
+      return expr_.get();
 }

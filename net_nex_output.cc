@@ -51,7 +51,7 @@ void NetAssign_::nex_output(NexusSet&out)
       unsigned use_wid = lwidth();
       if (word_) {
 	    long tmp = 0;
-	    if (eval_as_long(tmp, word_)) {
+	    if (eval_as_long(tmp, word_.get())) {
 		    // A constant word select, so add the selected word.
 		  use_word = tmp;
 	    } else {

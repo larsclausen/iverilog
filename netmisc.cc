@@ -1150,33 +1150,40 @@ bool evaluate_ranges(Design*des, NetScope*scope, const LineInfo*li,
       return dimensions_ok;
 }
 
-void eval_expr(NetExpr*&expr, int context_width)
+void eval_expr(std::unique_ptr<NetExpr>&expr, int context_width)
 {
       assert(expr);
-      if (dynamic_cast<NetECReal*>(expr)) return;
+      if (dynamic_cast<NetECReal*>(expr.get())) return;
 
       NetExpr*tmp = expr->eval_tree();
       if (tmp != 0) {
 	    tmp->set_line(*expr);
-	    delete expr;
-	    expr = tmp;
+	    expr.reset(tmp);
       }
 
       if (context_width <= 0) return;
 
-      NetEConst *ce = dynamic_cast<NetEConst*>(expr);
+      NetEConst *ce = dynamic_cast<NetEConst*>(expr.get());
       if (ce == 0) return;
 
         // The expression is a constant, so resize it if needed.
       if (ce->expr_width() < (unsigned)context_width) {
-            expr = pad_to_width(expr, context_width, *expr);
+	    expr.release(); 
+	    expr.reset(pad_to_width(ce, context_width, *ce));
       } else if (ce->expr_width() > (unsigned)context_width) {
             verinum value(ce->value(), context_width);
             ce = new NetEConst(value);
             ce->set_line(*expr);
-            delete expr;
-            expr = ce;
+            expr.reset(ce);
       }
+}
+
+
+void eval_expr(NetExpr*&expr, int context_width)
+{
+      std::unique_ptr<NetExpr> e(expr);
+      eval_expr(e, context_width);
+      expr = e.release();
 }
 
 bool eval_as_long(long&value, const NetExpr*expr)

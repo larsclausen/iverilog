@@ -96,7 +96,7 @@ NetExpr* NetEBinary::eval_tree()
       eval_expr(left_);
       eval_expr(right_);
 
-      return eval_arguments_(left_, right_);
+      return eval_arguments_(left_.get(), right_.get());
 }
 
 NetExpr* NetEBinary::eval_arguments_(const NetExpr*, const NetExpr*) const
@@ -139,7 +139,7 @@ NetExpr* NetEBAdd::eval_tree()
       eval_expr(right_);
 
 	// First try to elaborate the expression completely.
-      NetExpr*res = eval_arguments_(left_,right_);
+      NetExpr*res = eval_arguments_(left_.get(), right_.get());
       if (res != 0) return res;
 
 	// If the expression type is real, then do not attempt the
@@ -152,9 +152,9 @@ NetExpr* NetEBAdd::eval_tree()
 	// with the right constant value of a sub-expression add. For
 	// example, the expression (a + 2) - 1 can be rewritten as a + 1.
 
-      NetEBAdd*se = dynamic_cast<NetEBAdd*>(left_);
-      NetEConst*lc = se? dynamic_cast<NetEConst*>(se->right_) : 0;
-      NetEConst*rc = dynamic_cast<NetEConst*>(right_);
+      NetEBAdd*se = dynamic_cast<NetEBAdd*>(left_.get());
+      NetEConst*lc = se? dynamic_cast<NetEConst*>(se->right_.get()) : 0;
+      NetEConst*rc = dynamic_cast<NetEConst*>(right_.get());
 
       if (lc != 0 && rc != 0) {
 	    ivl_assert(*this, se != 0);
@@ -185,11 +185,9 @@ NetExpr* NetEBAdd::eval_tree()
 	    }
 
 	    NetEConst*tmp = new NetEConst(val);
-	    left_ = se->left_->dup_expr();
-	    delete se;
+	    left_.reset(se->left_->dup_expr());
 	    tmp->set_line(*right_);
-	    delete right_;
-	    right_ = tmp;
+	    right_.reset(tmp);
       }
 
 	// We may have changed the subexpression, but the result is
@@ -1194,12 +1192,12 @@ NetEConst* NetEConcat::eval_arguments_(const vector<NetExpr*>&vals,
 NetEConst* NetESelect::eval_tree()
 {
       eval_expr(expr_);
-      NetEConst*expr = dynamic_cast<NetEConst*>(expr_);
+      NetEConst*expr = dynamic_cast<NetEConst*>(expr_.get());
 
       long bval = 0;
       if (base_) {
 	    eval_expr(base_);
-	    NetEConst*base = dynamic_cast<NetEConst*>(base_);
+	    NetEConst*base = dynamic_cast<NetEConst*>(base_.get());
 
 	    if (base == 0) return 0;
 
@@ -1263,14 +1261,14 @@ static void print_ternary_cond(NetExpr*expr)
 NetExpr* NetETernary::eval_tree()
 {
       eval_expr(cond_);
-      switch (const_logical(cond_)) {
+      switch (const_logical(cond_.get())) {
 	  case C_0:
 	    eval_expr(false_val_);
 	    if (debug_eval_tree) {
 
 		  cerr << get_fileline() << ": debug: Evaluate ternary with "
 		       << "constant condition value: ";
-		  print_ternary_cond(cond_);
+		  print_ternary_cond(cond_.get());
 		  cerr << get_fileline() << ":      : Selecting false case: "
 		       << *false_val_ << endl;
 	    }
@@ -1281,7 +1279,7 @@ NetExpr* NetETernary::eval_tree()
 	    if (expr_type() == IVL_VT_REAL &&
 	        false_val_->expr_type() != IVL_VT_REAL) {
 		  verireal f;
-		  if (get_real_arg_(false_val_, f)) {
+		  if (get_real_arg_(false_val_.get(), f)) {
 			NetECReal*rc = new NetECReal(f);
 			rc->set_line(*this);
 			return rc;
@@ -1295,7 +1293,7 @@ NetExpr* NetETernary::eval_tree()
 	    if (debug_eval_tree) {
 		  cerr << get_fileline() << ": debug: Evaluate ternary with "
 		       << "constant condition value: ";
-		  print_ternary_cond(cond_);
+		  print_ternary_cond(cond_.get());
 		  cerr << get_fileline() << ":      : Selecting true case: "
 		       << *true_val_ << endl;
 	    }
@@ -1306,7 +1304,7 @@ NetExpr* NetETernary::eval_tree()
 	    if (expr_type() == IVL_VT_REAL &&
 	        true_val_->expr_type() != IVL_VT_REAL) {
 		  verireal t;
-		  if (get_real_arg_(true_val_, t)) {
+		  if (get_real_arg_(true_val_.get(), t)) {
 			NetECReal*rc = new NetECReal(t);
 			rc->set_line(*this);
 			return rc;
@@ -1329,7 +1327,7 @@ NetExpr* NetETernary::eval_tree()
       eval_expr(true_val_);
       eval_expr(false_val_);
 
-      return blended_arguments_(true_val_, false_val_);
+      return blended_arguments_(true_val_.get(), false_val_.get());
 }
 
 NetExpr*NetETernary::blended_arguments_(const NetExpr*te, const NetExpr*fe) const
@@ -1348,7 +1346,7 @@ NetExpr*NetETernary::blended_arguments_(const NetExpr*te, const NetExpr*fe) cons
 	    if (debug_eval_tree) {
 		  cerr << get_fileline() << ": debug: Evaluate ternary with "
 		       << "constant condition value: ";
-		  print_ternary_cond(cond_);
+		  print_ternary_cond(cond_.get());
 		  cerr << get_fileline() << ":      : Blending real cases "
 		       << "true=" << tv.as_double()
 		       << ", false=" << fv.as_double()
@@ -1378,7 +1376,7 @@ NetExpr*NetETernary::blended_arguments_(const NetExpr*te, const NetExpr*fe) cons
       if (debug_eval_tree) {
 	    cerr << get_fileline() << ": debug: Evaluate ternary with "
 		 << "constant condition value: ";
-	    print_ternary_cond(cond_);
+	    print_ternary_cond(cond_.get());
 	    cerr << get_fileline() << ":      : Blending cases to get "
 		 << val << endl;
       }
@@ -1391,7 +1389,7 @@ NetExpr*NetETernary::blended_arguments_(const NetExpr*te, const NetExpr*fe) cons
 NetExpr* NetEUnary::eval_tree()
 {
       eval_expr(expr_);
-      return eval_arguments_(expr_);
+      return eval_arguments_(expr_.get());
 }
 
 NetExpr* NetEUnary::eval_tree_real_(const NetExpr*ex) const

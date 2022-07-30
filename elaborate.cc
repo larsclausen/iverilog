@@ -2286,7 +2286,7 @@ NetAssign_* PAssign_::elaborate_lval(Design*des, NetScope*scope) const
 	// A function called as a task does not have an L-value.
       if (! lval_) {
 	      // The R-value must be a simple function call.
-	    assert (dynamic_cast<PECallFunction*>(rval_));
+	    assert (dynamic_cast<PECallFunction*>(rval_.get()));
 	    PExpr::width_mode_t mode = PExpr::SIZED;
 	    rval_->test_width(des, scope, mode);
 	      // Create a L-value that matches the function return type.
@@ -2323,7 +2323,7 @@ NetExpr* PAssign_::elaborate_rval_(Design*des, NetScope*scope,
 {
       ivl_assert(*this, rval_);
 
-      NetExpr*rv = elab_and_eval(des, scope, rval_, net_type, is_constant_);
+      NetExpr*rv = elab_and_eval(des, scope, rval_.get(), net_type, is_constant_);
 
       if (!is_constant_ || !rv) return rv;
 
@@ -3043,7 +3043,7 @@ NetProc* PCase::elaborate(Design*des, NetScope*scope) const
 	   largest self-determined width of any of the expressions. */
 
       PExpr::width_mode_t context_mode = PExpr::SIZED;
-      unsigned context_width = test_case_width(des, scope, expr_, context_mode);
+      unsigned context_width = test_case_width(des, scope, expr_.get(), context_mode);
       bool context_is_real = (expr_->expr_type() == IVL_VT_REAL);
       bool context_unsigned = !expr_->has_sign();
 
@@ -3081,7 +3081,7 @@ NetProc* PCase::elaborate(Design*des, NetScope*scope) const
 		 in a lossless context, so we need to run through the
 		 process again to get the final expression width. */
 
-	    context_width = test_case_width(des, scope, expr_, context_mode);
+	    context_width = test_case_width(des, scope, expr_.get(), context_mode);
 
 	    for (unsigned idx = 0; idx < items_->size(); idx += 1) {
 
@@ -3113,7 +3113,7 @@ NetProc* PCase::elaborate(Design*des, NetScope*scope) const
 		       << " vector, width=" << context_width << endl;
 	    }
       }
-      NetExpr*expr = elab_and_eval_case(des, scope, expr_,
+      NetExpr*expr = elab_and_eval_case(des, scope, expr_.get(),
 					context_is_real,
 					context_unsigned,
 					context_width);
@@ -3297,7 +3297,7 @@ NetProc* PCondit::elaborate(Design*des, NetScope*scope) const
 		 << " with conditional: " << *expr_ << endl;
 
 	// Elaborate and try to evaluate the conditional expression.
-      NetExpr*expr = elab_and_eval(des, scope, expr_, -1);
+      NetExpr*expr = elab_and_eval(des, scope, expr_.get(), -1);
       if (expr == 0) {
 	    cerr << get_fileline() << ": error: Unable to elaborate"
 		  " condition expression." << endl;
@@ -4371,7 +4371,7 @@ NetCAssign* PCAssign::elaborate(Design*des, NetScope*scope) const
 	// lv_net_type argument to elaborate_rval_expr here. This
 	// would entail getting the NetAssign_ to give us an
 	// ivl_type_t as needed.
-      NetExpr*rexp = elaborate_rval_expr(des, scope, 0, ltype, lwid, expr_);
+      NetExpr*rexp = elaborate_rval_expr(des, scope, 0, ltype, lwid, expr_.get());
       if (rexp == 0)
 	    return 0;
 
@@ -4518,7 +4518,7 @@ NetProc* PDisable::elaborate(Design*des, NetScope*scope) const
  */
 NetProc* PDoWhile::elaborate(Design*des, NetScope*scope) const
 {
-      NetExpr*ce = elab_and_eval(des, scope, cond_, -1);
+      NetExpr*ce = elab_and_eval(des, scope, cond_.get(), -1);
       NetProc*sub;
       if (statement_)
 	    sub = statement_->elaborate(des, scope);
@@ -5169,7 +5169,7 @@ NetForce* PForce::elaborate(Design*des, NetScope*scope) const
 	// better way to get a reasonable lv_net_type value, and that
 	// probably will involve NetAssign_ having a method for
 	// synthesizing one as needed.
-      NetExpr*rexp = elaborate_rval_expr(des, scope, lval->net_type(), ltype, lwid, expr_);
+      NetExpr*rexp = elaborate_rval_expr(des, scope, lval->net_type(), ltype, lwid, expr_.get());
       if (rexp == 0)
 	    return 0;
 
@@ -5603,7 +5603,7 @@ NetProc* PRepeat::elaborate(Design*des, NetScope*scope) const
 {
       assert(scope);
 
-      NetExpr*expr = elab_and_eval(des, scope, expr_, -1);
+      NetExpr*expr = elab_and_eval(des, scope, expr_.get(), -1);
       if (expr == 0) {
 	    cerr << get_fileline() << ": Unable to elaborate"
 		  " repeat expression." << endl;
@@ -5698,7 +5698,7 @@ NetProc* PReturn::elaborate(Design*des, NetScope*scope) const
       ivl_assert(*this, res);
       NetAssign_*lv = new NetAssign_(res);
 
-      NetExpr*val = elaborate_rval_expr(des, scope, res->net_type(), expr_);
+      NetExpr*val = elaborate_rval_expr(des, scope, res->net_type(), expr_.get());
 
       NetBlock*proc = new NetBlock(NetBlock::SEQU, 0);
       proc->set_line( *this );
@@ -5865,7 +5865,7 @@ NetProc* PNBTrigger::elaborate(Design*des, NetScope*scope) const
  */
 NetProc* PWhile::elaborate(Design*des, NetScope*scope) const
 {
-      NetExpr*ce = elab_and_eval(des, scope, cond_, -1);
+      NetExpr*ce = elab_and_eval(des, scope, cond_.get(), -1);
       NetProc*sub;
       if (statement_)
 	    sub = statement_->elaborate(des, scope);

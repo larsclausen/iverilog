@@ -3526,7 +3526,7 @@ unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
 	// If there is a repeat expression, then evaluate the constant
 	// value and set the repeat count.
       if (repeat_ && (scope != tested_scope_)) {
-	    NetExpr*tmp = elab_and_eval(des, scope, repeat_, -1, true);
+	    NetExpr*tmp = elab_and_eval(des, scope, repeat_.get(), -1, true);
 	    if (tmp == 0) return 0;
 
 	    if (tmp->expr_type() == IVL_VT_REAL) {
@@ -6748,7 +6748,7 @@ NetEConst* PENumber::elaborate_expr(Design*, NetScope*,
 unsigned PEString::test_width(Design*, NetScope*, width_mode_t&)
 {
       expr_type_   = IVL_VT_BOOL;
-      expr_width_  = text_ ? verinum(text_).len() : 0;
+      expr_width_  = 0;//text_ ? verinum(text_).len() : 0;
       min_width_   = expr_width_;
       signed_flag_ = false;
 

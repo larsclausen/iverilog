@@ -96,7 +96,7 @@ NetNet* NetEBAdd::synthesize(Design*des, NetScope*scope, NetExpr*root)
 
       NetNet *lsig=0, *rsig=0;
       bool real_args=false;
-      if (process_binary_args(des, scope, root, left_, right_, lsig, rsig,
+      if (process_binary_args(des, scope, root, left_.get(), right_.get(), lsig, rsig,
                               real_args)) {
 	    return 0;
       }
@@ -225,7 +225,7 @@ NetNet* NetEBComp::synthesize(Design*des, NetScope*scope, NetExpr*root)
       NetNet *lsig=0, *rsig=0;
       unsigned width;
       bool real_args=false;
-      if (process_binary_args(des, scope, root, left_, right_, lsig, rsig,
+      if (process_binary_args(des, scope, root, left_.get(), right_.get(), lsig, rsig,
                               real_args)) {
 	    return 0;
       }
@@ -387,7 +387,7 @@ NetNet* NetEBPow::synthesize(Design*des, NetScope*scope, NetExpr*root)
       NetNet *lsig=0, *rsig=0;
       unsigned width;
       bool real_args=false;
-      if (process_binary_args(des, scope, root, left_, right_, lsig, rsig,
+      if (process_binary_args(des, scope, root, left_.get(), right_.get(), lsig, rsig,
                               real_args)) {
 	    return 0;
       }
@@ -424,7 +424,7 @@ NetNet* NetEBMult::synthesize(Design*des, NetScope*scope, NetExpr*root)
       NetNet *lsig=0, *rsig=0;
       unsigned width;
       bool real_args=false;
-      if (process_binary_args(des, scope, root, left_, right_, lsig, rsig,
+      if (process_binary_args(des, scope, root, left_.get(), right_.get(), lsig, rsig,
                               real_args)) {
 	    return 0;
       }
@@ -461,7 +461,7 @@ NetNet* NetEBDiv::synthesize(Design*des, NetScope*scope, NetExpr*root)
       NetNet *lsig=0, *rsig=0;
       unsigned width;
       bool real_args=false;
-      if (process_binary_args(des, scope, root, left_, right_, lsig, rsig,
+      if (process_binary_args(des, scope, root, left_.get(), right_.get(), lsig, rsig,
                               real_args)) {
 	    return 0;
       }
@@ -617,7 +617,7 @@ NetNet* NetEBShift::synthesize(Design*des, NetScope*scope, NetExpr*root)
 	/* Detect the special case where the shift amount is
 	   constant. Evaluate the shift amount, and simply reconnect
 	   the left operand to the output, but shifted. */
-      if (NetEConst*rcon = dynamic_cast<NetEConst*>(right_)) {
+      if (NetEConst*rcon = dynamic_cast<NetEConst*>(right_.get())) {
 	    verinum shift_v = rcon->value();
 	    long shift = shift_v.as_long();
 
@@ -1050,7 +1050,7 @@ NetNet* NetESelect::synthesize(Design *des, NetScope*scope, NetExpr*root)
 
 	// Detect the special case that there is a base expression and
 	// it is constant. In this case we can generate fixed part selects.
-      if (NetEConst*base_const = dynamic_cast<NetEConst*>(base_)) {
+      if (NetEConst*base_const = dynamic_cast<NetEConst*>(base_.get())) {
 	    verinum base_tmp = base_const->value();
 	    unsigned select_width = expr_width();
 

@@ -19,6 +19,7 @@
  *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+# include  <memory>
 # include  <map>
 # include  "ivl_target.h"
 # include  "StringHeap.h"
@@ -46,8 +47,8 @@ class AContrib : public Statement {
       virtual NetProc* elaborate(Design*des, NetScope*scope) const;
 
     private:
-      PExpr*lval_;
-      PExpr*rval_;
+      std::unique_ptr<PExpr> lval_;
+      std::unique_ptr<PExpr> rval_;
 };
 
 /*

@@ -45,11 +45,7 @@ PAssign_::PAssign_(PExpr*lval__, PExpr*cnt, PEventStatement*ev, PExpr*ex)
       delay_ = 0;
 }
 
-PAssign_::~PAssign_()
-{
-      delete lval_;
-      delete rval_;
-}
+PAssign_::~PAssign_() = default;
 
 PAssign::PAssign(PExpr*lval__, PExpr*ex)
 : PAssign_(lval__, ex, false), op_(0)
@@ -207,7 +203,6 @@ PCase::PCase(ivl_case_quality_t q, NetCase::TYPE t, PExpr*ex, std::vector<PCase:
 
 PCase::~PCase()
 {
-      delete expr_;
       for (unsigned idx = 0 ;  idx < items_->size() ;  idx += 1)
 	    if ((*items_)[idx]->stat) delete (*items_)[idx]->stat;
 
@@ -219,11 +214,7 @@ PCAssign::PCAssign(PExpr*l, PExpr*r)
 {
 }
 
-PCAssign::~PCAssign()
-{
-      delete lval_;
-      delete expr_;
-}
+PCAssign::~PCAssign() = default;
 
 PChainConstructor::PChainConstructor(const list<PExpr*>&parms)
 : parms_(parms.size())
@@ -243,22 +234,14 @@ PCondit::PCondit(PExpr*ex, Statement*i, Statement*e)
 {
 }
 
-PCondit::~PCondit()
-{
-      delete expr_;
-      delete if_;
-      delete else_;
-}
+PCondit::~PCondit() = default;
 
 PDeassign::PDeassign(PExpr*l)
 : lval_(l)
 {
 }
 
-PDeassign::~PDeassign()
-{
-      delete lval_;
-}
+PDeassign::~PDeassign() = default;
 
 
 PDelayStatement::PDelayStatement(PExpr*d, Statement*st)
@@ -280,11 +263,7 @@ PDoWhile::PDoWhile(PExpr*ex, Statement*st)
 {
 }
 
-PDoWhile::~PDoWhile()
-{
-      delete cond_;
-      delete statement_;
-}
+PDoWhile::~PDoWhile() = default;
 
 PEventStatement::PEventStatement(const std::vector<PEEvent*>&ee)
 : expr_(ee), statement_(0), always_sens_(false)
@@ -328,11 +307,7 @@ PForce::PForce(PExpr*l, PExpr*r)
 {
 }
 
-PForce::~PForce()
-{
-      delete lval_;
-      delete expr_;
-}
+PForce::~PForce() = default;
 
 PForeach::PForeach(perm_string av, const list<perm_string>&ix, Statement*s)
 : array_var_(av), index_vars_(ix.size()), statement_(s)
@@ -343,20 +318,14 @@ PForeach::PForeach(perm_string av, const list<perm_string>&ix, Statement*s)
 	    index_vars_[idx++] = *cur;
 }
 
-PForeach::~PForeach()
-{
-      delete statement_;
-}
+PForeach::~PForeach() = default;
 
 PForever::PForever(Statement*s)
 : statement_(s)
 {
 }
 
-PForever::~PForever()
-{
-      delete statement_;
-}
+PForever::~PForever() = default;
 
 PForStatement::PForStatement(PExpr*n1, PExpr*e1, PExpr*cond,
 			     Statement*step, Statement*st)
@@ -366,41 +335,28 @@ PForStatement::PForStatement(PExpr*n1, PExpr*e1, PExpr*cond,
 
 PForStatement::~PForStatement() = default;
 
-PProcess::~PProcess()
-{
-      delete statement_;
-}
+PProcess::~PProcess() = default;
 
 PRelease::PRelease(PExpr*l)
 : lval_(l)
 {
 }
 
-PRelease::~PRelease()
-{
-      delete lval_;
-}
+PRelease::~PRelease() = default;
 
 PRepeat::PRepeat(PExpr*e, Statement*s)
 : expr_(e), statement_(s)
 {
 }
 
-PRepeat::~PRepeat()
-{
-      delete expr_;
-      delete statement_;
-}
+PRepeat::~PRepeat() = default;
 
 PReturn::PReturn(PExpr*e)
 : expr_(e)
 {
 }
 
-PReturn::~PReturn()
-{
-      delete expr_;
-}
+PReturn::~PReturn() = default;
 
 PTrigger::PTrigger(PPackage*pkg, const pform_name_t&ev)
 : package_(pkg), event_(ev)
@@ -421,8 +377,4 @@ PWhile::PWhile(PExpr*ex, Statement*st)
 {
 }
 
-PWhile::~PWhile()
-{
-      delete cond_;
-      delete statement_;
-}
+PWhile::~PWhile() = default;

@@ -325,14 +325,14 @@ bool NetAssignBase::synth_async(Design*des, NetScope*scope,
 	      /* Temporarily set the lval_ and rval_ fields for each
 		 part in turn and recurse. Restore them when done. */
 	    NetAssign_*full_lval = lval_;
-	    NetExpr*full_rval = rval_;
+	    NetExpr*full_rval = rval_.release();
 	    unsigned offset = 0;
 	    bool flag = true;
 	    while (lval_) {
 		  unsigned width = lval_->lwidth();
 		  NetEConst*base = new NetEConst(verinum(offset));
 		  base->set_line(*this);
-		  rval_ = new NetESelect(full_rval->dup_expr(), base, width);
+		  rval_.reset(new NetESelect(full_rval->dup_expr(), base, width));
 		  rval_->set_line(*this);
 		  eval_expr(rval_, width);
 		  NetAssign_*more = lval_->more;
@@ -343,7 +343,7 @@ bool NetAssignBase::synth_async(Design*des, NetScope*scope,
 		  offset += width;
 	    }
 	    lval_ = full_lval;
-	    rval_ = full_rval;
+	    rval_.reset(full_rval);
 	    return flag;
       }
 
@@ -1267,7 +1267,8 @@ bool NetCondit::synth_async(Design*des, NetScope*scope,
 	    }
 
 	    bool flag = synth_async_block_substatement_(des, scope, nex_map, a_out,
-							a_ena, a_masks, if_);
+							a_ena, a_masks,
+							if_.get());
 	    if (!flag) return false;
 
       } else {
@@ -1292,7 +1293,8 @@ bool NetCondit::synth_async(Design*des, NetScope*scope,
 	    }
 
 	    bool flag = synth_async_block_substatement_(des, scope, nex_map, b_out,
-							b_ena, b_masks, else_);
+							b_ena, b_masks,
+							else_.get());
 	    if (!flag) return false;
 
       } else {
@@ -1463,7 +1465,7 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
 	// Get the step assignment statement and break it into the
 	// l-value (should be the index) and the r-value, which is the
 	// step expressions.
-      NetAssign*step_assign = dynamic_cast<NetAssign*> (step_statement_);
+      NetAssign*step_assign = dynamic_cast<NetAssign*> (step_statement_.get());
       char assign_operator = step_assign->assign_operator();
       ivl_assert(*this, step_assign);
       NetExpr*step_expr = step_assign->rval();
@@ -1511,7 +1513,8 @@ bool NetForLoop::synth_async(Design*des, NetScope*scope,
 	    vector<mask_t> tmp_masks (nex_out.pin_count());
 
 	    rc = synth_async_block_substatement_(des, scope, nex_map, nex_out,
-						 tmp_ena, tmp_masks, statement_);
+						 tmp_ena, tmp_masks,
+						 statement_.get());
 
 	    for (unsigned idx = 0 ; idx < nex_out.pin_count() ; idx += 1) {
 		  merge_sequential_enables(des, scope, enables.pin(idx), tmp_ena.pin(idx));

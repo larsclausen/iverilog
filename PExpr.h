@@ -20,6 +20,7 @@
  *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+# include  <memory>
 # include  <string>
 # include  <vector>
 # include  <valarray>
@@ -261,7 +262,7 @@ class PEConcat : public PExpr {
       std::vector<PExpr*>parms_;
       std::valarray<width_mode_t>width_modes_;
 
-      PExpr*repeat_;
+      std::unique_ptr<PExpr> repeat_;
       NetScope*tested_scope_;
       unsigned repeat_count_;
 };
@@ -317,7 +318,7 @@ class PEFNumber : public PExpr {
       virtual void dump(std::ostream&) const;
 
     private:
-      verireal*value_;
+      std::unique_ptr<verireal> value_;
 };
 
 class PEIdent : public PExpr {
@@ -549,7 +550,7 @@ class PENewArray : public PExpr {
                                      unsigned flags) const;
 
     private:
-      PExpr*size_;
+      std::unique_ptr<PExpr> size_;
       PExpr*init_;
 };
 
@@ -642,7 +643,7 @@ class PENumber : public PExpr {
       virtual bool is_the_same(const PExpr*that) const;
 
     private:
-      verinum*const value_;
+      std::unique_ptr<verinum> const value_;
 };
 
 /*
@@ -671,7 +672,7 @@ class PEString : public PExpr {
 				       unsigned expr_wid, unsigned) const;
 
     private:
-      char*text_;
+      std::string text_;
 };
 
 class PETypename : public PExpr {

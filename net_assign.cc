@@ -42,7 +42,7 @@ unsigned count_lval_width(const NetAssign_*idx)
 }
 
 NetAssign_::NetAssign_(NetAssign_*n)
-: nest_(n), sig_(0), word_(0), base_(0), sel_type_(IVL_SEL_OTHER)
+: nest_(n), sig_(0), base_(0), sel_type_(IVL_SEL_OTHER)
 {
       lwid_ = 0;
       more = 0;
@@ -51,7 +51,7 @@ NetAssign_::NetAssign_(NetAssign_*n)
 }
 
 NetAssign_::NetAssign_(NetNet*s)
-: nest_(0), sig_(s), word_(0), base_(0), sel_type_(IVL_SEL_OTHER)
+: nest_(0), sig_(s), base_(0), sel_type_(IVL_SEL_OTHER)
 {
       lwid_ = sig_->vector_width();
       sig_->incr_lref();
@@ -69,7 +69,6 @@ NetAssign_::~NetAssign_()
       }
 
       assert( more == 0 );
-      delete word_;
 }
 
 string NetAssign_::get_fileline() const
@@ -86,18 +85,18 @@ NetScope*NetAssign_::scope() const
 
 void NetAssign_::set_word(NetExpr*r)
 {
-      assert(word_ == 0);
-      word_ = r;
+      assert(!word_);
+      word_.reset(r);
 }
 
 NetExpr* NetAssign_::word()
 {
-      return word_;
+      return word_.get();
 }
 
 const NetExpr* NetAssign_::word() const
 {
-      return word_;
+      return word_.get();
 }
 
 const NetExpr* NetAssign_::get_base() const
@@ -266,7 +265,6 @@ NetAssignBase::NetAssignBase(NetAssign_*lv, NetExpr*rv)
 
 NetAssignBase::~NetAssignBase()
 {
-      delete rval_;
       while (lval_) {
 	    NetAssign_*tmp = lval_;
 	    lval_ = tmp->more;
@@ -277,18 +275,17 @@ NetAssignBase::~NetAssignBase()
 
 NetExpr* NetAssignBase::rval()
 {
-      return rval_;
+      return rval_.get();
 }
 
 const NetExpr* NetAssignBase::rval() const
 {
-      return rval_;
+      return rval_.get();
 }
 
 void NetAssignBase::set_rval(NetExpr*r)
 {
-      delete rval_;
-      rval_ = r;
+      rval_.reset(r);
 }
 
 NetAssign_* NetAssignBase::l_val(unsigned idx)

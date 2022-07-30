@@ -19,6 +19,7 @@
  *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+# include  <memory>
 # include  <string>
 # include  <vector>
 # include  <list>
@@ -58,7 +59,7 @@ class PProcess : public LineInfo {
       bool elaborate(Design*des, NetScope*scope) const;
 
       ivl_process_type_t type() const { return type_; }
-      Statement*statement() { return statement_; }
+      Statement*statement() { return statement_.get(); }
 
       std::map<perm_string,PExpr*> attributes;
 
@@ -66,7 +67,7 @@ class PProcess : public LineInfo {
 
     private:
       ivl_process_type_t type_;
-      Statement*statement_;
+      std::unique_ptr<Statement> statement_;
 };
 
 /*
@@ -100,8 +101,8 @@ class PAssign_  : public Statement {
       explicit PAssign_(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
       virtual ~PAssign_() =0;
 
-      const PExpr* lval() const  { return lval_; }
-      PExpr* rval() const  { return rval_; }
+      const PExpr* lval() const  { return lval_.get(); }
+      PExpr* rval() const  { return rval_.get(); }
 
     protected:
       NetAssign_* elaborate_lval(Design*, NetScope*scope) const;
@@ -119,8 +120,8 @@ class PAssign_  : public Statement {
       PExpr* count_;
 
     private:
-      PExpr* lval_;
-      PExpr* rval_;
+      std::unique_ptr<PExpr> lval_;
+      std::unique_ptr<PExpr> rval_;
       bool is_constant_;
 };
 
@@ -277,7 +278,7 @@ class PCase  : public Statement {
     private:
       ivl_case_quality_t quality_;
       NetCase::TYPE type_;
-      PExpr*expr_;
+      std::unique_ptr<PExpr> expr_;
 
       std::vector<Item*>*items_;
 
@@ -296,8 +297,8 @@ class PCAssign  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*lval_;
-      PExpr*expr_;
+      std::unique_ptr<PExpr> lval_;
+      std::unique_ptr<PExpr> expr_;
 };
 
 /*
@@ -332,9 +333,9 @@ class PCondit  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*expr_;
-      Statement*if_;
-      Statement*else_;
+      std::unique_ptr<PExpr> expr_;
+      std::unique_ptr<Statement> if_;
+      std::unique_ptr<Statement> else_;
 
     private: // not implemented
       PCondit(const PCondit&);
@@ -351,7 +352,7 @@ class PDeassign  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*lval_;
+      std::unique_ptr<PExpr> lval_;
 };
 
 class PDelayStatement  : public Statement {
@@ -399,8 +400,8 @@ class PDoWhile  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*cond_;
-      Statement*statement_;
+      std::unique_ptr<PExpr> cond_;
+      std::unique_ptr<Statement> statement_;
 };
 
 /*
@@ -460,8 +461,8 @@ class PForce  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*lval_;
-      PExpr*expr_;
+      std::unique_ptr<PExpr> lval_;
+      std::unique_ptr<PExpr> expr_;
 };
 
 class PForeach : public Statement {
@@ -481,7 +482,7 @@ class PForeach : public Statement {
     private:
       perm_string array_var_;
       std::vector<perm_string> index_vars_;
-      Statement*statement_;
+      std::unique_ptr<Statement> statement_;
 };
 
 class PForever : public Statement {
@@ -495,7 +496,7 @@ class PForever : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      Statement*statement_;
+      std::unique_ptr<Statement> statement_;
 };
 
 class PForStatement  : public Statement {
@@ -539,8 +540,8 @@ class PRepeat : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*expr_;
-      Statement*statement_;
+      std::unique_ptr<PExpr> expr_;
+      std::unique_ptr<Statement> statement_;
 };
 
 class PRelease  : public Statement {
@@ -553,7 +554,7 @@ class PRelease  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*lval_;
+      std::unique_ptr<PExpr> lval_;
 };
 
 class PReturn  : public Statement {
@@ -566,7 +567,7 @@ class PReturn  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*expr_;
+      std::unique_ptr<PExpr> expr_;
 };
 
 /*
@@ -612,8 +613,8 @@ class PWhile  : public Statement {
       virtual void dump(std::ostream&out, unsigned ind) const;
 
     private:
-      PExpr*cond_;
-      Statement*statement_;
+      std::unique_ptr<PExpr> cond_;
+      std::unique_ptr<Statement> statement_;
 };
 
 #endif /* IVL_Statement_H */
