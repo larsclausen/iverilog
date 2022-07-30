@@ -29,6 +29,4 @@ PSpecPath::PSpecPath(unsigned src_cnt, unsigned dst_cnt, char polarity,
       polarity_ = polarity;
 }
 
-PSpecPath::~PSpecPath()
-{
-}
+PSpecPath::~PSpecPath() = default;

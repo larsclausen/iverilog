@@ -29,9 +29,7 @@ netenum_t::netenum_t(ivl_type_t btype, size_t name_count, bool integer_flag)
 {
 }
 
-netenum_t::~netenum_t()
-{
-}
+netenum_t::~netenum_t() = default;
 
 bool netenum_t::get_signed() const
 {

@@ -62,9 +62,7 @@ verireal::verireal(double val)
       value_ = val;
 }
 
-verireal::~verireal()
-{
-}
+verireal::~verireal() = default;
 
 long verireal::as_long() const
 {

@@ -44,7 +44,7 @@ class hname_t {
       explicit hname_t (perm_string text, int num);
       explicit hname_t (perm_string text, const std::vector<int>&nums);
       hname_t (const hname_t&that);
-      ~hname_t();
+      ~hname_t() = default;
 
       hname_t& operator= (const hname_t&);
 
@@ -66,10 +66,6 @@ class hname_t {
 
     private: // not implemented
 };
-
-inline hname_t::~hname_t()
-{
-}
 
 inline perm_string hname_t::peek_name(void) const
 {

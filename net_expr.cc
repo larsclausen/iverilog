@@ -40,9 +40,7 @@ NetExpr::NetExpr(ivl_type_t t)
 {
 }
 
-NetExpr::~NetExpr()
-{
-}
+NetExpr::~NetExpr() = default;
 
 ivl_type_t NetExpr::net_type() const
 {
@@ -94,9 +92,7 @@ NetEBAdd::NetEBAdd(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signed_fl
 {
 }
 
-NetEBAdd::~NetEBAdd()
-{
-}
+NetEBAdd::~NetEBAdd() = default;
 
 ivl_variable_type_t NetEBAdd::expr_type() const
 {
@@ -117,9 +113,7 @@ NetEBComp::NetEBComp(char op__, NetExpr*l, NetExpr*r)
 {
 }
 
-NetEBComp::~NetEBComp()
-{
-}
+NetEBComp::~NetEBComp() = default;
 
 bool NetEBComp::has_width() const
 {
@@ -146,9 +140,7 @@ NetEBDiv::NetEBDiv(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signed_fl
 {
 }
 
-NetEBDiv::~NetEBDiv()
-{
-}
+NetEBDiv::~NetEBDiv() = default;
 
 ivl_variable_type_t NetEBDiv::expr_type() const
 {
@@ -166,9 +158,7 @@ NetEBMinMax::NetEBMinMax(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool sig
 {
 }
 
-NetEBMinMax::~NetEBMinMax()
-{
-}
+NetEBMinMax::~NetEBMinMax() = default;
 
 ivl_variable_type_t NetEBMinMax::expr_type() const
 {
@@ -185,9 +175,7 @@ NetEBMult::NetEBMult(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signed_
 {
 }
 
-NetEBMult::~NetEBMult()
-{
-}
+NetEBMult::~NetEBMult() = default;
 
 ivl_variable_type_t NetEBMult::expr_type() const
 {
@@ -205,9 +193,7 @@ NetEBPow::NetEBPow(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signed_fl
 {
 }
 
-NetEBPow::~NetEBPow()
-{
-}
+NetEBPow::~NetEBPow() = default;
 
 ivl_variable_type_t NetEBPow::expr_type() const
 {
@@ -224,9 +210,7 @@ NetEBShift::NetEBShift(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signe
 {
 }
 
-NetEBShift::~NetEBShift()
-{
-}
+NetEBShift::~NetEBShift() = default;
 
 bool NetEBShift::has_width() const
 {
@@ -269,9 +253,7 @@ NetEConstEnum::NetEConstEnum(perm_string n, const netenum_t*eset, const verinum&
       assert(has_width());
 }
 
-NetEConstEnum::~NetEConstEnum()
-{
-}
+NetEConstEnum::~NetEConstEnum() = default;
 
 const netenum_t*NetEConstEnum::enumeration() const
 {
@@ -285,9 +267,7 @@ NetECReal::NetECReal(const verireal&val)
       cast_signed_base_(true);
 }
 
-NetECReal::~NetECReal()
-{
-}
+NetECReal::~NetECReal() = default;
 
 const verireal& NetECReal::value() const
 {
@@ -309,9 +289,7 @@ NetECRealParam::NetECRealParam(const NetScope*s, perm_string n, const verireal&v
 {
 }
 
-NetECRealParam::~NetECRealParam()
-{
-}
+NetECRealParam::~NetECRealParam() = default;
 
 perm_string NetECRealParam::name() const
 {
@@ -328,9 +306,7 @@ NetECString::NetECString(const std::string& val)
 {
 }
 
-NetECString::~NetECString()
-{
-}
+NetECString::~NetECString() = default;
 
 ivl_variable_type_t NetECString::expr_type() const
 {
@@ -342,9 +318,7 @@ NetELast::NetELast(NetNet*s)
 {
 }
 
-NetELast::~NetELast()
-{
-}
+NetELast::~NetELast() = default;
 
 ivl_variable_type_t NetELast::expr_type() const
 {
@@ -356,9 +330,7 @@ NetENetenum::NetENetenum(const netenum_t*s)
 {
 }
 
-NetENetenum::~NetENetenum()
-{
-}
+NetENetenum::~NetENetenum() = default;
 
 const netenum_t* NetENetenum::netenum() const
 {
@@ -375,22 +347,16 @@ NetENew::NetENew(ivl_type_t t, NetExpr*size, NetExpr*init_val)
 {
 }
 
-NetENew::~NetENew()
-{
-}
+NetENew::~NetENew() = default;
 
 ivl_variable_type_t NetENew::expr_type() const
 {
       return size_ ? IVL_VT_DARRAY : IVL_VT_CLASS;
 }
 
-NetENull::NetENull()
-{
-}
+NetENull::NetENull() = default
 
-NetENull::~NetENull()
-{
-}
+NetENull::~NetENull() = default;
 
 NetEProperty::NetEProperty(NetNet*net, perm_string pnam, NetExpr*idx)
 : net_(net), index_(idx)
@@ -404,9 +370,7 @@ NetEProperty::NetEProperty(NetNet*net, perm_string pnam, NetExpr*idx)
       cast_signed(prop_type->get_signed());
 }
 
-NetEProperty::~NetEProperty()
-{
-}
+NetEProperty::~NetEProperty() = default;
 
 ivl_variable_type_t NetEProperty::expr_type() const
 {
@@ -549,9 +513,7 @@ NetEShallowCopy::NetEShallowCopy(NetExpr*arg1, NetExpr*arg2)
 {
 }
 
-NetEShallowCopy::~NetEShallowCopy()
-{
-}
+NetEShallowCopy::~NetEShallowCopy() = default;
 
 ivl_variable_type_t NetEShallowCopy::expr_type() const
 {
@@ -564,9 +526,7 @@ NetEAccess::NetEAccess(NetBranch*br, ivl_nature_t nat)
       cast_signed_base_(true);
 }
 
-NetEAccess::~NetEAccess()
-{
-}
+NetEAccess::~NetEAccess() = default;
 
 ivl_variable_type_t NetEAccess::expr_type() const
 {

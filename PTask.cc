@@ -28,9 +28,7 @@ PTaskFunc::PTaskFunc(perm_string n, LexicalScope*p)
 {
 }
 
-PTaskFunc::~PTaskFunc()
-{
-}
+PTaskFunc::~PTaskFunc() = default;
 
 bool PTaskFunc::var_init_needs_explicit_lifetime() const
 {
@@ -66,9 +64,7 @@ PTask::PTask(perm_string name, LexicalScope*parent, bool is_auto__)
       is_auto_ = is_auto__;
 }
 
-PTask::~PTask()
-{
-}
+PTask::~PTask() = default;
 
 void PTask::set_statement(Statement*s)
 {

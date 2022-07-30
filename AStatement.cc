@@ -32,6 +32,4 @@ AContrib::~AContrib()
       delete rval_;
 }
 
-AProcess::~AProcess()
-{
-}
+AProcess::~AProcess() = default;

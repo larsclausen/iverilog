@@ -31,9 +31,7 @@ netstruct_t::netstruct_t()
 {
 }
 
-netstruct_t::~netstruct_t()
-{
-}
+netstruct_t::~netstruct_t() = default;
 
 void netstruct_t::union_flag(bool flag)
 {

@@ -39,9 +39,7 @@ Module::Module(LexicalScope*parent, perm_string n)
       uc_drive = UCD_NONE;
 }
 
-Module::~Module()
-{
-}
+Module::~Module() = default;
 
 void Module::add_gate(PGate*gate)
 {

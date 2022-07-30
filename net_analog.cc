@@ -32,9 +32,7 @@ NetContribution::NetContribution(NetEAccess*l, NetExpr*r)
 {
 }
 
-NetContribution::~NetContribution()
-{
-}
+NetContribution::~NetContribution() = default;
 
 const NetEAccess* NetContribution::lval() const
 {

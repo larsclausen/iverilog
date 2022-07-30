@@ -52,9 +52,7 @@ Design:: Design()
       des_delay_sel_ = Design::TYP;
 }
 
-Design::~Design()
-{
-}
+Design::~Design() = default;
 
 void Design::set_precision(int val)
 {

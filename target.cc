@@ -26,9 +26,7 @@
 
 using namespace std;
 
-target_t::~target_t()
-{
-}
+target_t::~target_t() = default;
 
 void target_t::scope(const NetScope*)
 {
@@ -464,9 +462,7 @@ int target_t::end_design(const Design*)
       return 0;
 }
 
-expr_scan_t::~expr_scan_t()
-{
-}
+expr_scan_t::~expr_scan_t() = default;
 
 void expr_scan_t::expr_access_func(const NetEAccess*)
 {

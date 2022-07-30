@@ -25,9 +25,7 @@
 
 using namespace std;
 
-Statement::~Statement()
-{
-}
+Statement::~Statement() = default;
 
 PAssign_::PAssign_(PExpr*lval__, PExpr*ex, bool is_constant)
 : event_(0), count_(0), lval_(lval__), rval_(ex), is_constant_(is_constant)
@@ -78,9 +76,7 @@ PAssign::PAssign(PExpr*lval__, PExpr*ex, bool is_constant)
 {
 }
 
-PAssign::~PAssign()
-{
-}
+PAssign::~PAssign() = default;
 
 PAssignNB::PAssignNB(PExpr*lval__, PExpr*ex)
 : PAssign_(lval__, ex, false)
@@ -97,9 +93,7 @@ PAssignNB::PAssignNB(PExpr*lval__, PExpr*cnt, PEventStatement*d, PExpr*ex)
 {
 }
 
-PAssignNB::~PAssignNB()
-{
-}
+PAssignNB::~PAssignNB() = default;
 
 PBlock::PBlock(perm_string n, LexicalScope*parent, BL_TYPE t)
 : PScope(n, parent), bl_type_(t)
@@ -199,9 +193,7 @@ PCallTask::PCallTask(perm_string n, const list<PExpr*>&p)
       path_.push_back(name_component_t(n));
 }
 
-PCallTask::~PCallTask()
-{
-}
+PCallTask::~PCallTask() = default;
 
 const pform_name_t& PCallTask::path() const
 {
@@ -244,9 +236,7 @@ PChainConstructor::PChainConstructor(const list<PExpr*>&parms)
       assert(cur == parms.end());
 }
 
-PChainConstructor::~PChainConstructor()
-{
-}
+PChainConstructor::~PChainConstructor() = default;
 
 PCondit::PCondit(PExpr*ex, Statement*i, Statement*e)
 : expr_(ex), if_(i), else_(e)
@@ -276,18 +266,14 @@ PDelayStatement::PDelayStatement(PExpr*d, Statement*st)
 {
 }
 
-PDelayStatement::~PDelayStatement()
-{
-}
+PDelayStatement::~PDelayStatement() = default;
 
 PDisable::PDisable(const pform_name_t&sc)
 : scope_(sc)
 {
 }
 
-PDisable::~PDisable()
-{
-}
+PDisable::~PDisable() = default;
 
 PDoWhile::PDoWhile(PExpr*ex, Statement*st)
 : cond_(ex), statement_(st)
@@ -378,9 +364,7 @@ PForStatement::PForStatement(PExpr*n1, PExpr*e1, PExpr*cond,
 {
 }
 
-PForStatement::~PForStatement()
-{
-}
+PForStatement::~PForStatement() = default;
 
 PProcess::~PProcess()
 {
@@ -423,18 +407,14 @@ PTrigger::PTrigger(PPackage*pkg, const pform_name_t&ev)
 {
 }
 
-PTrigger::~PTrigger()
-{
-}
+PTrigger::~PTrigger() = default;
 
 PNBTrigger::PNBTrigger(const pform_name_t&ev, PExpr*dly)
 : event_(ev), dly_(dly)
 {
 }
 
-PNBTrigger::~PNBTrigger()
-{
-}
+PNBTrigger::~PNBTrigger() = default;
 
 PWhile::PWhile(PExpr*ex, Statement*st)
 : cond_(ex), statement_(st)

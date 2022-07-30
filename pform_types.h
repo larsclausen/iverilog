@@ -90,7 +90,7 @@ struct lgate : public LineInfo {
 struct pform_port_t {
       pform_port_t(perm_string n, std::list<pform_range_t>*ud, PExpr*e)
 	: name(n), udims(ud), expr(e) { }
-      ~pform_port_t() { }
+      ~pform_port_t() = default;
 
       perm_string name;
       std::list<pform_range_t>*udims;
@@ -109,7 +109,7 @@ struct index_component_t {
       enum ctype_t { SEL_NONE, SEL_BIT, SEL_BIT_LAST, SEL_PART, SEL_IDX_UP, SEL_IDX_DO };
 
       index_component_t() : sel(SEL_NONE), msb(0), lsb(0) { };
-      ~index_component_t() { }
+      ~index_component_t() = default;
 
       ctype_t sel;
       class PExpr*msb;
@@ -119,7 +119,7 @@ struct index_component_t {
 struct name_component_t {
       inline name_component_t() { }
       inline explicit name_component_t(perm_string n) : name(n) { }
-      ~name_component_t() { }
+      ~name_component_t() = default;
 
       // Return true if this component is nil.
       inline bool empty() const { return name.nil(); }

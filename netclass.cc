@@ -28,9 +28,7 @@ netclass_t::netclass_t(perm_string name, const netclass_t*super)
 {
 }
 
-netclass_t::~netclass_t()
-{
-}
+netclass_t::~netclass_t() = default;
 
 bool netclass_t::set_property(perm_string pname, property_qualifier_t qual,
 			      ivl_type_t ptype)

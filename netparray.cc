@@ -22,13 +22,9 @@
 
 using namespace std;
 
-netsarray_t::~netsarray_t()
-{
-}
+netsarray_t::~netsarray_t() = default;
 
-netparray_t::~netparray_t()
-{
-}
+netparray_t::~netparray_t() = default;
 
 /*
  * The packed width of a packed array is the packed width of the
@@ -68,9 +64,7 @@ vector<netrange_t> netparray_t::slice_dimensions() const
       return res;
 }
 
-netuarray_t::~netuarray_t()
-{
-}
+netuarray_t::~netuarray_t() = default;
 
 vector<netrange_t> netuarray_t::slice_dimensions() const
 {

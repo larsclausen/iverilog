@@ -24,9 +24,7 @@ ivl_nature_s::ivl_nature_s(perm_string name__, perm_string access__)
 {
 }
 
-ivl_nature_s::~ivl_nature_s()
-{
-}
+ivl_nature_s::~ivl_nature_s() = default;
 
 ivl_discipline_s::ivl_discipline_s(perm_string name__, ivl_dis_domain_t domain__,
 				   ivl_nature_t pot, ivl_nature_t flow__)
@@ -34,6 +32,4 @@ ivl_discipline_s::ivl_discipline_s(perm_string name__, ivl_dis_domain_t domain__
 {
 }
 
-ivl_discipline_s::~ivl_discipline_s()
-{
-}
+ivl_discipline_s::~ivl_discipline_s() = default;

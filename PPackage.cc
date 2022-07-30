@@ -25,6 +25,4 @@ PPackage::PPackage(perm_string name, LexicalScope*parent)
 {
 }
 
-PPackage::~PPackage()
-{
-}
+PPackage::~PPackage() = default;

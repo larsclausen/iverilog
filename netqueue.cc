@@ -27,9 +27,7 @@ netqueue_t::netqueue_t(ivl_type_t vec, long max_idx)
 {
 }
 
-netqueue_t::~netqueue_t()
-{
-}
+netqueue_t::~netqueue_t() = default;
 
 ivl_variable_type_t netqueue_t::base_type() const
 {

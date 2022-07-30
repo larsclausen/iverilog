@@ -524,8 +524,8 @@ class PForStatement  : public Statement {
 class PNoop  : public Statement {
 
     public:
-      PNoop() { }
-      ~PNoop() { }
+      PNoop() = default;
+      ~PNoop() = default;
 };
 
 class PRepeat : public Statement {

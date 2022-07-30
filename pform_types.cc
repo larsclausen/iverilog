@@ -20,18 +20,14 @@
 
 # include  "pform_types.h"
 
-data_type_t::~data_type_t()
-{
-}
+data_type_t::~data_type_t() = default;
 
 PNamedItem::SymbolType data_type_t::symbol_type() const
 {
       return TYPE;
 }
 
-string_type_t::~string_type_t()
-{
-}
+string_type_t::~string_type_t() = default;
 
 ivl_variable_type_t data_type_t::figure_packed_base_type(void) const
 {

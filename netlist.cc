@@ -246,9 +246,7 @@ NetObj::NetObj(NetScope*s, perm_string n, unsigned np)
        */
 }
 
-NetObj::~NetObj()
-{
-}
+NetObj::~NetObj() = default;
 
 NetScope* NetObj::scope()
 {
@@ -278,9 +276,7 @@ NetBranch::NetBranch(ivl_discipline_t dis)
       pin(1).set_dir(Link::PASSIVE);
 }
 
-NetBranch::~NetBranch()
-{
-}
+NetBranch::~NetBranch() = default;
 
 NetBus::NetBus(NetScope*s, unsigned pin_count__)
 : NetObj(s, perm_string::literal(""), pin_count__)
@@ -290,9 +286,7 @@ NetBus::NetBus(NetScope*s, unsigned pin_count__)
       }
 }
 
-NetBus::~NetBus()
-{
-}
+NetBus::~NetBus() = default;
 
 unsigned NetBus::find_link(const Link&that) const
 {
@@ -326,9 +320,7 @@ NetDelaySrc::NetDelaySrc(NetScope*s, perm_string n, unsigned npins,
       }
 }
 
-NetDelaySrc::~NetDelaySrc()
-{
-}
+NetDelaySrc::~NetDelaySrc() = default;
 
 void NetDelaySrc::set_delays(uint64_t del)
 {
@@ -949,9 +941,7 @@ NetPartSelect::NetPartSelect(NetNet*sig, NetNet*sel,
       connect(pin(2), sel->pin(0));
 }
 
-NetPartSelect::~NetPartSelect()
-{
-}
+NetPartSelect::~NetPartSelect() = default;
 
 unsigned NetPartSelect::width() const
 {
@@ -973,18 +963,14 @@ NetSubstitute::NetSubstitute(NetNet*sig, NetNet*sub, unsigned wid, unsigned off)
       connect(pin(2), sub->pin(0));
 }
 
-NetSubstitute::~NetSubstitute()
-{
-}
+NetSubstitute::~NetSubstitute() = default;
 
 NetProc::NetProc()
 : next_(0)
 {
 }
 
-NetProc::~NetProc()
-{
-}
+NetProc::~NetProc() = default;
 
 NetProcTop::NetProcTop(NetScope*s, ivl_process_type_t t, NetProc*st)
 : type_(t), statement_(st), scope_(s)
@@ -1047,9 +1033,7 @@ NetAnalogTop::NetAnalogTop(NetScope*scope__, ivl_process_type_t t, NetProc*st)
       next_ = 0;
 }
 
-NetAnalogTop::~NetAnalogTop()
-{
-}
+NetAnalogTop::~NetAnalogTop() = default;
 
 NetProc* NetAnalogTop::statement()
 {
@@ -1101,9 +1085,7 @@ NetConcat::NetConcat(NetScope*scope__, perm_string n, unsigned wid, unsigned cnt
       }
 }
 
-NetConcat::~NetConcat()
-{
-}
+NetConcat::~NetConcat() = default;
 
 unsigned NetConcat::width() const
 {
@@ -1118,9 +1100,7 @@ NetReplicate::NetReplicate(NetScope*scope__, perm_string n,
       pin(1).set_dir(Link::INPUT);
 }
 
-NetReplicate::~NetReplicate()
-{
-}
+NetReplicate::~NetReplicate() = default;
 
 unsigned NetReplicate::width() const
 {
@@ -1159,9 +1139,7 @@ NetFF::NetFF(NetScope*s, perm_string n, bool negedge__, unsigned width__)
       pin_Q().set_dir(Link::OUTPUT);
 }
 
-NetFF::~NetFF()
-{
-}
+NetFF::~NetFF() = default;
 
 bool NetFF::is_negedge() const
 {
@@ -1289,9 +1267,7 @@ NetLatch::NetLatch(NetScope*s, perm_string n, unsigned width__)
       pin_Q().set_dir(Link::OUTPUT);
 }
 
-NetLatch::~NetLatch()
-{
-}
+NetLatch::~NetLatch() = default;
 
 unsigned NetLatch::width() const
 {
@@ -1335,9 +1311,7 @@ NetAbs::NetAbs(NetScope*s, perm_string n, unsigned w)
       pin(1).set_dir(Link::INPUT);
 }
 
-NetAbs::~NetAbs()
-{
-}
+NetAbs::~NetAbs() = default;
 
 unsigned NetAbs::width() const
 {
@@ -1361,9 +1335,7 @@ NetAddSub::NetAddSub(NetScope*s, perm_string n, unsigned w)
       pin(3).set_dir(Link::OUTPUT); // Result
 }
 
-NetAddSub::~NetAddSub()
-{
-}
+NetAddSub::~NetAddSub() = default;
 
 unsigned NetAddSub::width()const
 {
@@ -1421,9 +1393,7 @@ NetArrayDq::NetArrayDq(NetScope*s, perm_string n, NetNet*mem__, unsigned awid)
       mem_->incr_eref();
 }
 
-NetArrayDq::~NetArrayDq()
-{
-}
+NetArrayDq::~NetArrayDq() = default;
 
 unsigned NetArrayDq::width() const
 {
@@ -1478,9 +1448,7 @@ NetCLShift::NetCLShift(NetScope*s, perm_string n,
       pin(2).set_dir(Link::INPUT);  // Distance
 }
 
-NetCLShift::~NetCLShift()
-{
-}
+NetCLShift::~NetCLShift() = default;
 
 unsigned NetCLShift::width() const
 {
@@ -1546,9 +1514,7 @@ NetCompare::NetCompare(NetScope*s, perm_string n, unsigned wi)
       pin(7).set_dir(Link::INPUT);  // DataB
 }
 
-NetCompare::~NetCompare()
-{
-}
+NetCompare::~NetCompare() = default;
 
 unsigned NetCompare::width() const
 {
@@ -1656,9 +1622,7 @@ NetDivide::NetDivide(NetScope*sc, perm_string n, unsigned wr,
       pin(2).set_dir(Link::INPUT);  // DataB
 }
 
-NetDivide::~NetDivide()
-{
-}
+NetDivide::~NetDivide() = default;
 
 unsigned NetDivide::width_r() const
 {
@@ -1721,9 +1685,7 @@ NetLiteral::NetLiteral(NetScope*sc, perm_string n, const verireal&val)
       pin(0).set_dir(Link::OUTPUT);
 }
 
-NetLiteral::~NetLiteral()
-{
-}
+NetLiteral::~NetLiteral() = default;
 
 ivl_variable_type_t NetLiteral::data_type() const
 {
@@ -1745,9 +1707,7 @@ NetMult::NetMult(NetScope*sc, perm_string n, unsigned wr,
       pin(2).set_dir(Link::INPUT);  // DataB
 }
 
-NetMult::~NetMult()
-{
-}
+NetMult::~NetMult() = default;
 
 void NetMult::set_signed(bool flag)
 {
@@ -1814,9 +1774,7 @@ NetPow::NetPow(NetScope*sc, perm_string n, unsigned wr,
       pin(2).set_dir(Link::INPUT);  // DataB
 }
 
-NetPow::~NetPow()
-{
-}
+NetPow::~NetPow() = default;
 
 void NetPow::set_signed(bool flag)
 {
@@ -1894,9 +1852,7 @@ NetMux::NetMux(NetScope*s, perm_string n,
       }
 }
 
-NetMux::~NetMux()
-{
-}
+NetMux::~NetMux() = default;
 
 unsigned NetMux::width()const
 {
@@ -1952,9 +1908,7 @@ NetSignExtend::NetSignExtend(NetScope*s, perm_string n, unsigned w)
       pin(1).set_dir(Link::INPUT);
 }
 
-NetSignExtend::~NetSignExtend()
-{
-}
+NetSignExtend::~NetSignExtend() = default;
 
 unsigned NetSignExtend::width() const
 {
@@ -1968,9 +1922,7 @@ NetBUFZ::NetBUFZ(NetScope*s, perm_string n, unsigned w, bool trans)
       pin(1).set_dir(Link::INPUT);
 }
 
-NetBUFZ::~NetBUFZ()
-{
-}
+NetBUFZ::~NetBUFZ() = default;
 
 unsigned NetBUFZ::width() const
 {
@@ -1985,9 +1937,7 @@ NetCaseCmp::NetCaseCmp(NetScope*s, perm_string n, unsigned wid, kind_t k)
       pin(2).set_dir(Link::INPUT);
 }
 
-NetCaseCmp::~NetCaseCmp()
-{
-}
+NetCaseCmp::~NetCaseCmp() = default;
 
 unsigned NetCaseCmp::width() const
 {
@@ -2044,9 +1994,7 @@ NetConst::NetConst(NetScope*s, perm_string n, const verinum&val)
       pin(0).set_dir(Link::OUTPUT);
 }
 
-NetConst::~NetConst()
-{
-}
+NetConst::~NetConst() = default;
 
 verinum::V NetConst::value(unsigned idx) const
 {
@@ -2060,9 +2008,7 @@ NetBaseDef::NetBaseDef(NetScope*s, const vector<NetNet*>&po, const std::vector<N
       proc_ = 0;
 }
 
-NetBaseDef::~NetBaseDef()
-{
-}
+NetBaseDef::~NetBaseDef() = default;
 
 const NetScope* NetBaseDef::scope() const
 {
@@ -2109,9 +2055,7 @@ NetFuncDef::NetFuncDef(NetScope*s, NetNet*result, const vector<NetNet*>&po,
 {
 }
 
-NetFuncDef::~NetFuncDef()
-{
-}
+NetFuncDef::~NetFuncDef() = default;
 
 const NetNet* NetFuncDef::return_sig() const
 {
@@ -2215,9 +2159,7 @@ NetUTask::NetUTask(NetScope*def)
 {
 }
 
-NetUTask::~NetUTask()
-{
-}
+NetUTask::~NetUTask() = default;
 
 const NetScope* NetUTask::task() const
 {
@@ -2229,9 +2171,8 @@ NetAlloc::NetAlloc(NetScope*scope__)
 {
 }
 
-NetAlloc::~NetAlloc()
-{
-}
+NetAlloc::~NetAlloc() = default;
+
 #if 0
 const string NetAlloc::name() const
 {
@@ -2248,9 +2189,8 @@ NetFree::NetFree(NetScope*scope__)
 {
 }
 
-NetFree::~NetFree()
-{
-}
+NetFree::~NetFree() = default;
+
 #if 0
 const string NetFree::name() const
 {
@@ -2271,9 +2211,7 @@ NetEBBits::NetEBBits(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signed_
 {
 }
 
-NetEBBits::~NetEBBits()
-{
-}
+NetEBBits::~NetEBBits() = default;
 
 NetEBinary::NetEBinary(char op__, NetExpr*l, NetExpr*r, unsigned wid, bool signed_flag)
 : op_(op__), left_(l), right_(r)
@@ -2298,9 +2236,7 @@ NetEBLogic::NetEBLogic(char op__, NetExpr*l, NetExpr*r)
 {
 }
 
-NetEBLogic::~NetEBLogic()
-{
-}
+NetEBLogic::~NetEBLogic() = default;
 
 NetEConst::NetEConst(const verinum&val)
 : NetExpr(val.len()), value_(val)
@@ -2308,9 +2244,7 @@ NetEConst::NetEConst(const verinum&val)
       cast_signed_base_(value_.has_sign());
 }
 
-NetEConst::~NetEConst()
-{
-}
+NetEConst::~NetEConst() = default;
 
 void NetEConst::cast_signed(bool flag)
 {
@@ -2357,9 +2291,7 @@ NetEConstParam::NetEConstParam(const NetScope*s, perm_string n, const verinum&v)
       cast_signed_base_(v.has_sign());
 }
 
-NetEConstParam::~NetEConstParam()
-{
-}
+NetEConstParam::~NetEConstParam() = default;
 
 perm_string NetEConstParam::name() const
 {
@@ -2377,9 +2309,7 @@ NetEEvent::NetEEvent(NetEvent*e)
     e->exprref_ += 1;
 }
 
-NetEEvent::~NetEEvent()
-{
-}
+NetEEvent::~NetEEvent() = default;
 
 const NetEvent* NetEEvent::event() const
 {
@@ -2391,9 +2321,7 @@ NetEScope::NetEScope(NetScope*s)
 {
 }
 
-NetEScope::~NetEScope()
-{
-}
+NetEScope::~NetEScope() = default;
 
 const NetScope* NetEScope::scope() const
 {
@@ -2416,7 +2344,7 @@ NetESignal::NetESignal(NetNet*n, NetExpr*w)
       cast_signed_base_(net_->get_signed());
 }
 
-NetESignal::~NetESignal()
+NetESignal::~NetESignal() 
 {
       net_->decr_eref();
 }
@@ -2576,9 +2504,7 @@ NetEUBits::NetEUBits(char op__, NetExpr*ex, unsigned wid, bool signed_flag)
 {
 }
 
-NetEUBits::~NetEUBits()
-{
-}
+NetEUBits::~NetEUBits() = default;
 
 ivl_variable_type_t NetEUBits::expr_type() const
 {
@@ -2590,9 +2516,7 @@ NetEUReduce::NetEUReduce(char op__, NetExpr*ex)
 {
 }
 
-NetEUReduce::~NetEUReduce()
-{
-}
+NetEUReduce::~NetEUReduce() = default;
 
 ivl_variable_type_t NetEUReduce::expr_type() const
 {
@@ -2604,9 +2528,7 @@ NetECast::NetECast(char op__, NetExpr*ex, unsigned wid, bool signed_flag)
 {
 }
 
-NetECast::~NetECast()
-{
-}
+NetECast::~NetECast() = default;
 
 ivl_variable_type_t NetECast::expr_type() const
 {

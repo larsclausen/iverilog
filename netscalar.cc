@@ -25,18 +25,14 @@ netreal_t netreal_t::type_real;
 netreal_t netreal_t::type_shortreal;
 netstring_t netstring_t::type_string;
 
-netreal_t::~netreal_t()
-{
-}
+netreal_t::~netreal_t() = default;
 
 ivl_variable_type_t netreal_t::base_type() const
 {
       return IVL_VT_REAL;
 }
 
-netstring_t::~netstring_t()
-{
-}
+netstring_t::~netstring_t() = default;
 
 ivl_variable_type_t netstring_t::base_type() const
 {

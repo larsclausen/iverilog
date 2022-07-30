@@ -32,9 +32,7 @@ PFunction::PFunction(perm_string name, LexicalScope*parent, bool is_auto__)
       return_type_ = 0;
 }
 
-PFunction::~PFunction()
-{
-}
+PFunction::~PFunction() = default;
 
 void PFunction::set_statement(Statement*s)
 {
@@ -99,6 +97,4 @@ PLet::PLet(perm_string name, LexicalScope*parent, list<let_port_t*>*ports,
 {
 }
 
-PLet::~PLet()
-{
-}
+PLet::~PLet() = default;

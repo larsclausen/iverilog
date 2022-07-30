@@ -43,9 +43,7 @@ NetModulo::NetModulo(NetScope*s, perm_string n, unsigned wr,
       signed_flag_ = false;
 }
 
-NetModulo::~NetModulo()
-{
-}
+NetModulo::~NetModulo() = default;
 
 unsigned NetModulo::width_r() const
 {

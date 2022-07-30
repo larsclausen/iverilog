@@ -179,9 +179,7 @@ NetDisable::NetDisable(NetScope*tgt, bool flow_control)
 {
 }
 
-NetDisable::~NetDisable()
-{
-}
+NetDisable::~NetDisable() = default;
 
 const NetScope* NetDisable::target() const
 {

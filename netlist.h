@@ -5000,7 +5000,7 @@ class NetESignal  : public NetExpr {
 struct elaborator_work_item_t {
       explicit elaborator_work_item_t(Design*d)
       : des(d) { }
-      virtual ~elaborator_work_item_t() { }
+      virtual ~elaborator_work_item_t() = default;
       virtual void elaborate_runrun() =0;
     protected:
       Design*des;

@@ -26,9 +26,7 @@
 
 using namespace std;
 
-functor_t::~functor_t()
-{
-}
+functor_t::~functor_t() = default;
 
 void functor_t::event(Design*, NetEvent*)
 {
@@ -278,9 +276,7 @@ void NetUReduce::functor_node(Design*des, functor_t*fun)
       fun->lpm_ureduce(des, this);
 }
 
-proc_match_t::~proc_match_t()
-{
-}
+proc_match_t::~proc_match_t() = default;
 
 int NetProc::match_proc(proc_match_t*)
 {

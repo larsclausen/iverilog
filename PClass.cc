@@ -25,9 +25,7 @@ PClass::PClass(perm_string name, LexicalScope*parent)
 }
 
 
-PClass::~PClass()
-{
-}
+PClass::~PClass() = default;
 
 PNamedItem::SymbolType PClass::symbol_type() const
 {

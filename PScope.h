@@ -60,7 +60,7 @@ class LexicalScope {
         : default_lifetime(INHERITED), has_parameter_port_list(false),
 	  generate_counter(0), parent_(parent) { }
 	// A virtual destructor is so that dynamic_cast can work.
-      virtual ~LexicalScope() { }
+      virtual ~LexicalScope() = default;
 
       lifetime_t default_lifetime;
 

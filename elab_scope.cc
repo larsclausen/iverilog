@@ -1343,7 +1343,7 @@ class delayed_elaborate_scope_mod_instances : public elaborator_work_item_t {
 					    NetScope*sc)
       : elaborator_work_item_t(des__), obj_(obj), mod_(mod), sc_(sc)
       { }
-      ~delayed_elaborate_scope_mod_instances() { }
+      ~delayed_elaborate_scope_mod_instances() = default;
 
       virtual void elaborate_runrun();
 

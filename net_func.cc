@@ -46,9 +46,7 @@ NetUserFunc::NetUserFunc(NetScope*s, perm_string n, NetScope*d,
       }
 }
 
-NetUserFunc::~NetUserFunc()
-{
-}
+NetUserFunc::~NetUserFunc() = default;
 
 ivl_variable_type_t NetUserFunc::data_type(unsigned port) const
 {
@@ -135,9 +133,7 @@ NetSysFunc::NetSysFunc(NetScope*s, perm_string n,
       }
 }
 
-NetSysFunc::~NetSysFunc()
-{
-}
+NetSysFunc::~NetSysFunc() = default;
 
 const char*NetSysFunc::func_name() const
 {

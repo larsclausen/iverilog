@@ -115,9 +115,7 @@ StringHeapLex::StringHeapLex()
 	    hash_table_[idx] = 0;
 }
 
-StringHeapLex::~StringHeapLex()
-{
-}
+StringHeapLex::~StringHeapLex() = default;
 
 void StringHeapLex::cleanup()
 {

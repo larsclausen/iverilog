@@ -64,9 +64,7 @@ NetTran::NetTran(NetScope*scope__, perm_string n, unsigned wid, unsigned part, u
       pin(1).set_dir(Link::PASSIVE);
 }
 
-NetTran::~NetTran()
-{
-}
+NetTran::~NetTran() = default;
 
 unsigned NetTran::vector_width() const
 {

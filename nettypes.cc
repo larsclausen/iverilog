@@ -23,9 +23,7 @@
 
 using namespace std;
 
-ivl_type_s::~ivl_type_s()
-{
-}
+ivl_type_s::~ivl_type_s() = default;
 
 /*
  * The derived class may override this to provide a more accurate
@@ -74,9 +72,7 @@ bool ivl_type_s::test_compatibility(const ivl_type_s* /*that*/) const
       return false;
 }
 
-netarray_t::~netarray_t()
-{
-}
+netarray_t::~netarray_t() = default;
 
 ivl_variable_type_t netarray_t::base_type() const
 {

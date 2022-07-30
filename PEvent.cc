@@ -26,9 +26,7 @@ PEvent::PEvent(perm_string n)
 {
 }
 
-PEvent::~PEvent()
-{
-}
+PEvent::~PEvent() = default;
 
 perm_string  PEvent::name() const
 {

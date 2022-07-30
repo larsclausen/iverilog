@@ -20,13 +20,8 @@
 # include  "PNamedItem.h"
 # include  <ostream>
 
-PNamedItem::PNamedItem()
-{
-}
-
-PNamedItem::~PNamedItem()
-{
-}
+PNamedItem::PNamedItem() = default;
+PNamedItem::~PNamedItem() = default;
 
 PNamedItem::SymbolType PNamedItem::symbol_type() const
 {
@@ -102,13 +97,8 @@ std::ostream& operator << (std::ostream&o, PNamedItem::SymbolType st)
       return o;
 }
 
-PGenvar::PGenvar()
-{
-}
-
-PGenvar::~PGenvar()
-{
-}
+PGenvar::PGenvar() = default;
+PGenvar::~PGenvar() = default;
 
 PNamedItem::SymbolType PGenvar::symbol_type() const
 {

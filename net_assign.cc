@@ -361,9 +361,7 @@ NetAssign::NetAssign(NetAssign_*lv, char op, NetExpr*rv)
 {
 }
 
-NetAssign::~NetAssign()
-{
-}
+NetAssign::~NetAssign() = default;
 
 NetAssignNB::NetAssignNB(NetAssign_*lv, NetExpr*rv, NetEvWait*ev, NetExpr*cnt)
 : NetAssignBase(lv, rv)
@@ -372,9 +370,7 @@ NetAssignNB::NetAssignNB(NetAssign_*lv, NetExpr*rv, NetEvWait*ev, NetExpr*cnt)
       count_ = cnt;
 }
 
-NetAssignNB::~NetAssignNB()
-{
-}
+NetAssignNB::~NetAssignNB() = default;
 
 unsigned NetAssignNB::nevents() const
 {
@@ -398,33 +394,25 @@ NetCAssign::NetCAssign(NetAssign_*lv, NetExpr*rv)
 {
 }
 
-NetCAssign::~NetCAssign()
-{
-}
+NetCAssign::~NetCAssign() = default;
 
 NetDeassign::NetDeassign(NetAssign_*l)
 : NetAssignBase(l, 0)
 {
 }
 
-NetDeassign::~NetDeassign()
-{
-}
+NetDeassign::~NetDeassign() = default;
 
 NetForce::NetForce(NetAssign_*lv, NetExpr*rv)
 : NetAssignBase(lv, rv)
 {
 }
 
-NetForce::~NetForce()
-{
-}
+NetForce::~NetForce() = default;
 
 NetRelease::NetRelease(NetAssign_*l)
 : NetAssignBase(l, 0)
 {
 }
 
-NetRelease::~NetRelease()
-{
-}
+NetRelease::~NetRelease() = default;

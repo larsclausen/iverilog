@@ -26,9 +26,7 @@ PModport::PModport(perm_string n)
 {
 }
 
-PModport::~PModport()
-{
-}
+PModport::~PModport() = default;
 
 PNamedItem::SymbolType PModport::symbol_type() const
 {

@@ -36,13 +36,8 @@ using namespace std;
 
 class PExpr;
 
-Definitions::Definitions()
-{
-}
-
-Definitions::~Definitions()
-{
-}
+Definitions::Definitions() = default;
+Definitions::~Definitions() = default;
 
 void Definitions::add_enumeration_set(const enum_type_t*key, netenum_t*enum_set)
 {

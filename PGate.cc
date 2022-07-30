@@ -66,9 +66,7 @@ PGate::PGate(perm_string name, list<PExpr*>*pins)
       str1_ = IVL_DR_STRONG;
 }
 
-PGate::~PGate()
-{
-}
+PGate::~PGate() = default;
 
 void PGate::set_ranges(list<pform_range_t>*ranges)
 {
@@ -142,9 +140,7 @@ PGAssign::PGAssign(list<PExpr*>*pins, list<PExpr*>*dels)
       assert(pin_count() == 2);
 }
 
-PGAssign::~PGAssign()
-{
-}
+PGAssign::~PGAssign() = default;
 
 PGBuiltin::PGBuiltin(Type t, perm_string name,
 		     list<PExpr*>*pins,
@@ -161,9 +157,7 @@ PGBuiltin::PGBuiltin(Type t, perm_string name,
 }
 
 
-PGBuiltin::~PGBuiltin()
-{
-}
+PGBuiltin::~PGBuiltin() = default;
 
 const char* PGBuiltin::gate_name() const
 {
@@ -282,9 +276,7 @@ PGModule::PGModule(Module*type, perm_string name)
 {
 }
 
-PGModule::~PGModule()
-{
-}
+PGModule::~PGModule() = default;
 
 void PGModule::set_parameters(list<PExpr*>*o)
 {

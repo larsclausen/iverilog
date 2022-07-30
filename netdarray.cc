@@ -28,9 +28,7 @@ netdarray_t::netdarray_t(ivl_type_t vec)
 {
 }
 
-netdarray_t::~netdarray_t()
-{
-}
+netdarray_t::~netdarray_t() = default;
 
 ivl_variable_type_t netdarray_t::base_type(void) const
 {

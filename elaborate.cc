@@ -6559,7 +6559,7 @@ class elaborate_package_t : public elaborator_work_item_t {
       : elaborator_work_item_t(d), scope_(scope), package_(p)
       { }
 
-      ~elaborate_package_t() { }
+      ~elaborate_package_t() = default;
 
       virtual void elaborate_runrun()
       {
@@ -6578,7 +6578,7 @@ class elaborate_root_scope_t : public elaborator_work_item_t {
       : elaborator_work_item_t(des__), scope_(scope), rmod_(rmod)
       { }
 
-      ~elaborate_root_scope_t() { }
+      ~elaborate_root_scope_t() = default;
 
       virtual void elaborate_runrun()
       {
@@ -6612,7 +6612,7 @@ class top_defparams : public elaborator_work_item_t {
       : elaborator_work_item_t(des__)
       { }
 
-      ~top_defparams() { }
+      ~top_defparams() = default;
 
       virtual void elaborate_runrun()
       {
@@ -6643,7 +6643,7 @@ class later_defparams : public elaborator_work_item_t {
       : elaborator_work_item_t(des__)
       { }
 
-      ~later_defparams() { }
+      ~later_defparams() = default;
 
       virtual void elaborate_runrun()
       {

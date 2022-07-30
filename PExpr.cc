@@ -40,9 +40,7 @@ PExpr::PExpr()
       signed_flag_ = false;
 }
 
-PExpr::~PExpr()
-{
-}
+PExpr::~PExpr() = default;
 
 void PExpr::declare_implicit_nets(LexicalScope*, NetNet::Type)
 {
@@ -113,18 +111,14 @@ PEAssignPattern::PEAssignPattern(const list<PExpr*>&p)
       }
 }
 
-PEAssignPattern::~PEAssignPattern()
-{
-}
+PEAssignPattern::~PEAssignPattern() = default;
 
 PEBinary::PEBinary(char op, PExpr*l, PExpr*r)
 : op_(op), left_(l), right_(r)
 {
 }
 
-PEBinary::~PEBinary()
-{
-}
+PEBinary::~PEBinary() = default;
 
 void PEBinary::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)
 {
@@ -143,18 +137,14 @@ PECastSize::PECastSize(PExpr*si, PExpr*b)
 {
 }
 
-PECastSize::~PECastSize()
-{
-}
+PECastSize::~PECastSize() = default;
 
 PECastType::PECastType(data_type_t*t, PExpr*b)
 : target_(t), base_(b)
 {
 }
 
-PECastType::~PECastType()
-{
-}
+PECastType::~PECastType() = default;
 
 PEBComp::PEBComp(char op, PExpr*l, PExpr*r)
 : PEBinary(op, l, r)
@@ -163,9 +153,7 @@ PEBComp::PEBComp(char op, PExpr*l, PExpr*r)
       r_width_ = 0;
 }
 
-PEBComp::~PEBComp()
-{
-}
+PEBComp::~PEBComp() = default;
 
 PEBLogic::PEBLogic(char op, PExpr*l, PExpr*r)
 : PEBinary(op, l, r)
@@ -173,36 +161,28 @@ PEBLogic::PEBLogic(char op, PExpr*l, PExpr*r)
       assert(op == 'a' || op == 'o' || op == 'q' || op == 'Q');
 }
 
-PEBLogic::~PEBLogic()
-{
-}
+PEBLogic::~PEBLogic() = default;
 
 PEBLeftWidth::PEBLeftWidth(char op, PExpr*l, PExpr*r)
 : PEBinary(op, l, r)
 {
 }
 
-PEBLeftWidth::~PEBLeftWidth()
-{
-}
+PEBLeftWidth::~PEBLeftWidth() = default;
 
 PEBPower::PEBPower(char op, PExpr*l, PExpr*r)
 : PEBLeftWidth(op, l, r)
 {
 }
 
-PEBPower::~PEBPower()
-{
-}
+PEBPower::~PEBPower() = default;
 
 PEBShift::PEBShift(char op, PExpr*l, PExpr*r)
 : PEBLeftWidth(op, l, r)
 {
 }
 
-PEBShift::~PEBShift()
-{
-}
+PEBShift::~PEBShift() = default;
 
 PECallFunction::PECallFunction(const pform_name_t&n, const vector<PExpr *> &parms)
 : package_(0), path_(n), parms_(parms), is_overridden_(false)
@@ -263,9 +243,7 @@ PECallFunction::PECallFunction(perm_string n, const list<PExpr*>&parms)
 	    parms_[tmp_idx++] = *idx;
 }
 
-PECallFunction::~PECallFunction()
-{
-}
+PECallFunction::~PECallFunction() = default;
 
 void PECallFunction::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)
 {
@@ -325,9 +303,7 @@ PEEvent::PEEvent(PEEvent::edge_t t, PExpr*e)
 {
 }
 
-PEEvent::~PEEvent()
-{
-}
+PEEvent::~PEEvent() = default;
 
 PEEvent::edge_t PEEvent::type() const
 {
@@ -345,13 +321,8 @@ PExpr* PEEvent::expr() const
       return expr_;
 }
 
-PENull::PENull(void)
-{
-}
-
-PENull::~PENull()
-{
-}
+PENull::PENull() = default;
+PENull::~PENull() = default;
 
 PEFNumber::PEFNumber(verireal*v)
 : value_(v)
@@ -384,9 +355,7 @@ PEIdent::PEIdent(PPackage*pkg, const pform_name_t&that)
 {
 }
 
-PEIdent::~PEIdent()
-{
-}
+PEIdent::~PEIdent() = default;
 
 static bool find_enum_constant(LexicalScope*scope, perm_string name)
 {
@@ -485,18 +454,14 @@ PENewClass::PENewClass(const list<PExpr*>&p)
       }
 }
 
-PENewClass::~PENewClass()
-{
-}
+PENewClass::~PENewClass() = default;
 
 PENewCopy::PENewCopy(PExpr*src)
 : src_(src)
 {
 }
 
-PENewCopy::~PENewCopy()
-{
-}
+PENewCopy::~PENewCopy() = default;
 
 PENumber::PENumber(verinum*vp)
 : value_(vp)
@@ -543,9 +508,7 @@ PETernary::PETernary(PExpr*e, PExpr*t, PExpr*f)
 {
 }
 
-PETernary::~PETernary()
-{
-}
+PETernary::~PETernary() = default;
 
 void PETernary::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)
 {
@@ -568,18 +531,14 @@ PETypename::PETypename(data_type_t*dt)
 {
 }
 
-PETypename::~PETypename()
-{
-}
+PETypename::~PETypename() = default;
 
 PEUnary::PEUnary(char op, PExpr*ex)
 : op_(op), expr_(ex)
 {
 }
 
-PEUnary::~PEUnary()
-{
-}
+PEUnary::~PEUnary() = default;
 
 void PEUnary::declare_implicit_nets(LexicalScope*scope, NetNet::Type type)
 {
@@ -593,10 +552,5 @@ bool PEUnary::has_aa_term(Design*des, NetScope*scope) const
       return expr_->has_aa_term(des, scope);
 }
 
-PEVoid::PEVoid()
-{
-}
-
-PEVoid::~PEVoid()
-{
-}
+PEVoid::PEVoid() = default;
+PEVoid::~PEVoid() = default;

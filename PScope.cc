@@ -63,6 +63,4 @@ PScopeExtra::PScopeExtra(perm_string n, LexicalScope*parent)
       time_prec_is_local = false;
 }
 
-PScopeExtra::~PScopeExtra()
-{
-}
+PScopeExtra::~PScopeExtra() = default;

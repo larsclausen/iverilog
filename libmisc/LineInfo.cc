@@ -27,9 +27,7 @@ LineInfo::LineInfo()
 {
 }
 
-LineInfo::~LineInfo()
-{
-}
+LineInfo::~LineInfo() = default;
 
 string LineInfo::get_fileline() const
 {

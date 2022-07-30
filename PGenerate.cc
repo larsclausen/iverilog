@@ -34,9 +34,7 @@ PGenerate::PGenerate(LexicalScope*parent, unsigned id)
       loop_step = 0;
 }
 
-PGenerate::~PGenerate()
-{
-}
+PGenerate::~PGenerate() = default;
 
 void PGenerate::add_gate(PGate*gate)
 {

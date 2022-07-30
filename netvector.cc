@@ -60,9 +60,7 @@ netvector_t::netvector_t(ivl_variable_type_t type)
 {
 }
 
-netvector_t::~netvector_t()
-{
-}
+netvector_t::~netvector_t() = default;
 
 ivl_variable_type_t netvector_t::base_type() const
 {
