@@ -43,6 +43,7 @@ class verinum {
       verinum();
       explicit verinum(const std::string&str);
       verinum(const V*v, unsigned nbits, bool has_len =true);
+      verinum(std::unique_ptr<V[]> &&v, unsigned nbits, bool has_len =true);
       explicit verinum(V, unsigned nbits =1, bool has_len =true);
       verinum(uint64_t val, unsigned bits);
       verinum(double val, bool);

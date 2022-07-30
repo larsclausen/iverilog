@@ -57,6 +57,10 @@ verinum::verinum(const V*bits, unsigned nbits, bool has_len__)
 {
       std::copy_n(bits, nbits, bits_.get());
 }
+
+verinum::verinum(std::unique_ptr<V[]> &&bits, unsigned nbits, bool has_len__)
+: bits_(std::move(bits)), nbits_(nbits), has_len_(has_len__),
+  has_sign_(false), is_single_(false), string_flag_(false)
 {
 }
 
@@ -1071,7 +1075,7 @@ verinum operator + (const verinum&left, const verinum&right)
 	    return result;
       }
 
-      verinum::V*val_bits = new verinum::V[max_len+1];
+      std::unique_ptr<verinum::V[]> val_bits(new verinum::V[max_len+1]);
 
       verinum::V carry = verinum::V0;
       for (unsigned idx = 0 ;  idx < min_len ;  idx += 1)
@@ -1100,10 +1104,8 @@ verinum operator + (const verinum&left, const verinum&right)
 		  if (val_bits[max_len] != verinum::V0) len += 1;
 	    }
       }
-      verinum result (val_bits, len, has_len_flag);
+      verinum result (std::move(val_bits), len, has_len_flag);
       result.has_sign(signed_flag);
-
-      delete[]val_bits;
 
       return result;
 }
@@ -1125,7 +1127,7 @@ verinum operator - (const verinum&left, const verinum&right)
 	    return result;
       }
 
-      verinum::V*val_bits = new verinum::V[max_len+1];
+      std::unique_ptr<verinum::V[]> val_bits(new verinum::V[max_len+1]);
 
       verinum::V carry = verinum::V1;
       for (unsigned idx = 0 ;  idx < min_len ;  idx += 1)
@@ -1150,10 +1152,8 @@ verinum operator - (const verinum&left, const verinum&right)
 	    val_bits[max_len] = add_with_carry(lpad, ~rpad, carry);
 	    if (val_bits[max_len] != val_bits[max_len-1]) len += 1;
       }
-      verinum result (val_bits, len, has_len_flag);
+      verinum result (std::move(val_bits), len, has_len_flag);
       result.has_sign(signed_flag);
-
-      delete[]val_bits;
 
       return result;
 }
@@ -1173,7 +1173,7 @@ verinum operator - (const verinum&right)
 	    return result;
       }
 
-      verinum::V*val_bits = new verinum::V[len+1];
+      std::unique_ptr<verinum::V[]> val_bits(new verinum::V[len+1]);
 
       verinum::V carry = verinum::V1;
       for (unsigned idx = 0 ;  idx < len ;  idx += 1)
@@ -1183,10 +1183,8 @@ verinum operator - (const verinum&right)
 	    val_bits[len] = add_with_carry(verinum::V0, ~sign_bit(right), carry);
 	    if (val_bits[len] != val_bits[len-1]) len += 1;
       }
-      verinum result (val_bits, len, has_len_flag);
+      verinum result (std::move(val_bits), len, has_len_flag);
       result.has_sign(signed_flag);
-
-      delete[]val_bits;
 
       return result;
 }
