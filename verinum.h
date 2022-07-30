@@ -19,6 +19,7 @@
  *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+# include  <memory>
 # include  <string>
 
 # include  "config.h"
@@ -113,7 +114,7 @@ class verinum {
       void signed_trim();
 
     private:
-      V* bits_;
+      std::unique_ptr<V[]> bits_;
       unsigned nbits_;
       bool has_len_;
       bool has_sign_;

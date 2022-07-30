@@ -47,18 +47,17 @@ extern "C" long int lround(double x)
 static verinum::V add_with_carry(verinum::V l, verinum::V r, verinum::V&c);
 
 verinum::verinum()
-: bits_(0), nbits_(0), has_len_(false), has_sign_(false), is_single_(false), string_flag_(false)
+: nbits_(0), has_len_(false), has_sign_(false), is_single_(false), string_flag_(false)
 {
 }
 
 verinum::verinum(const V*bits, unsigned nbits, bool has_len__)
-: has_len_(has_len__), has_sign_(false), is_single_(false), string_flag_(false)
+: bits_(new V[nbits]), nbits_(nbits),  has_len_(has_len__),
+  has_sign_(false), is_single_(false), string_flag_(false)
 {
-      nbits_ = nbits;
-      bits_ = new V [nbits];
-      for (unsigned idx = 0 ;  idx < nbits ;  idx += 1) {
-	    bits_[idx] = bits[idx];
-      }
+      std::copy_n(bits, nbits, bits_.get());
+}
+{
 }
 
 static string process_verilog_string_quotes(const string&str)
@@ -156,7 +155,7 @@ verinum::verinum(const string&s)
 	// Special case: The string "" is 8 bits of 0.
       if (nbits_ == 0) {
 	    nbits_ = 8;
-	    bits_ = new V [nbits_];
+	    bits_.reset(new V [nbits_]);
 	    bits_[0] = V0;
 	    bits_[1] = V0;
 	    bits_[2] = V0;
@@ -168,10 +167,10 @@ verinum::verinum(const string&s)
 	    return;
       }
 
-      bits_ = new V [nbits_];
+      bits_.reset(new V [nbits_]);
 
       unsigned idx, cp;
-      V*bp = bits_+nbits_;
+      V*bp = bits_.get()+nbits_;
       for (idx = nbits_, cp = 0 ;  idx > 0 ;  idx -= 8, cp += 1) {
 	    char ch = str[cp];
 	    *(--bp) = (ch&0x80) ? V1 : V0;
@@ -186,19 +185,17 @@ verinum::verinum(const string&s)
 }
 
 verinum::verinum(verinum::V val, unsigned n, bool h)
-: has_len_(h), has_sign_(false), is_single_(false), string_flag_(false)
+: bits_(new V[n]), nbits_(n), has_len_(h), has_sign_(false),
+  is_single_(false), string_flag_(false)
 {
-      nbits_ = n;
-      bits_ = new V[nbits_];
       for (unsigned idx = 0 ;  idx < nbits_ ;  idx += 1)
 	    bits_[idx] = val;
 }
 
 verinum::verinum(uint64_t val, unsigned n)
-: has_len_(true), has_sign_(false), is_single_(false), string_flag_(false)
+: bits_(new V[n]), nbits_(n), has_len_(true), has_sign_(false),
+  is_single_(false), string_flag_(false)
 {
-      nbits_ = n;
-      bits_ = new V[nbits_];
       for (unsigned idx = 0 ;  idx < nbits_ ;  idx += 1) {
 	    bits_[idx] = (val&1) ? V1 : V0;
 	    val >>= (uint64_t)1;
@@ -218,7 +215,7 @@ verinum::verinum(double val, bool)
 	/* We return `bx for a NaN or +/- infinity. */
       if (val != val || (val && (val == 0.5*val))) {
 	    nbits_ = 1;
-	    bits_ = new V[nbits_];
+	    bits_.reset(new V[nbits_]);
 	    bits_[0] = Vx;
 	    return;
       }
@@ -236,7 +233,7 @@ verinum::verinum(double val, bool)
 	/* Get the exponent and fractional part of the number. */
       fraction = frexp(val, &exponent);
       nbits_ = exponent+1;
-      bits_ = new V[nbits_];
+      bits_.reset(new V[nbits_]);
 
 	/* If the value is small enough just use lround(). */
       if (nbits_ <= BITS_IN_LONG) {
@@ -306,8 +303,7 @@ void verinum::signed_trim()
 	    V* tbits = new V[tlen];
 	    for (unsigned idx = 0; idx < tlen; idx += 1)
 		  tbits[idx] = bits_[idx];
-	    delete[] bits_;
-	    bits_ = tbits;
+	    bits_.reset(tbits);
 	    nbits_ = tlen;
       }
 }
@@ -316,7 +312,7 @@ verinum::verinum(const verinum&that)
 {
       string_flag_ = that.string_flag_;
       nbits_ = that.nbits_;
-      bits_ = new V[nbits_];
+      bits_.reset(new V[nbits_]);
       has_len_ = that.has_len_;
       has_sign_ = that.has_sign_;
       is_single_ = that.is_single_;
@@ -328,7 +324,7 @@ verinum::verinum(const verinum&that, unsigned nbits)
 {
       string_flag_ = that.string_flag_ && (that.nbits_ == nbits);
       nbits_ = nbits;
-      bits_ = new V[nbits_];
+      bits_.reset(new V[nbits_]);
       has_len_ = true;
       has_sign_ = that.has_sign_;
       is_single_ = false;
@@ -365,25 +361,21 @@ verinum::verinum(int64_t that)
 
       nbits_ += 1;
 
-      bits_ = new V[nbits_];
+      bits_.reset(new V[nbits_]);
       for (unsigned idx = 0 ;  idx < nbits_ ;  idx += 1) {
 	    bits_[idx] = (that & 1)? V1 : V0;
 	    that >>= 1;
       }
 }
 
-verinum::~verinum()
-{
-      delete[]bits_;
-}
+verinum::~verinum() = default;
 
 verinum& verinum::operator= (const verinum&that)
 {
       if (this == &that) return *this;
       if (nbits_ != that.nbits_) {
-            delete[]bits_;
             nbits_ = that.nbits_;
-            bits_ = new V[that.nbits_];
+            bits_.reset(new V[that.nbits_]);
       }
       for (unsigned idx = 0 ;  idx < nbits_ ;  idx += 1)
 	    bits_[idx] = that.bits_[idx];
@@ -563,7 +555,7 @@ string verinum::as_string() const
       string res;
       for (unsigned idx = nbits_ ;  idx > 0 ;  idx -= 8) {
 	    char char_val = 0;
-	    V*bp = bits_+idx;
+	    V*bp = bits_.get() + idx;
 
 	    if (*(--bp) == V1) char_val |= 0x80;
 	    if (*(--bp) == V1) char_val |= 0x40;
