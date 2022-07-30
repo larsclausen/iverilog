@@ -324,6 +324,13 @@ verinum::verinum(const verinum&that)
 	    bits_[idx] = that.bits_[idx];
 }
 
+verinum::verinum(verinum&& that)
+: bits_(std::move(that.bits_)), nbits_(that.nbits_), has_len_(that.has_len_),
+  has_sign_(that.has_sign_), is_single_(that.is_single_),
+  string_flag_(that.string_flag_)
+{
+}
+
 verinum::verinum(const verinum&that, unsigned nbits)
 {
       string_flag_ = that.string_flag_ && (that.nbits_ == nbits);
@@ -388,6 +395,20 @@ verinum& verinum::operator= (const verinum&that)
       has_sign_ = that.has_sign_;
       is_single_ = that.is_single_;
       string_flag_ = that.string_flag_;
+      return *this;
+}
+
+verinum& verinum::operator= (verinum&&that)
+{
+      if (this == &that) return *this;
+
+      std::swap(bits_, that.bits_);
+      nbits_ = that.nbits_;
+      has_len_ = that.has_len_;
+      has_sign_ = that.has_sign_;
+      is_single_ = that.is_single_;
+      string_flag_ = that.string_flag_;
+
       return *this;
 }
 

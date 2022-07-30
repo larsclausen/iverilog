@@ -48,6 +48,7 @@ class verinum {
       verinum(uint64_t val, unsigned bits);
       verinum(double val, bool);
       verinum(const verinum&);
+      verinum(verinum&&that);
 
 	// Create a signed number, with an unspecified number of bits.
       explicit verinum(int64_t val);
@@ -58,6 +59,7 @@ class verinum {
 
       ~verinum();
       verinum& operator= (const verinum&);
+      verinum& operator= (verinum&&that);
 
 	// Number of stored bits in this number.
       unsigned len() const { return nbits_; }
