@@ -1683,9 +1683,9 @@ bool do_cast_vec_dar(vthread_t thr, vvp_code_t cp, bool as_vec4)
       thr->pop_object(obj);
 
       vvp_darray*darray = obj.peek<vvp_darray>();
-      assert(darray);
-
-      vvp_vector4_t vec = darray->get_bitstream(as_vec4);
+      vvp_vector4_t vec;
+      if (darray)
+	    vec = darray->get_bitstream(as_vec4);
       if (vec.size() != wid) {
 	    cerr << thr->get_fileline()
 	         << "VVP error: size mismatch when casting dynamic array to vector." << endl;

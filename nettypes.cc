@@ -61,6 +61,11 @@ bool ivl_type_s::get_scalar() const
       return false;
 }
 
+bool ivl_type_s::bitstream_type() const
+{
+      return packed();
+}
+
 bool ivl_type_s::type_compatible(ivl_type_t that) const
 {
       if (this == that)
@@ -81,6 +86,11 @@ netarray_t::~netarray_t()
 ivl_variable_type_t netarray_t::base_type() const
 {
       return element_type_->base_type();
+}
+
+ivl_variable_type_t netarray_t::bitstream_type() const
+{
+      return element_type_->bitstream_type();
 }
 
 unsigned long netrange_width(const vector<netrange_t>&packed)

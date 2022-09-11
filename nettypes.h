@@ -46,6 +46,7 @@ class ivl_type_s {
       virtual ivl_variable_type_t base_type() const;
       virtual bool get_signed() const;
       virtual bool get_scalar() const;
+      virtual bool bitstream_type() const;
 
 	// Return true if "that" type is compatible with this
 	// type. Compatible means the types are essentially the same.
@@ -82,6 +83,7 @@ class netarray_t : public ivl_type_s {
 
 	// The base_type() for arrays is the base_Typeof the element.
       ivl_variable_type_t base_type() const;
+      bool bitstream_type() const;
 
     public:
       inline ivl_type_t element_type() const { return element_type_; }
