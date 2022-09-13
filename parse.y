@@ -773,6 +773,12 @@ assignment_pattern /* IEEE1800-2005: A.6.7.1 */
 	delete $2;
 	$$ = tmp;
       }
+  | K_LP expression '{' expression_list_proper '}' '}'
+      { PEAssignPattern*tmp = new PEAssignPattern(*$4, $2);
+	FILE_NAME(tmp, @1);
+	delete $4;
+	$$ = tmp;
+      }
   | K_LP '}'
       { PEAssignPattern*tmp = new PEAssignPattern;
 	FILE_NAME(tmp, @1);

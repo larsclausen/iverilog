@@ -189,6 +189,7 @@ void dll_target::expr_array_pattern(const NetEArrayPattern*net)
       expr_tmp->sized_   = 0;
       FILE_NAME(expr_tmp, net);
 
+      expr_tmp->u_.array_pattern_.rept = net->repeat();
       expr_tmp->u_.array_pattern_.parms = net->item_size();
       expr_tmp->u_.array_pattern_.parm = new ivl_expr_t [net->item_size()];
 

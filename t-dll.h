@@ -247,6 +247,7 @@ struct ivl_expr_s {
 	    } binary_;
 
 	    struct {
+		  unsigned int rept;
 		  size_t parms;
 		  ivl_expr_t*parm;
 	    } array_pattern_;

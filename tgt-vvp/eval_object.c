@@ -66,6 +66,55 @@ void darray_new(ivl_type_t element_type, unsigned size_reg)
       clr_word(size_reg);
 }
 
+int eval_darray_pattern(ivl_type_t element_type, ivl_expr_t rval)
+{
+      unsigned idx, ridx;
+
+      for (idx = 0; idx < ivl_expr_parms(rval); idx++) {
+	    switch (ivl_type_base(element_type)) {
+		case IVL_VT_BOOL:
+		case IVL_VT_LOGIC:
+		  draw_eval_vec4(ivl_expr_parm(rval, idx));
+		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+		  for (ridx = 0; ridx < ivl_expr_repeat(rval); ridx++) {
+			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n",
+			        idx + ridx * ivl_expr_parms(rval));
+			fprintf(vvp_out, "    %%set/dar/obj/vec4 3;\n");
+		  }
+		  fprintf(vvp_out, "    %%pop/vec4 1;\n");
+		  break;
+
+		case IVL_VT_REAL:
+		  draw_eval_real(ivl_expr_parm(rval, idx));
+		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+		  for (ridx = 0; ridx < ivl_expr_repeat(rval); ridx++) {
+			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n",
+			        idx + ridx * ivl_expr_parms(rval));
+			fprintf(vvp_out, "    %%set/dar/obj/real 3;\n");
+		  }
+		  fprintf(vvp_out, "    %%pop/real 1;\n");
+		  break;
+
+		case IVL_VT_STRING:
+		  draw_eval_string(ivl_expr_parm(rval, idx));
+		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+		  for (ridx = 0; ridx < ivl_expr_repeat(rval); ridx++) {
+			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n",
+			        idx + ridx * ivl_expr_parms(rval));
+			fprintf(vvp_out, "    %%set/dar/obj/str 3;\n");
+		  }
+		  fprintf(vvp_out, "    %%pop/str 1;\n");
+		  break;
+
+		default:
+		  fprintf(vvp_out, "; ERROR: show_stmt_assign_darray_pattern: type_base=%d not implemented\n", ivl_type_base(element_type));
+		  return 1;
+	    }
+      }
+
+      return 0;
+}
+
 static int eval_darray_new(ivl_expr_t ex)
 {
       int errors = 0;
@@ -85,38 +134,7 @@ static int eval_darray_new(ivl_expr_t ex)
       darray_new(element_type, size_reg);
 
       if (init_expr && ivl_expr_type(init_expr)==IVL_EX_ARRAY_PATTERN) {
-	    unsigned idx;
-	    switch (ivl_type_base(element_type)) {
-		case IVL_VT_BOOL:
-		case IVL_VT_LOGIC:
-		  for (idx = 0 ; idx < ivl_expr_parms(init_expr) ; idx += 1) {
-			draw_eval_vec4(ivl_expr_parm(init_expr,idx));
-			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-			fprintf(vvp_out, "    %%set/dar/obj/vec4 3;\n");
-			fprintf(vvp_out, "    %%pop/vec4 1;\n");
-		  }
-		  break;
-		case IVL_VT_REAL:
-		  for (idx = 0 ; idx < ivl_expr_parms(init_expr) ; idx += 1) {
-			draw_eval_real(ivl_expr_parm(init_expr,idx));
-			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-			fprintf(vvp_out, "    %%set/dar/obj/real 3;\n");
-			fprintf(vvp_out, "    %%pop/real 1;\n");
-		  }
-		  break;
-		case IVL_VT_STRING:
-		  for (idx = 0 ; idx < ivl_expr_parms(init_expr) ; idx += 1) {
-			draw_eval_string(ivl_expr_parm(init_expr,idx));
-			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-			fprintf(vvp_out, "    %%set/dar/obj/str 3;\n");
-			fprintf(vvp_out, "    %%pop/str 1;\n");
-		  }
-		  break;
-		default:
-		  fprintf(vvp_out, "; ERROR: Sorry, this type not supported here.\n");
-		  errors += 1;
-		  break;
-	    }
+	    errors += eval_darray_pattern(element_type, init_expr);
       } else if (init_expr && (ivl_expr_value(init_expr) == IVL_VT_DARRAY)) {
 		  ivl_signal_t sig = ivl_expr_signal(init_expr);
 		  fprintf(vvp_out, "    %%load/obj v%p_0;\n", sig);

@@ -97,8 +97,8 @@ PEAssignPattern::PEAssignPattern()
 {
 }
 
-PEAssignPattern::PEAssignPattern(const list<PExpr*>&p)
-: parms_(p.size())
+PEAssignPattern::PEAssignPattern(const list<PExpr*>&p, PExpr *repeat)
+: parms_(p.size()), repeat_(repeat)
 {
       size_t idx = 0;
       for (list<PExpr*>::const_iterator cur = p.begin()

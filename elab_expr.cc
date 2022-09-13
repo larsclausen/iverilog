@@ -23,6 +23,7 @@
 # include  <cstdlib>
 # include  <cstring>
 # include  <climits>
+# include  <memory>
 # include "compiler.h"
 
 # include  "PPackage.h"
@@ -145,6 +146,51 @@ NetExpr* elaborate_rval_expr(Design*des, NetScope*scope, ivl_type_t lv_net_type,
 			   false, lv_type, force_unsigned);
 }
 
+unsigned int evaluate_repeat(Design *des, NetScope *scope, const LineInfo &loc,
+			     PExpr *repeat, const char *what)
+{
+      std::unique_ptr<NetExpr> repeat_expr(elab_and_eval(des, scope, repeat, -1,
+						         true));
+      if (!repeat_expr) {
+	    return 1;
+      }
+
+      if (repeat->expr_type() == IVL_VT_REAL) {
+	    cerr << loc.get_fileline() << ": error: " << what
+		 << " repeat expression can not be REAL." << endl;
+	    des->errors += 1;
+	    return 1;
+      }
+
+      NetEConst*rep = dynamic_cast<NetEConst*>(repeat_expr.get());
+      if (!rep) {
+	    cerr << loc.get_fileline() << ": error: " << what
+	         << " repeat expression is not constant." << endl;
+	    cerr << loc.get_fileline() << ":      : The expression is: "
+		 << *repeat_expr << endl;
+	    des->errors += 1;
+	    return 1;
+      }
+
+      if (!rep->value().is_defined()) {
+	    cerr << loc.get_fileline() << ": error: " << what
+		 << " repeat may not be undefined (" << rep->value()
+		 << ")." << endl;
+	    des->errors += 1;
+	    return 1;
+      }
+
+      if (rep->value().is_negative()) {
+	    cerr << loc.get_fileline() << ": error: " << what
+		 << " repeat may not be negative (" << rep->value().as_long()
+		 << ")." << endl;
+	    des->errors += 1;
+	    return 1;
+      }
+
+      return rep->value().as_ulong();
+}
+
 /*
  * If the mode is UPSIZE, make sure the final expression width is at
  * least integer_width, but return the calculated lossless width to
@@ -249,7 +295,19 @@ NetExpr*PEAssignPattern::elaborate_expr_darray_(Design*des, NetScope*scope,
 	    elem_exprs[idx] = tmp;
       }
 
-      NetEArrayPattern*res = new NetEArrayPattern(array_type, elem_exprs);
+      unsigned int repeat_count = 1;
+      if (repeat_) {
+	    repeat_count = evaluate_repeat(des, scope, *this, repeat_.get(),
+					   "Assignment pattern");
+	    if (repeat_count == 0) {
+		  cerr << get_fileline() << ": error: Assignment pattern repeat"
+		       << " may not be zero." << endl;
+		  des->errors += 1;
+	    }
+      }
+
+      NetEArrayPattern*res = new NetEArrayPattern(array_type, repeat_count,
+						  elem_exprs);
       res->set_line(*this);
       return res;
 }
@@ -3568,46 +3626,8 @@ unsigned PEConcat::test_width(Design*des, NetScope*scope, width_mode_t&)
 	// If there is a repeat expression, then evaluate the constant
 	// value and set the repeat count.
       if (repeat_ && (scope != tested_scope_)) {
-	    NetExpr*tmp = elab_and_eval(des, scope, repeat_, -1, true);
-	    if (tmp == 0) return 0;
-
-	    if (tmp->expr_type() == IVL_VT_REAL) {
-		  cerr << tmp->get_fileline() << ": error: Concatenation "
-		       << "repeat expression can not be REAL." << endl;
-		  des->errors += 1;
-		  return 0;
-	    }
-
-	    NetEConst*rep = dynamic_cast<NetEConst*>(tmp);
-
-	    if (rep == 0) {
-		  cerr << get_fileline() << ": error: "
-			"Concatenation repeat expression is not constant."
-		       << endl;
-		  cerr << get_fileline() << ":      : The expression is: "
-		       << *tmp << endl;
-		  des->errors += 1;
-		  return 0;
-	    }
-
-	    if (!rep->value().is_defined()) {
-		  cerr << get_fileline() << ": error: Concatenation repeat "
-		       << "may not be undefined (" << rep->value()
-		       << ")." << endl;
-		  des->errors += 1;
-		  return 0;
-	    }
-
-	    if (rep->value().is_negative()) {
-		  cerr << get_fileline() << ": error: Concatenation repeat "
-		       << "may not be negative (" << rep->value().as_long()
-		       << ")." << endl;
-		  des->errors += 1;
-		  return 0;
-	    }
-
-            repeat_count_ = rep->value().as_ulong();
-
+            repeat_count_ = evaluate_repeat(des, scope, *this, repeat_,
+					    "Concatenation");
             tested_scope_ = scope;
       }
       expr_width_ *= repeat_count_;
@@ -3622,6 +3642,13 @@ static int concat_depth = 0;
 NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 				  ivl_type_t ntype, unsigned flags) const
 {
+
+      if (repeat_) {
+	    cerr << get_fileline() << ": error: "
+	         << "Array concatenation repeat is not allowed." << endl;
+	    des->errors++;
+      }
+
       switch (ntype->base_type()) {
 	  case IVL_VT_QUEUE:
 // FIXME: Does a DARRAY support a zero size?
@@ -3644,7 +3671,8 @@ NetExpr* PEConcat::elaborate_expr(Design*des, NetScope*scope,
 			elem_exprs[idx] = tmp;
 		  }
 
-		  NetEArrayPattern*res = new NetEArrayPattern(array_type, elem_exprs);
+		  NetEArrayPattern*res = new NetEArrayPattern(array_type, 1,
+							      elem_exprs);
 		  res->set_line(*this);
 		  return res;
 	    }

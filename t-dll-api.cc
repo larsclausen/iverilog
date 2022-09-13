@@ -657,8 +657,18 @@ extern "C" unsigned ivl_expr_parms(ivl_expr_t net)
 extern "C" unsigned ivl_expr_repeat(ivl_expr_t net)
 {
       assert(net);
-      assert(net->type_ == IVL_EX_CONCAT);
-      return net->u_.concat_.rept;
+      switch (net->type_) {
+
+	  case IVL_EX_ARRAY_PATTERN:
+	    return net->u_.array_pattern_.rept;
+
+	  case IVL_EX_CONCAT:
+	    return net->u_.concat_.rept;
+
+	  default:
+	    assert(0);
+	    return 0;
+      }
 }
 
 extern "C" ivl_event_t ivl_expr_event(ivl_expr_t net)

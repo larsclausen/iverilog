@@ -40,7 +40,7 @@ NetEArrayPattern*NetEArrayPattern::dup_expr() const
       for (size_t idx = 0 ; idx < tmp.size() ; idx += 1)
 	    tmp[idx] = items_[idx]->dup_expr();
 
-      NetEArrayPattern*res = new NetEArrayPattern(net_type(), tmp);
+      NetEArrayPattern*res = new NetEArrayPattern(net_type(), repeat_, tmp);
       res->set_line(*this);
       return res;
 }

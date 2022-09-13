@@ -912,6 +912,8 @@ unsigned width_of_packed_type(ivl_type_t net)
       return width;
 }
 
+int eval_darray_pattern(ivl_type_t element_type, ivl_expr_t rval);
+
 /*
  * This function handles the special case that we assign an array
  * pattern to a dynamic array. Handle this by assigning each
@@ -928,7 +930,6 @@ static int show_stmt_assign_darray_pattern(ivl_statement_t net)
       assert(ivl_type_base(var_type) == IVL_VT_DARRAY);
 
       ivl_type_t element_type = ivl_type_element(var_type);
-      unsigned idx;
       unsigned size_reg = allocate_word();
 
 #if 0
@@ -942,43 +943,15 @@ static int show_stmt_assign_darray_pattern(ivl_statement_t net)
 // FIXME: At the moment we reallocate the array space.
 //        This probably should be a resize to avoid values glitching
 	/* Allocate at least enough space for the array pattern. */
-      fprintf(vvp_out, "    %%ix/load %u, %u, 0;\n", size_reg, ivl_expr_parms(rval));
+      fprintf(vvp_out, "    %%ix/load %u, %u, 0;\n", size_reg,
+	      ivl_expr_parms(rval) * ivl_expr_repeat(rval));
 	/* This can not have have a X/Z value so clear flag 4. */
       fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
       darray_new(element_type, size_reg);
-      fprintf(vvp_out, "    %%store/obj v%p_0;\n", var);
 
       assert(ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN);
-      for (idx = 0 ; idx < ivl_expr_parms(rval) ; idx += 1) {
-	    switch (ivl_type_base(element_type)) {
-		case IVL_VT_BOOL:
-		case IVL_VT_LOGIC:
-		  draw_eval_vec4(ivl_expr_parm(rval,idx));
-		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
-		  fprintf(vvp_out, "    %%store/dar/vec4 v%p_0;\n", var);
-		  break;
-
-		case IVL_VT_REAL:
-		  draw_eval_real(ivl_expr_parm(rval,idx));
-		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
-		  fprintf(vvp_out, "    %%store/dar/r v%p_0;\n", var);
-		  break;
-
-		case IVL_VT_STRING:
-		  draw_eval_string(ivl_expr_parm(rval,idx));
-		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
-		  fprintf(vvp_out, "    %%store/dar/str v%p_0;\n", var);
-		  break;
-
-		default:
-		  fprintf(vvp_out, "; ERROR: show_stmt_assign_darray_pattern: type_base=%d not implemented\n", ivl_type_base(element_type));
-		  errors += 1;
-		  break;
-	    }
-      }
+      errors += eval_darray_pattern(element_type, rval);
+      fprintf(vvp_out, "    %%store/obj v%p_0;\n", var);
 
       return errors;
 }
@@ -1075,9 +1048,13 @@ static int show_stmt_assign_queue_pattern(ivl_signal_t var, ivl_expr_t rval,
       unsigned idx;
       unsigned max_size;
       unsigned max_elems;
+      unsigned int nparms;
+      unsigned int rep;
       assert(ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN);
       max_size = ivl_signal_array_count(var);
-      max_elems = ivl_expr_parms(rval);
+      rep = ivl_expr_repeat(rval);
+      nparms = ivl_expr_parms(rval);
+      max_elems = nparms * rep;
       if ((max_size != 0) && (max_elems > max_size)) {
 	    fprintf(stderr, "%s:%u: Warning: Array pattern assignment has more elements "
 	                    "(%u) than bounded queue '%s' supports (%u).\n"
@@ -1086,29 +1063,51 @@ static int show_stmt_assign_queue_pattern(ivl_signal_t var, ivl_expr_t rval,
 	                    max_elems, ivl_signal_basename(var), max_size, max_size);
 	    max_elems = max_size;
       }
-      for (idx = 0 ; idx < max_elems ; idx += 1) {
+
+
+	/* Save the first queue element to delete. */
+      fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", max_elems);
+      fprintf(vvp_out, "    %%delete/tail v%p_0, 3\n", var);
+
+      for (idx = 0 ; idx < nparms; idx += 1) {
 	    switch (ivl_type_base(element_type)) {
 		case IVL_VT_BOOL:
 		case IVL_VT_LOGIC:
 		  draw_eval_vec4(ivl_expr_parm(rval,idx));
-		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
-		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
-		  fprintf(vvp_out, "    %%store/qdar/v v%p_0, %d, %u;\n", var, max_idx,
-		                   width_of_packed_type(element_type));
+		  if (idx < max_elems) {
+			fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+			for (unsigned int ridx = 0; idx + ridx * nparms < max_elems; ridx++) {
+			      if (idx + (ridx + 1) * nparms < max_elems)
+				    fprintf(vvp_out, "    %%dup/vec4;\n");
+			      fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx + ridx * nparms);
+			      fprintf(vvp_out, "    %%store/qdar/v v%p_0, %d, %u;\n", var, max_idx,
+					       width_of_packed_type(element_type));
+			}
+		  } else {
+			fprintf(vvp_out, "    %%pop/vec4 1;\n");
+		  }
 		  break;
 
 		case IVL_VT_REAL:
 		  draw_eval_real(ivl_expr_parm(rval,idx));
-		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
 		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
-		  fprintf(vvp_out, "    %%store/qdar/r v%p_0, %d;\n", var, max_idx);
+		  for (unsigned int ridx = 0; ridx < rep; ridx++) {
+			if (ridx != rep - 1)
+			      fprintf(vvp_out, "    %%dup/real;\n");
+			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx + ridx * nparms);
+			fprintf(vvp_out, "    %%store/qdar/r v%p_0, %d;\n", var, max_idx);
+		  }
 		  break;
 
 		case IVL_VT_STRING:
 		  draw_eval_string(ivl_expr_parm(rval,idx));
-		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx);
 		  fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
-		  fprintf(vvp_out, "    %%store/qdar/str v%p_0, %d;\n", var, max_idx);
+		  for (unsigned int ridx = 0; ridx < rep; ridx++) {
+			if (ridx != rep - 1)
+			      fprintf(vvp_out, "    %%dup/str;\n");
+			fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx + ridx * nparms);
+			fprintf(vvp_out, "    %%store/qdar/str v%p_0, %d;\n", var, max_idx);
+		  }
 		  break;
 
 		default:
@@ -1117,15 +1116,6 @@ static int show_stmt_assign_queue_pattern(ivl_signal_t var, ivl_expr_t rval,
 		  errors += 1;
 		  break;
 	    }
-      }
-
-      if ((max_size == 0) || (max_elems < max_size)) {
-	    int del_idx = allocate_word();
-	    assert(del_idx >= 0);
-	      /* Save the first queue element to delete. */
-	    fprintf(vvp_out, "    %%ix/load %d, %u, 0;\n", del_idx, max_elems);
-	    fprintf(vvp_out, "    %%delete/tail v%p_0, %d;\n", var, del_idx);
-	    clr_word(del_idx);
       }
 
       return errors;

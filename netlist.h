@@ -2082,9 +2082,11 @@ class NetExpr  : public LineInfo {
 class NetEArrayPattern  : public NetExpr {
 
     public:
-      NetEArrayPattern(ivl_type_t lv_type, std::vector<NetExpr*>&items);
+      NetEArrayPattern(ivl_type_t lv_type, unsigned int repeat,
+		       std::vector<NetExpr*>&items);
       ~NetEArrayPattern();
 
+      unsigned int repeat() const { return repeat_; }
       inline size_t item_size() const { return items_.size(); }
       const NetExpr* item(size_t idx) const { return items_[idx]; }
 
@@ -2096,6 +2098,7 @@ class NetEArrayPattern  : public NetExpr {
                           bool nested_func = false) const;
 
     private:
+      unsigned int repeat_;
       std::vector<NetExpr*> items_;
 };
 
