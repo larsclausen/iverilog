@@ -1625,7 +1625,8 @@ NetExpr*collapse_array_indices(Design*des, NetScope*scope, NetNet*net,
 
 void assign_unpacked_with_bufz(Design*des, NetScope*scope,
 			       const LineInfo*loc,
-			       NetNet*lval, NetNet*rval)
+			       NetNet*lval, NetNet*rval,
+			       bool reverse)
 {
       ivl_assert(*loc, lval->pin_count()==rval->pin_count());
 
@@ -1636,7 +1637,10 @@ void assign_unpacked_with_bufz(Design*des, NetScope*scope,
 	    des->add_node(driver);
 
 	    connect(lval->pin(idx), driver->pin(0));
-	    connect(driver->pin(1), rval->pin(idx));
+	    if (reverse)
+		  connect(driver->pin(1), rval->pin(rval->pin_count() - idx - 1));
+	    else
+		  connect(driver->pin(1), rval->pin(idx));
       }
 }
 

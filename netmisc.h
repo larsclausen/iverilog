@@ -500,7 +500,8 @@ extern NetExpr*collapse_array_exprs(Design*des, NetScope*scope,
 
 extern void assign_unpacked_with_bufz(Design*des, NetScope*scope,
 				      const LineInfo*loc,
-				      NetNet*lval, NetNet*rval);
+				      NetNet*lval, NetNet*rval,
+				      bool reverse = false);
 
 extern NetPartSelect* detect_partselect_lval(Link&pin);
 
