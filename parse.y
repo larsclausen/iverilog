@@ -660,8 +660,8 @@ Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
 %type <decl_assignments> net_decl_assigns
 %type <decl_assignment> net_decl_assign
 
-%type <mport> port port_opt port_reference port_reference_list
-%type <mport> port_declaration
+%type <mport> port port_opt port_declaration
+%type <mport> port_reference port_reference_list port_reference_or_list
 %type <mports> list_of_ports module_port_list_opt list_of_port_declarations module_attribute_foreign
 %type <value_range> parameter_value_range parameter_value_ranges
 %type <value_range> parameter_value_ranges_opt
@@ -4424,6 +4424,14 @@ list_of_port_declarations
 		  ports->push_back(port);
 		  $$ = ports;
 		}
+	| list_of_port_declarations ',' attribute_list_opt '.' IDENTIFIER '(' port_reference_or_list ')'
+		{ std::vector<Module::port_t*> *ports = $1;
+		  Module::port_t *port = $7;
+		  port->name = lex_strings.make($5);
+		  delete[] $5;
+		  ports->push_back(port);
+		  $$ = ports;
+		}
 	| list_of_port_declarations ','
 		{
 		  yyerror(@2, "error: Superfluous comma in port declaration list.");
@@ -4456,6 +4464,12 @@ port_declaration
 	FILE_NAME(real_type, @3);
 	$$ = module_declare_port(@4, $4, $2, NetNet::WIRE,
 				 real_type, nullptr, nullptr, $1);
+      }
+  | attribute_list_opt port_direction '.' IDENTIFIER '(' port_reference ')'
+      { Module::port_t *port = $6;
+	port->name = lex_strings.make($4);
+	delete[] $4;
+	$$ = port;
       }
   ;
 
@@ -5499,7 +5513,7 @@ parameter_value_byname_list
      tweaks its name as needed. */
 
 port
-	: port_reference
+      : port_reference_or_list
 		{ $$ = $1; }
 
   /* This syntax attaches an external name to the port reference so
@@ -5507,28 +5521,8 @@ port
      references. The port_t object gets its PWire from the
      port_reference, but its name from the IDENTIFIER. */
 
-	| '.' IDENTIFIER '(' port_reference ')'
+	| '.' IDENTIFIER '(' port_reference_or_list ')'
 		{ Module::port_t*tmp = $4;
-		  tmp->name = lex_strings.make($2);
-		  delete[]$2;
-		  $$ = tmp;
-		}
-
-  /* A port can also be a concatenation of port references. In this
-     case the port does not have a name available to the outside, only
-     positional parameter passing is possible here. */
-
-	| '{' port_reference_list '}'
-		{ Module::port_t*tmp = $2;
-		  tmp->name = perm_string();
-		  $$ = tmp;
-		}
-
-  /* This attaches a name to a port reference concatenation list so
-     that parameter passing be name is possible. */
-
-	| '.' IDENTIFIER '(' '{' port_reference_list '}' ')'
-		{ Module::port_t*tmp = $5;
 		  tmp->name = lex_strings.make($2);
 		  delete[]$2;
 		  $$ = tmp;
@@ -5718,6 +5712,10 @@ port_reference_list
 		  $$ = tmp;
 		}
 	;
+
+port_reference_or_list
+  : port_reference { $$ = $1; }
+  | '{' port_reference_list '}' { $$ = $2; }
 
   /* The range is a list of variable dimensions. */
 dimensions_opt
