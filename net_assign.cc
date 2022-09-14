@@ -191,7 +191,7 @@ const ivl_type_s* NetAssign_::net_type() const
 		  return darray->element_type();
       }
 
-      return 0;
+      return sig_->net_type();
 }
 
 const netenum_t*NetAssign_::enumeration() const

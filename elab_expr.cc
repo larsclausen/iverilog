@@ -264,8 +264,8 @@ NetExpr*PEAssignPattern::elaborate_expr(Design*des, NetScope*scope,
 	    return tmp;
       }
 
-      if (ntype->base_type()==IVL_VT_DARRAY ||
-          ntype->base_type()==IVL_VT_QUEUE)
+//      if (ntype->base_type()==IVL_VT_DARRAY ||
+//          ntype->base_type()==IVL_VT_QUEUE)
 	    return elaborate_expr_darray_(des, scope, ntype, flags);
 
       cerr << get_fileline() << ": sorry: I don't know how to elaborate "
@@ -280,14 +280,15 @@ NetExpr*PEAssignPattern::elaborate_expr_darray_(Design*des, NetScope*scope,
 						ivl_type_t ntype, unsigned flags) const
 {
       const netdarray_t*array_type = dynamic_cast<const netdarray_t*> (ntype);
-      ivl_assert(*this, array_type);
 
       bool need_const = NEED_CONST & flags;
 
 	// This is an array pattern, so run through the elements of
 	// the expression and elaborate each as if they are
 	// element_type expressions.
-      ivl_type_t elem_type = array_type->element_type();
+      ivl_type_t elem_type = ntype;
+      if (array_type)
+	    elem_type = array_type->element_type();
       vector<NetExpr*> elem_exprs (parms_.size());
       for (size_t idx = 0 ; idx < parms_.size() ; idx += 1) {
 	    NetExpr*tmp = elaborate_rval_expr(des, scope, elem_type,
@@ -306,7 +307,7 @@ NetExpr*PEAssignPattern::elaborate_expr_darray_(Design*des, NetScope*scope,
 	    }
       }
 
-      NetEArrayPattern*res = new NetEArrayPattern(array_type, repeat_count,
+      NetEArrayPattern*res = new NetEArrayPattern(ntype, repeat_count,
 						  elem_exprs);
       res->set_line(*this);
       return res;

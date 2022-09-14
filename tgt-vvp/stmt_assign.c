@@ -490,6 +490,29 @@ static void store_vec4_to_lval(ivl_statement_t net)
       }
 }
 
+static int store_pattern_vec4(ivl_lval_t lval, ivl_expr_t rval)
+{
+      ivl_signal_t var = ivl_lval_sig(lval);
+      unsigned int nparms = ivl_expr_parms(rval);
+      unsigned int rep = ivl_expr_repeat(rval);
+
+      assert(ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN);
+      assert(var);
+
+      for (unsigned int idx = 0; idx < nparms; idx++) {
+	    draw_eval_vec4(ivl_expr_parm(rval, idx));
+	    fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+	    for (unsigned int ridx = 0; ridx < rep; ridx++) {
+		  if (ridx != rep - 1)
+			fprintf(vvp_out, "    %%dup/vec4;\n");
+		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx + ridx * nparms);
+		  fprintf(vvp_out, "    %%store/vec4a v%p, 3, 0;\n", var);
+	    }
+      }
+
+      return 0;
+}
+
 static int show_stmt_assign_vector(ivl_statement_t net)
 {
       ivl_expr_t rval = ivl_stmt_rval(net);
@@ -497,6 +520,10 @@ static int show_stmt_assign_vector(ivl_statement_t net)
 	//struct vector_info lres = {0, 0};
       struct vec_slice_info*slices = 0;
       int idx_reg;
+
+      if (ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN) {
+	    return store_pattern_vec4(ivl_stmt_lval(net, 0), rval);
+      }
 
 	/* If this is a compressed assignment, then get the contents
 	   of the l-value. We need these values as part of the r-value
@@ -778,6 +805,29 @@ static void store_real_to_lval(ivl_lval_t lval)
       clr_word(word_ix);
 }
 
+static int store_pattern_real(ivl_lval_t lval, ivl_expr_t rval)
+{
+      ivl_signal_t var = ivl_lval_sig(lval);
+      unsigned int nparms = ivl_expr_parms(rval);
+      unsigned int rep = ivl_expr_repeat(rval);
+
+      assert(ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN);
+      assert(var);
+
+      for (unsigned int idx = 0; idx < nparms; idx++) {
+	    draw_eval_real(ivl_expr_parm(rval, idx));
+	    fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+	    for (unsigned int ridx = 0; ridx < rep; ridx++) {
+		  if (ridx != rep - 1)
+			fprintf(vvp_out, "    %%dup/real;\n");
+		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx + ridx * nparms);
+		  fprintf(vvp_out, "    %%store/reala v%p, 3;\n", var);
+	    }
+      }
+
+      return 0;
+}
+
 /*
  * This function assigns a value to a real variable. This is destined
  * for /dev/null when typed ivl_signal_t takes over all the real
@@ -791,6 +841,11 @@ static int show_stmt_assign_sig_real(ivl_statement_t net)
       assert(ivl_stmt_lvals(net) == 1);
       lval = ivl_stmt_lval(net, 0);
 
+      ivl_expr_t rval = ivl_stmt_rval(net);
+      if (ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN) {
+	    return store_pattern_real(lval, rval);
+      }
+
 	/* If this is a compressed assignment, then get the contents
 	   of the l-value. We need this value as part of the r-value
 	   calculation. */
@@ -800,7 +855,7 @@ static int show_stmt_assign_sig_real(ivl_statement_t net)
 	    get_real_from_lval(lval, slice);
       }
 
-      draw_eval_real(ivl_stmt_rval(net));
+      draw_eval_real(rval);
 
       switch (ivl_stmt_opcode(net)) {
 	  case 0:
@@ -839,6 +894,29 @@ static int show_stmt_assign_sig_real(ivl_statement_t net)
       return 0;
 }
 
+static int store_pattern_string(ivl_lval_t lval, ivl_expr_t rval)
+{
+      ivl_signal_t var = ivl_lval_sig(lval);
+      unsigned int nparms = ivl_expr_parms(rval);
+      unsigned int rep = ivl_expr_repeat(rval);
+
+      assert(ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN);
+      assert(var);
+
+      for (unsigned int idx = 0; idx < nparms; idx++) {
+	    draw_eval_string(ivl_expr_parm(rval, idx));
+	    fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+	    for (unsigned int ridx = 0; ridx < rep; ridx++) {
+		  if (ridx != rep - 1)
+			fprintf(vvp_out, "    %%dup/str;\n");
+		  fprintf(vvp_out, "    %%ix/load 3, %u, 0;\n", idx + ridx * nparms);
+		  fprintf(vvp_out, "    %%store/stra v%p, 3;\n", var);
+	    }
+      }
+
+      return 0;
+}
+
 static int show_stmt_assign_sig_string(ivl_statement_t net)
 {
       ivl_lval_t lval = ivl_stmt_lval(net, 0);
@@ -849,6 +927,10 @@ static int show_stmt_assign_sig_string(ivl_statement_t net)
 
       assert(ivl_stmt_lvals(net) == 1);
       assert(ivl_stmt_opcode(net) == 0);
+
+      if (ivl_expr_type(rval) == IVL_EX_ARRAY_PATTERN) {
+	    return store_pattern_string(ivl_stmt_lval(net, 0), rval);
+      }
 
 	/* Special case: If the l-value signal (string) is named after
 	   its scope, and the scope is a function, then this is an

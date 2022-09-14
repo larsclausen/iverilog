@@ -262,6 +262,7 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 	// slice. Detect the situation by noting if the index count
 	// is less than the array dimensions (unpacked).
       if (reg->unpacked_dimensions() > name_tail.index.size()) {
+      #if 0
 	    if (gn_system_verilog()) {
 		  cerr << get_fileline() << ": sorry: Assignment to an entire"
 		        " array or to an array slice is not yet supported."
@@ -273,6 +274,10 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 	    }
 	    des->errors += 1;
 	    return 0;
+      #endif
+
+	    NetAssign_*lv = new NetAssign_(reg);
+	    return lv;
       }
 
 	/* Get the signal referenced by the identifier, and make sure

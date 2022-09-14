@@ -2608,7 +2608,8 @@ NetProc* PAssign::elaborate(Design*des, NetScope*scope) const
 
       } else {
 	      /* Elaborate the r-value expression, then try to evaluate it. */
-	    rv = elaborate_rval_(des, scope, lv_net_type, lv->expr_type(), count_lval_width(lv));
+	    rv = elaborate_rval_(des, scope, lv_net_type);
+	    //rv = elaborate_rval_(des, scope, lv_net_type, lv->expr_type(), count_lval_width(lv));
       }
 
       if (rv == 0) {

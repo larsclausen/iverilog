@@ -2553,7 +2553,7 @@ bool of_DELETE_TAIL(vthread_t thr, vvp_code_t cp)
       vvp_fun_signal_object*obj = dynamic_cast<vvp_fun_signal_object*> (net->fun);
       assert(obj);
 
-      vvp_queue*queue = obj->get_object().peek<vvp_queue>();
+      vvp_queue*queue = get_queue_object<vvp_queue_vec4>(thr, net);
       assert(queue);
 
       unsigned idx = thr->words[cp->bit_idx[0]].w_int;
