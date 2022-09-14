@@ -351,6 +351,13 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       current_function->set_statement(tmp);
 }
 
+void port_declaration_context_init()
+{
+      port_declaration_context.port_type = NetNet::PINOUT;
+      port_declaration_context.port_net_type = NetNet::IMPLICIT;
+      port_declaration_context.data_type = nullptr;
+}
+
 Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
 			            NetNet::PortType port_type,
 				    NetNet::Type net_type,
@@ -699,6 +706,7 @@ Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
 %type <decl_assignments> list_of_variable_decl_assignments
 
 %type <data_type>  data_type data_type_opt data_type_or_implicit data_type_or_implicit_or_void
+%type <data_type>  data_type_or_implicit_no_opt
 %type <data_type>  simple_type_or_string let_formal_type
 %type <data_type>  packed_array_data_type
 %type <data_type>  ps_type_identifier
@@ -1323,7 +1331,11 @@ scalar_vector_opt /*IEEE1800-2005: optional support for packed array */
   ;
 
 data_type_or_implicit /* IEEE1800-2005: A.2.2.1 */
-  : data_type_opt
+  : data_type_or_implicit_no_opt
+  | { $$ = nullptr; }
+
+data_type_or_implicit_no_opt
+  : data_type
       { $$ = $1; }
   | signing dimensions_opt
       { vector_type_t*tmp = new vector_type_t(IVL_VT_LOGIC, $1, $2);
@@ -4389,10 +4401,10 @@ list_of_ports
 	;
 
 list_of_port_declarations
-	: port_declaration
+	: { port_declaration_context_init(); } port_declaration
 		{ std::vector<Module::port_t*>*tmp
 			  = new std::vector<Module::port_t*>(1);
-		  (*tmp)[0] = $1;
+		  (*tmp)[0] = $2;
 		  $$ = tmp;
 		}
 	| list_of_port_declarations ',' port_declaration
@@ -4400,15 +4412,15 @@ list_of_port_declarations
 		  tmp->push_back($3);
 		  $$ = tmp;
 		}
-	| list_of_port_declarations ',' IDENTIFIER initializer_opt
+	| list_of_port_declarations ',' attribute_list_opt IDENTIFIER dimensions_opt initializer_opt
 		{ std::vector<Module::port_t*> *ports = $1;
 
 		  Module::port_t* port;
-		  port = module_declare_port(@3, $3,
+		  port = module_declare_port(@4, $4,
 					     port_declaration_context.port_type,
 					     port_declaration_context.port_net_type,
 					     port_declaration_context.data_type,
-					     nullptr, $4, nullptr);
+					     $5, $6, $3);
 		  ports->push_back(port);
 		  $$ = ports;
 		}
@@ -4423,9 +4435,21 @@ list_of_port_declarations
 		}
         ;
 
+  // All of port direction, port kind and data type are optional, but at least
+  // one has to be specified, so we need multiple rules.
 port_declaration
   : attribute_list_opt port_direction net_type_or_var_opt data_type_or_implicit IDENTIFIER dimensions_opt initializer_opt
-      { $$ = module_declare_port(@2, $5, $2, $3, $4, $6, $7, $1);
+      { $$ = module_declare_port(@5, $5, $2, $3, $4, $6, $7, $1);
+      }
+  | attribute_list_opt net_type_or_var data_type_or_implicit IDENTIFIER dimensions_opt initializer_opt
+      { pform_requires_sv(@4, "Partial ANSI port declaration");
+	$$ = module_declare_port(@4, $4, port_declaration_context.port_type,
+			         $2, $3, $5, $6, $1);
+      }
+  | attribute_list_opt data_type_or_implicit_no_opt IDENTIFIER dimensions_opt initializer_opt
+      { pform_requires_sv(@3, "Partial ANSI port declaration");
+	$$ = module_declare_port(@3, $3, port_declaration_context.port_type,
+			         NetNet::IMPLICIT, $2, $4, $5, $1);
       }
   | attribute_list_opt port_direction K_wreal IDENTIFIER
       { real_type_t*real_type = new real_type_t(real_type_t::REAL);
