@@ -504,13 +504,13 @@ static void elaborate_scope_class(Design*des, NetScope*scope, PClass*pclass)
 	    use_base_class = dynamic_cast<const netclass_t *>(base_type);
 	    if (!use_base_class) {
 		  cerr << pclass->get_fileline() << ": error: "
-		       << "Base type of " << use_type->name
+		       << "Base type of " << pclass->pscope_name()
 		       << " is not a class." << endl;
 		  des->errors += 1;
 	    }
       }
 
-      netclass_t*use_class = new netclass_t(use_type->name, use_base_class);
+      netclass_t*use_class = new netclass_t(pclass->pscope_name(), use_base_class);
 
       // If this is a package we need to remember the elaborated type so that
       // scoped type references work. Since there is only one instance for each

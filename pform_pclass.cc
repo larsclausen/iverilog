@@ -26,7 +26,7 @@ using namespace std;
 /*
  * The functions here help the parser put together class type declarations.
  */
-static PClass*pform_cur_class = 0;
+static class_type_t*pform_cur_class = 0;
 
 /*
  * The base_type is set to the base class if this declaration is
@@ -44,10 +44,9 @@ void pform_start_class_declaration(const struct vlltype&loc,
 				   list<PExpr*>*base_exprs,
 				   LexicalScope::lifetime_t lifetime)
 {
-      PClass*class_scope = pform_push_class_scope(loc, type->name, lifetime);
-      class_scope->type = type;
+      pform_push_class_scope(loc, type->name, lifetime);
       assert(pform_cur_class == 0);
-      pform_cur_class = class_scope;
+      pform_cur_class = type;
 
       assert(type->base_type == 0);
       type->base_type = base_type;
@@ -84,9 +83,9 @@ void pform_class_property(const struct vlltype&loc,
 		  FILE_NAME(use_type, loc);
 	    }
 
-	    pform_cur_class->type->properties[curp->name]
+	    pform_cur_class->properties[curp->name]
 		  = class_type_t::prop_info_t(property_qual,use_type);
-	    FILE_NAME(&pform_cur_class->type->properties[curp->name], loc);
+	    FILE_NAME(&pform_cur_class->properties[curp->name], loc);
 
 	    if (PExpr*rval = curp->expr.release()) {
 		  PExpr*lval = new PEIdent(curp->name);
@@ -95,9 +94,9 @@ void pform_class_property(const struct vlltype&loc,
 		  FILE_NAME(tmp, loc);
 
 		  if (property_qual.test_static())
-			pform_cur_class->type->initialize_static.push_back(tmp);
+			pform_cur_class->initialize_static.push_back(tmp);
 		  else
-			pform_cur_class->type->initialize.push_back(tmp);
+			pform_cur_class->initialize.push_back(tmp);
 	    }
       }
 }
@@ -111,7 +110,7 @@ void pform_set_this_class(const struct vlltype&loc, PTaskFunc*net)
       this_name->push_back(pform_port_t(perm_string::literal(THIS_TOKEN), 0, 0));
       vector<pform_tf_port_t>*this_port = pform_make_task_ports(loc,
 						       NetNet::PINPUT,
-						       pform_cur_class->type,
+						       pform_cur_class,
 						       this_name);
 	// The pform_make_task_ports() function deletes the this_name
 	// object.
@@ -120,13 +119,13 @@ void pform_set_this_class(const struct vlltype&loc, PTaskFunc*net)
       PWire*this_wire = this_port->at(0).port;
       delete this_port;
 
-      net->set_this(pform_cur_class->type, this_wire);
+      net->set_this(pform_cur_class, this_wire);
 }
 
 void pform_set_constructor_return(PFunction*net)
 {
       assert(pform_cur_class);
-      net->set_return(pform_cur_class->type);
+      net->set_return(pform_cur_class);
 }
 
 /*
@@ -145,18 +144,17 @@ void pform_end_class_declaration(const struct vlltype&loc)
 
 	// If there were initializer statements, then collect them
 	// into an implicit constructor function.
-      if (! pform_cur_class->type->initialize.empty()) {
+      if (! pform_cur_class->initialize.empty()) {
 	    PFunction*func = pform_push_function_scope(loc, "new@", LexicalScope::AUTOMATIC);
 	    func->set_ports(0);
 	    pform_set_constructor_return(func);
 	    pform_set_this_class(loc, func);
 
-	    class_type_t*use_class = pform_cur_class->type;
-	    if (use_class->initialize.size() == 1) {
-		  func->set_statement(use_class->initialize.front());
+	    if (pform_cur_class->initialize.size() == 1) {
+		  func->set_statement(pform_cur_class->initialize.front());
 	    } else {
 		  PBlock*tmp = new PBlock(PBlock::BL_SEQ);
-		  tmp->set_statement(use_class->initialize);
+		  tmp->set_statement(pform_cur_class->initialize);
 		  func->set_statement(tmp);
 	    }
 	    pform_pop_scope();
