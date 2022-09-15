@@ -88,10 +88,8 @@ void pform_class_property(const struct vlltype&loc,
 		  = class_type_t::prop_info_t(property_qual,use_type);
 	    FILE_NAME(&pform_cur_class->properties[curp->name], loc);
 
-	    if (PExpr*rval = curp->expr.release()) {
-		  if (property_qual.test_static()) {
-			pform_make_var_init(loc, curp->name, rval);
-		  } else {
+	    if (!property_qual.test_static()) {
+		  if (PExpr*rval = curp->expr.release()) {
 			PExpr*lval = new PEIdent(curp->name);
 			FILE_NAME(lval, loc);
 			PAssign*tmp = new PAssign(lval, rval);
@@ -100,6 +98,9 @@ void pform_class_property(const struct vlltype&loc,
 		  }
 	    }
       }
+
+      if (property_qual.test_static())
+	    pform_make_var(loc, decls, data_type);
 }
 
 void pform_set_this_class(const struct vlltype&loc, PTaskFunc*net)
