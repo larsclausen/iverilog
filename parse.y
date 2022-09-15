@@ -1215,22 +1215,22 @@ packed_array_data_type /* IEEE1800-2005: A.2.2.1 */
 
 /* Data types that can have packed dimensions directly attached to it */
 packed_array_data_type2 /* IEEE1800-2005: A.2.2.1 */
-  : enum_data_type
+  : enum_data_type dimensions_opt
       { $$ = $1; }
-  | struct_data_type
+  | struct_data_type dimensions_opt
       { if (!$1->packed_flag) {
 	      yyerror(@1, "sorry: Unpacked structs not supported.");
 	}
 	$$ = $1;
       }
-  | IDENTIFIER
+  | IDENTIFIER dimensions_opt
       { pform_set_type_referenced(@1, $1.text);
 	delete[]$1.text;
 	$$ = $1.type;
       }
   | PACKAGE_IDENTIFIER K_SCOPE_RES
       { lex_in_package_scope($1); }
-    IDENTIFIER
+    IDENTIFIER dimensions_opt
       { lex_in_package_scope(0);
 	$$ = $4.type;
 	delete[]$4.text;
@@ -1266,9 +1266,9 @@ data_type2 /* IEEE1800-2005: A.2.2.1 */
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
-  | packed_array_data_type2 dimensions_opt
-      { if ($2) {
-	      parray_type_t*tmp = new parray_type_t($1, $2);
+  | packed_array_data_type2
+      { if (0) {
+	      parray_type_t*tmp = new parray_type_t($1, 0);
 	      FILE_NAME(tmp, @1);
 	      $$ = tmp;
         } else {
@@ -2393,7 +2393,7 @@ data_type_or_implicit_plus_id
       { $$.type = 0;
         $$.id = $1;
       }
-  | data_type IDENTIFIER
+  | data_type2 IDENTIFIER
       { $$.type = $1;
         $$.id = $2;
       }
@@ -2418,7 +2418,7 @@ data_type_or_implicit_plus_id_dim
       { $$.type = 0;
         $$.id = $1;
       }
-  | data_type IDENTIFIER dimensions_opt
+  | data_type2 IDENTIFIER dimensions_opt
       { $$.type = $1;
         $$.id = $2;
       }
@@ -2462,12 +2462,12 @@ data_type_or_implicit_or_void_plus_id
 
 tf_port_item /* IEEE1800-2005: A.2.7 */
 
-  : port_direction_opt K_var_opt data_type_or_implicit_plus_id dimensions_opt initializer_opt
+  : port_direction_opt K_var_opt data_type_or_implicit_plus_id_dim initializer_opt
       { std::vector<pform_tf_port_t>*tmp;
 	NetNet::PortType use_port_type = $1;
         if ((use_port_type == NetNet::PIMPLICIT) && (gn_system_verilog() || ($3.type == 0)))
               use_port_type = port_declaration_context.port_type;
-	struct pform_port_list port_list = make_port_list(0, $3.id, $4, 0);
+	struct pform_port_list port_list = make_port_list(0, $3.id, 0, 0);
 
 	if (use_port_type == NetNet::PIMPLICIT) {
 	      yyerror(@1, "error: missing task/function port direction.");
@@ -2477,9 +2477,9 @@ tf_port_item /* IEEE1800-2005: A.2.7 */
 		// Detect special case this is an undecorated
 		// identifier and we need to get the declaration from
 		// left context.
-	      if ($4) {
-		    yyerror(@4, "internal error: How can there be an unpacked range here?\n");
-	      }
+//	      if ($4) {
+//		    yyerror(@4, "internal error: How can there be an unpacked range here?\n");
+//	      }
 	      tmp = pform_make_task_ports(@3, use_port_type,
 					  port_declaration_context.data_type,
 					  port_list.ports);
@@ -2499,20 +2499,21 @@ tf_port_item /* IEEE1800-2005: A.2.7 */
 	}
 
 	$$ = tmp;
-	if ($5) {
-	      pform_requires_sv(@5, "Task/function default argument");
+	if ($4) {
+	      pform_requires_sv(@4, "Task/function default argument");
 	      assert(tmp->size()==1);
-	      tmp->front().defe = $5;
+	      tmp->front().defe = $4;
 	}
       }
 
   /* Rules to match error cases... */
-
-  | port_direction_opt K_var_opt data_type_or_implicit_plus_id error
-      { yyerror(@2, "error: Error in task/function port item after port name %s.", $3.id);
+/*
+  | port_direction_opt K_var_opt error
+      { yyerror(@2, "error: Error in task/function port item after port name.");
 	yyerrok;
 	$$ = 0;
       }
+*/
   ;
 
 tf_port_list /* IEEE1800-2005: A.2.7 */
@@ -2737,10 +2738,11 @@ block_item_decl
   /* Recover from errors that happen within variable lists. Use the
      trailing semi-colon to resync the parser. */
 
-  | K_var variable_lifetime_opt data_type_or_implicit error ';'
+/*  | K_var variable_lifetime_opt data_type_or_implicit error ';'
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
       }
+*/
   | variable_lifetime_opt data_type error ';'
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
@@ -4398,8 +4400,8 @@ list_of_identifiers
 	;
 
 list_of_port_identifiers
-	: data_type_or_implicit_plus_id dimensions_opt
-                { $$ = make_port_list($1.type, $1.id, $2, 0); }
+	: data_type_or_implicit_plus_id_dim
+                { $$ = make_port_list($1.type, $1.id, 0, 0); }
 	| list_of_port_identifiers ',' IDENTIFIER dimensions_opt
                 { $$ = make_port_list($1, $3, $4, 0); }
 	;
