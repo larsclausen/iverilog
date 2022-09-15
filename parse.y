@@ -655,10 +655,12 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <decl_assignment> variable_decl_assignment
 %type <decl_assignments> list_of_variable_decl_assignments
+%type <decl_assignments> list_of_variable_decl_assignments_with_type
 
-%type <data_type>  data_type data_type_opt data_type_or_implicit
+%type <data_type>  data_type data_type_opt data_type_or_implicit 
 %type <data_type>  simple_type_or_string let_formal_type
 %type <data_type>  packed_array_data_type
+
 %type <data_type>  ps_type_identifier
 %type <data_type>  simple_packed_type
 %type <class_type> class_identifier
@@ -718,6 +720,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <genvar_iter> genvar_iteration
 
 %type <type_plus_id> data_type_or_implicit_plus_id
+%type <type_plus_id> data_type_or_implicit_plus_id_dim
 %type <type_plus_id> data_type_or_implicit_or_void_plus_id
 
 %token K_TAND
@@ -951,11 +954,6 @@ class_item /* IEEE1800-2005: A.1.8 */
 
   | property_qualifier_opt data_type error ';'
       { yyerror(@3, "error: Errors in variable names after data type.");
-	yyerrok;
-      }
-
-  | property_qualifier_opt IDENTIFIER error ';'
-      { yyerror(@3, "error: %s doesn't name a type.", $2);
 	yyerrok;
       }
 
@@ -1754,6 +1752,19 @@ loop_statement /* IEEE1800-2005: A.6.8 */
   ;
 
 
+list_of_variable_decl_assignments_with_type /* IEEE1800-2005 A.2.3 */
+  : data_type_or_implicit_plus_id_dim var_decl_initializer_opt
+      { std::list<decl_assignment_t*>*tmp = new std::list<decl_assignment_t*>;
+//	tmp->push_back($1);
+	$$ = tmp;
+      }
+  | list_of_variable_decl_assignments_with_type ',' variable_decl_assignment
+      { std::list<decl_assignment_t*>*tmp = $1;
+	tmp->push_back($3);
+	$$ = tmp;
+      }
+  ;
+
 list_of_variable_decl_assignments /* IEEE1800-2005 A.2.3 */
   : variable_decl_assignment
       { std::list<decl_assignment_t*>*tmp = new std::list<decl_assignment_t*>;
@@ -2324,7 +2335,6 @@ tf_port_declaration /* IEEE1800-2005: A.2.7 */
       }
   ;
 
-
 data_type_or_implicit_plus_id
   : IDENTIFIER
       { $$.type = 0;
@@ -2333,7 +2343,7 @@ data_type_or_implicit_plus_id
   | data_type IDENTIFIER
       { $$.type = $1;
         $$.id = $2;
-       }
+      }
   | signing dimensions_opt IDENTIFIER
       { vector_type_t*tmp = new vector_type_t(IVL_VT_LOGIC, $1, $2);
 	tmp->implicit_flag = true;
@@ -2349,6 +2359,32 @@ data_type_or_implicit_plus_id
 	$$.id = $3;
       }
   ;
+
+data_type_or_implicit_plus_id_dim
+  : IDENTIFIER dimensions_opt
+      { $$.type = 0;
+        $$.id = $1;
+      }
+  | data_type IDENTIFIER dimensions_opt
+      { $$.type = $1;
+        $$.id = $2;
+      }
+  | signing dimensions_opt IDENTIFIER dimensions_opt
+      { vector_type_t*tmp = new vector_type_t(IVL_VT_LOGIC, $1, $2);
+	tmp->implicit_flag = true;
+	FILE_NAME(tmp, @1);
+	$$.type = tmp;
+	$$.id = $3;
+      }
+  | scalar_vector_opt dimensions IDENTIFIER dimensions_opt
+      { vector_type_t*tmp = new vector_type_t(IVL_VT_LOGIC, false, $2);
+	tmp->implicit_flag = true;
+	FILE_NAME(tmp, @2);
+	$$.type = tmp;
+	$$.id = $3;
+      }
+  ;
+
 
 data_type_or_implicit_or_void_plus_id
   : data_type_or_implicit_plus_id
@@ -2616,14 +2652,8 @@ block_item_decl
   /* variable declarations. Note that data_type can be 0 if we are
      recovering from an error. */
 
-  : K_var variable_lifetime_opt data_type_or_implicit list_of_variable_decl_assignments ';'
-      { data_type_t*data_type = $3;
-	if (data_type == 0) {
-	      data_type = new vector_type_t(IVL_VT_LOGIC, false, 0);
-	      FILE_NAME(data_type, @1);
-	}
-	pform_make_var(@1, $4, data_type, attributes_in_context);
-	var_lifetime = LexicalScope::INHERITED;
+  : K_var variable_lifetime_opt list_of_variable_decl_assignments_with_type ';'
+      { //if ($3) pform_make_var(@3, $3, attributes_in_context);
       }
 
   | variable_lifetime_opt data_type list_of_variable_decl_assignments ';'
@@ -4322,8 +4352,8 @@ list_of_port_identifiers
 	;
 
 list_of_variable_port_identifiers
-	: IDENTIFIER dimensions_opt initializer_opt
-                { $$ = make_port_list($1, $2, $3); }
+	: data_type_or_implicit_plus_id_dim initializer_opt
+                { $$ = {}; }//make_port_list($1, 0, $2); }
 	| list_of_variable_port_identifiers ',' IDENTIFIER dimensions_opt initializer_opt
                 { $$ = make_port_list($1, $3, $4, $5); }
 	;
@@ -4416,11 +4446,11 @@ list_of_port_declarations
         ;
 
 port_declaration
-  : attribute_list_opt K_input net_type_or_var_opt data_type_or_implicit_plus_id dimensions_opt
+  : attribute_list_opt K_input net_type_or_var_opt data_type_or_implicit_plus_id_dim
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4.id);
 	data_type_t*use_type = $4.type;
-	if ($5) use_type = new uarray_type_t(use_type, $5);
+//	if ($5) use_type = new uarray_type_t(use_type, $5);
 	ptmp = pform_module_port_reference(@2, name);
 	pform_module_define_port(@2, name, NetNet::PINPUT, $3, use_type, $1);
 	port_declaration_context.port_type = NetNet::PINPUT;
@@ -4458,7 +4488,7 @@ port_declaration
 	delete[]$4.id;
 	$$ = ptmp;
       }
-  | attribute_list_opt K_inout net_type_opt data_type_or_implicit_plus_id dimensions_opt
+  | attribute_list_opt K_inout net_type_opt data_type_or_implicit_plus_id_dim
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4.id);
 	ptmp = pform_module_port_reference(@2, name);
@@ -4467,10 +4497,10 @@ port_declaration
 	port_declaration_context.port_net_type = $3;
 	port_declaration_context.data_type = $4.type;
 	delete[]$4.id;
-	if ($5) {
+/*	if ($5) {
 	      yyerror(@5, "sorry: Inout ports with unpacked dimensions not supported.");
 	      delete $5;
-	}
+	}*/
 	$$ = ptmp;
       }
   | attribute_list_opt
@@ -4488,11 +4518,11 @@ port_declaration
 	delete[]$4;
 	$$ = ptmp;
       }
-  | attribute_list_opt K_output net_type_or_var_opt data_type_or_implicit_plus_id dimensions_opt
+  | attribute_list_opt K_output net_type_or_var_opt data_type_or_implicit_plus_id_dim
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4.id);
 	data_type_t*use_dtype = $4.type;
-	if ($5) use_dtype = new uarray_type_t(use_dtype, $5);
+//	if ($5) use_dtype = new uarray_type_t(use_dtype, $5);
 	NetNet::Type use_type = $3;
 	if (use_type == NetNet::IMPLICIT) {
 		// The SystemVerilog types that can show up as
@@ -4889,7 +4919,7 @@ module_item
 
   | attribute_list_opt port_direction K_wreal list_of_port_identifiers ';'
       { real_type_t*real_type = new real_type_t(real_type_t::REAL);
-	pform_module_define_port(@2, $4, $2, NetNet::WIRE, real_type, $1);
+	pform_module_define_port(@2, $4.ports, $2, NetNet::WIRE, real_type, $1);
       }
 
   /* The next three rules handle port declarations that include a variable
@@ -4922,9 +4952,9 @@ module_item
 	      pform_module_define_port(@2, $3.ports, NetNet::PINPUT, use_type, $3.type, $1);
       }
 
-  | attribute_list_opt K_output data_type_or_implicit list_of_variable_port_identifiers ';'
-      { NetNet::Type use_type = $3 ? NetNet::IMPLICIT : NetNet::NONE;
-	if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($3)) {
+  | attribute_list_opt K_output list_of_variable_port_identifiers ';'
+      { NetNet::Type use_type = $3.type ? NetNet::IMPLICIT : NetNet::NONE;
+	if (vector_type_t*dtype = dynamic_cast<vector_type_t*> ($3.type)) {
 	      if (dtype->implicit_flag)
 		    use_type = NetNet::NONE;
 	      else
@@ -4934,40 +4964,36 @@ module_item
 		// output ports are implicitly (on the inside)
 		// variables because "reg" is not valid syntax
 		// here.
-	} else if ($3) {
+	} else if ($3.type) {
 	      use_type = NetNet::IMPLICIT_REG;
 	}
 	if (use_type == NetNet::NONE)
-	      pform_set_port_type(@2, $4, NetNet::POUTPUT, $3, $1);
+	      pform_set_port_type(@2, $3.ports, NetNet::POUTPUT, $3.type, $1);
 	else
-	      pform_module_define_port(@2, $4, NetNet::POUTPUT, use_type, $3, $1);
+	      pform_module_define_port(@2, $3.ports, NetNet::POUTPUT, use_type, $3.type, $1);
       }
 
-  | attribute_list_opt port_direction net_type_or_var data_type_or_implicit error ';'
+  | attribute_list_opt port_direction net_type_or_var error ';'
       { yyerror(@2, "error: Invalid variable list in port declaration.");
 	if ($1) delete $1;
-	if ($4) delete $4;
 	yyerrok;
       }
 
-  | attribute_list_opt K_inout data_type_or_implicit error ';'
+  | attribute_list_opt K_inout error ';'
       { yyerror(@2, "error: Invalid variable list in port declaration.");
 	if ($1) delete $1;
-	if ($3) delete $3;
 	yyerrok;
       }
 
-  | attribute_list_opt K_input data_type_or_implicit error ';'
+  | attribute_list_opt K_input error ';'
       { yyerror(@2, "error: Invalid variable list in port declaration.");
 	if ($1) delete $1;
-	if ($3) delete $3;
 	yyerrok;
       }
 
-  | attribute_list_opt K_output data_type_or_implicit error ';'
+  | attribute_list_opt K_output error ';'
       { yyerror(@2, "error: Invalid variable list in port declaration.");
 	if ($1) delete $1;
-	if ($3) delete $3;
 	yyerrok;
       }
 
