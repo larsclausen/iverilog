@@ -6217,15 +6217,14 @@ static void elaborate_tasks(Design*des, NetScope*scope,
 }
 
 static void elaborate_classes(Design*des, NetScope*scope,
-			      const map<perm_string,PClass*>&classes)
+			      const vector<PClass*>&classes)
 {
-      for (map<perm_string,PClass*>::const_iterator cur = classes.begin()
-		 ; cur != classes.end() ; ++ cur) {
-	    netclass_t*use_class = scope->find_class(des, cur->second->pscope_name());
-	    use_class->elaborate(des, cur->second);
+	  for (PClass *cur : classes) {
+	    netclass_t*use_class = scope->find_class(des, cur->pscope_name());
+	    use_class->elaborate(des, cur);
 
 	    if (use_class->test_for_missing_initializers()) {
-		  cerr << cur->second->get_fileline() << ": error: "
+		  cerr << cur->get_fileline() << ": error: "
 		       << "Const properties of class " << use_class->get_name()
 		       << " are missing initialization." << endl;
 		  des->errors += 1;

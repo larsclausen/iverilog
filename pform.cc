@@ -614,8 +614,7 @@ PClass* pform_push_class_scope(const struct vlltype&loc, perm_string name,
 
       pform_set_scope_timescale(class_scope, scopex);
 
-      scopex->classes[name] = class_scope;
-      scopex->classes_lexical .push_back(class_scope);
+      scopex->classes.push_back(class_scope);
 
       lexical_scope = class_scope;
       return class_scope;

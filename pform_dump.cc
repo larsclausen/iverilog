@@ -1595,11 +1595,9 @@ void LexicalScope::dump_var_inits_(ostream&out, unsigned indent) const
 
 void PScopeExtra::dump_classes_(ostream&out, unsigned indent) const
 {
-	// Dump the task definitions.
-      typedef map<perm_string,PClass*>::const_iterator class_iter_t;
-      for (class_iter_t cur = classes.begin()
-		 ; cur != classes.end() ; ++ cur ) {
-	    cur->second->dump(out, indent);
+	// Dump the class definitions.
+      for (PClass *cur : classes) {
+	    cur->dump(out, indent);
       }
 }
 

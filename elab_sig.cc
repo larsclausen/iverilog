@@ -239,12 +239,11 @@ static void elaborate_sig_tasks(Design*des, NetScope*scope,
 }
 
 static void elaborate_sig_classes(Design*des, NetScope*scope,
-				  const map<perm_string,PClass*>&classes)
+				  const vector<PClass*>&classes)
 {
-      for (map<perm_string,PClass*>::const_iterator cur = classes.begin()
-		 ; cur != classes.end() ; ++ cur) {
-	    netclass_t*use_class = scope->find_class(des, cur->second->pscope_name());
-	    use_class->elaborate_sig(des, cur->second);
+      for (PClass *cur : classes) {
+	    netclass_t*use_class = scope->find_class(des, cur->pscope_name());
+	    use_class->elaborate_sig(des, cur);
       }
 }
 

@@ -778,7 +778,7 @@ bool PPackage::elaborate_scope(Design*des, NetScope*scope)
       }
       elaborate_scope_enumerations(des, scope, enum_sets);
 
-      elaborate_scope_classes(des, scope, classes_lexical);
+      elaborate_scope_classes(des, scope, classes);
       elaborate_scope_funcs(des, scope, funcs);
       elaborate_scope_tasks(des, scope, tasks);
       elaborate_scope_events_(des, scope, events);
@@ -817,8 +817,7 @@ bool Module::elaborate_scope(Design*des, NetScope*scope,
 
       elaborate_scope_enumerations(des, scope, enum_sets);
 
-      assert(classes.size() == classes_lexical.size());
-      elaborate_scope_classes(des, scope, classes_lexical);
+      elaborate_scope_classes(des, scope, classes);
 
 	// Run through the defparams for this module and save the result
 	// in a table for later final override.

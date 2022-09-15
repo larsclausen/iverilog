@@ -227,11 +227,9 @@ class PScopeExtra : public PScope {
 	/* Task definitions within this module */
       std::map<perm_string,PTask*> tasks;
       std::map<perm_string,PFunction*> funcs;
-	/* Class definitions within this module. */
-      std::map<perm_string,PClass*> classes;
 	/* This is the lexical order of the classes, and is used by
 	   elaboration to choose an elaboration order. */
-      std::vector<PClass*> classes_lexical;
+      std::vector<PClass*> classes;
 
 	/* Flags used to support warnings about timescales. */
       bool time_unit_is_local;
