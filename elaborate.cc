@@ -6328,19 +6328,7 @@ bool Module::elaborate(Design*des, NetScope*scope) const
  */
 void PClass::elaborate(Design *des, NetScope *scope)
 {
-      if (! type->initialize_static.empty()) {
-	    std::vector<Statement*>&stmt_list = type->initialize_static;
-	    NetBlock*stmt = new NetBlock(NetBlock::SEQU, 0);
-	    for (size_t idx = 0 ; idx < stmt_list.size() ; idx += 1) {
-		  NetProc*tmp = stmt_list[idx]->elaborate(des, scope);
-		  if (tmp == 0) continue;
-		  stmt->append(tmp);
-	    }
-	    NetProcTop*top = new NetProcTop(scope, IVL_PR_INITIAL, stmt);
-	    top->set_line(*this);
-	    des->add_process(top);
-      }
-
+      elaborate_var_inits_(des, scope);
       elaborate_functions(des, scope, funcs);
       elaborate_tasks(des, scope, tasks);
 }
