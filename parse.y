@@ -661,6 +661,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <data_type>  simple_type_or_string let_formal_type
 %type <data_type>  packed_array_data_type
 
+%type <data_type>  packed_array_data_type2 data_type2
+
 %type <data_type>  ps_type_identifier
 %type <data_type>  simple_packed_type
 %type <class_type> class_identifier
@@ -912,10 +914,10 @@ class_item /* IEEE1800-2005: A.1.8 */
 
     /* IEEE1800-2017: A.1.9 Class items: Class properties... */
 
-  | property_qualifier_opt data_type list_of_variable_decl_assignments ';'
+  | property_qualifier_opt data_type2 list_of_variable_decl_assignments ';'
       { pform_class_property(@2, $1, $2, $3); }
 
-  | K_const class_item_qualifier_opt data_type list_of_variable_decl_assignments ';'
+  | K_const class_item_qualifier_opt data_type2 list_of_variable_decl_assignments ';'
       { pform_class_property(@1, $2 | property_qualifier_t::make_const(), $3, $4); }
 
     /* IEEEE1800-2017: A.1.9 Class items: class_item ::= { property_qualifier} data_declaration */
@@ -952,7 +954,7 @@ class_item /* IEEE1800-2005: A.1.8 */
     /* Here are some error matching rules to help recover from various
        syntax errors within a class declaration. */
 
-  | property_qualifier_opt data_type error ';'
+  | property_qualifier_opt data_type2 error ';'
       { yyerror(@3, "error: Errors in variable names after data type.");
 	yyerrok;
       }
@@ -1161,7 +1163,7 @@ constraint_set /* IEEE1800-2005 A.1.9 */
   ;
 
 data_declaration /* IEEE1800-2005: A.2.1.3 */
-  : attribute_list_opt data_type list_of_variable_decl_assignments ';'
+  : attribute_list_opt data_type2 list_of_variable_decl_assignments ';'
       { data_type_t*data_type = $2;
 	if (data_type == 0) {
 	      data_type = new vector_type_t(IVL_VT_LOGIC, false, 0);
@@ -1211,6 +1213,32 @@ packed_array_data_type /* IEEE1800-2005: A.2.2.1 */
   | ps_type_identifier
   ;
 
+/* Data types that can have packed dimensions directly attached to it */
+packed_array_data_type2 /* IEEE1800-2005: A.2.2.1 */
+  : enum_data_type
+      { $$ = $1; }
+  | struct_data_type
+      { if (!$1->packed_flag) {
+	      yyerror(@1, "sorry: Unpacked structs not supported.");
+	}
+	$$ = $1;
+      }
+  | IDENTIFIER
+      { pform_set_type_referenced(@1, $1.text);
+	delete[]$1.text;
+	$$ = $1.type;
+      }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES
+      { lex_in_package_scope($1); }
+    IDENTIFIER
+      { lex_in_package_scope(0);
+	$$ = $4.type;
+	delete[]$4.text;
+      }
+
+  ;
+
+
 simple_packed_type /* Integer and vector types */
   : integer_vector_type unsigned_signed_opt dimensions_opt
       { vector_type_t*tmp = new vector_type_t($1, $2, $3);
@@ -1224,6 +1252,31 @@ simple_packed_type /* Integer and vector types */
       }
   | K_time unsigned_signed_opt
       { atom_type_t*tmp = new atom_type_t(atom_type_t::TIME, $2);
+	FILE_NAME(tmp, @1);
+	$$ = tmp;
+      }
+  ;
+
+data_type2 /* IEEE1800-2005: A.2.2.1 */
+  : simple_packed_type
+      { $$ = $1;
+      }
+  | non_integer_type
+      { real_type_t*tmp = new real_type_t($1);
+	FILE_NAME(tmp, @1);
+	$$ = tmp;
+      }
+  | packed_array_data_type2 dimensions_opt
+      { if ($2) {
+	      parray_type_t*tmp = new parray_type_t($1, $2);
+	      FILE_NAME(tmp, @1);
+	      $$ = tmp;
+        } else {
+	      $$ = $1;
+        }
+      }
+  | K_string
+      { string_type_t*tmp = new string_type_t;
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
@@ -2720,7 +2773,7 @@ block_item_decls_opt
   /* Type declarations are parsed here. The rule actions call pform
      functions that add the declaration to the current lexical scope. */
 type_declaration
-  : K_typedef data_type IDENTIFIER dimensions_opt ';'
+  : K_typedef data_type2 IDENTIFIER dimensions_opt ';'
       { perm_string name = lex_strings.make($3);
 	pform_set_typedef(name, $2, $4);
 	delete[]$3;
@@ -2729,7 +2782,7 @@ type_declaration
   /* If the IDENTIFIER already is a typedef, it is possible for this
      code to override the definition, but only if the typedef is
      inherited from a different scope. */
-  | K_typedef data_type TYPE_IDENTIFIER dimensions_opt ';'
+  | K_typedef data_type2 TYPE_IDENTIFIER dimensions_opt ';'
       { perm_string name = lex_strings.make($3.text);
 	if (pform_test_type_identifier_local(name)) {
 	      yyerror(@3, "error: Typedef identifier \"%s\" is already a type name.", $3.text);
@@ -2924,7 +2977,7 @@ struct_union_member_list
   ;
 
 struct_union_member /* IEEE 1800-2012 A.2.2.1 */
-  : attribute_list_opt data_type list_of_variable_decl_assignments ';'
+  : attribute_list_opt data_type2 list_of_variable_decl_assignments ';'
       { struct_member_t*tmp = new struct_member_t;
 	FILE_NAME(tmp, @2);
 	tmp->type  .reset($2);
