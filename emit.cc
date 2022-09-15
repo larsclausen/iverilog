@@ -419,11 +419,6 @@ void NetRepeat::emit_recurse(struct target_t*tgt) const
 	    statement_->emit_proc(tgt);
 }
 
-void netclass_t::emit_scope(struct target_t*tgt) const
-{
-      class_scope_->emit_scope(tgt);
-}
-
 void NetScope::emit_scope(struct target_t*tgt) const
 {
       if (debug_emit) {
@@ -438,7 +433,6 @@ void NetScope::emit_scope(struct target_t*tgt) const
 
       for (map<perm_string,netclass_t*>::const_iterator cur = classes_.begin()
 		 ; cur != classes_.end() ; ++cur) {
-	    cur->second->emit_scope(tgt);
 	    tgt->class_type(this, cur->second);
       }
 
@@ -484,9 +478,6 @@ bool NetScope::emit_defs(struct target_t*tgt) const
 	    for (map<hname_t,NetScope*>::const_iterator cur = children_.begin()
 		       ; cur != children_.end() ; ++ cur )
 		  flag &= cur->second->emit_defs(tgt);
-	    for (map<perm_string,netclass_t*>::const_iterator cur = classes_.begin()
-		       ; cur != classes_.end() ; ++ cur)
-		  flag &= cur->second->emit_defs(tgt);
 	    break;
 
 	  case FUNC:
@@ -503,11 +494,6 @@ bool NetScope::emit_defs(struct target_t*tgt) const
       }
 
       return flag;
-}
-
-bool netclass_t::emit_defs(struct target_t*tgt) const
-{
-      return class_scope_->emit_defs(tgt);
 }
 
 int Design::emit(struct target_t*tgt) const

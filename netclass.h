@@ -104,9 +104,6 @@ class netclass_t : public ivl_type_s {
 	// "local" and "protected".
       bool test_scope_is_method(const NetScope*scope) const;
 
-      void emit_scope(struct target_t*tgt) const;
-      bool emit_defs(struct target_t*tgt) const;
-
       std::ostream& debug_dump(std::ostream&fd) const;
       void dump_scope(std::ostream&fd) const;
 
