@@ -42,6 +42,9 @@ class PClass : public PScopeExtra, public PNamedItem {
 
       SymbolType symbol_type() const;
 
+      void elaborate(Design *des, NetScope *scope);
+      void elaborate_sig(Design *des, NetScope *scope);
+
     public:
       class_type_t*type;
 };

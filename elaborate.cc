@@ -6220,9 +6220,12 @@ static void elaborate_classes(Design*des, NetScope*scope,
 			      const vector<PClass*>&classes)
 {
 	  for (PClass *cur : classes) {
-	    netclass_t*use_class = scope->find_class(des, cur->pscope_name());
-	    use_class->elaborate(des, cur);
+	    NetScope *class_scope = scope->child(hname_t(cur->pscope_name()));
+	    assert(class_scope);
+	    cur->elaborate(des, class_scope);
 
+	    const netclass_t *use_class = class_scope->class_def();
+	    assert(use_class);
 	    if (use_class->test_for_missing_initializers()) {
 		  cerr << cur->get_fileline() << ": error: "
 		       << "Const properties of class " << use_class->get_name()
@@ -6317,29 +6320,29 @@ bool Module::elaborate(Design*des, NetScope*scope) const
 }
 
 /*
- * Elaborating a netclass_t means elaborating the PFunction and PTask
+ * Elaborating a PScope means elaborating the PFunction and PTask
  * objects that it contains. The scopes and signals have already been
- * elaborated in the class of the netclass_t scope, so we can get the
+ * elaborated in the class of the PScope scope, so we can get the
  * child scope for each definition and use that for the context of the
  * function.
  */
-void netclass_t::elaborate(Design*des, PClass*pclass)
+void PClass::elaborate(Design *des, NetScope *scope)
 {
-      if (! pclass->type->initialize_static.empty()) {
-	    std::vector<Statement*>&stmt_list = pclass->type->initialize_static;
+      if (! type->initialize_static.empty()) {
+	    std::vector<Statement*>&stmt_list = type->initialize_static;
 	    NetBlock*stmt = new NetBlock(NetBlock::SEQU, 0);
 	    for (size_t idx = 0 ; idx < stmt_list.size() ; idx += 1) {
-		  NetProc*tmp = stmt_list[idx]->elaborate(des, class_scope_);
+		  NetProc*tmp = stmt_list[idx]->elaborate(des, scope);
 		  if (tmp == 0) continue;
 		  stmt->append(tmp);
 	    }
-	    NetProcTop*top = new NetProcTop(class_scope_, IVL_PR_INITIAL, stmt);
-	    top->set_line(*pclass);
+	    NetProcTop*top = new NetProcTop(scope, IVL_PR_INITIAL, stmt);
+	    top->set_line(*this);
 	    des->add_process(top);
       }
 
-      elaborate_functions(des, class_scope_, pclass->funcs);
-      elaborate_tasks(des, class_scope_, pclass->tasks);
+      elaborate_functions(des, scope, funcs);
+      elaborate_tasks(des, scope, tasks);
 }
 
 bool PGenerate::elaborate(Design*des, NetScope*container) const

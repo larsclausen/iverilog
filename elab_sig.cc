@@ -242,8 +242,8 @@ static void elaborate_sig_classes(Design*des, NetScope*scope,
 				  const vector<PClass*>&classes)
 {
       for (PClass *cur : classes) {
-	    netclass_t*use_class = scope->find_class(des, cur->pscope_name());
-	    use_class->elaborate_sig(des, cur);
+	    NetScope *class_scope = scope->child(hname_t(cur->pscope_name()));
+	    cur->elaborate_sig(des, class_scope);
       }
 }
 
@@ -371,29 +371,29 @@ bool Module::elaborate_sig(Design*des, NetScope*scope) const
       return flag;
 }
 
-void netclass_t::elaborate_sig(Design*des, PClass*pclass)
+void PClass::elaborate_sig(Design*des, NetScope *class_scope)
 {
-      for (map<perm_string,struct class_type_t::prop_info_t>::iterator cur = pclass->type->properties.begin()
-		 ; cur != pclass->type->properties.end() ; ++ cur) {
+      for (map<perm_string,struct class_type_t::prop_info_t>::iterator cur = type->properties.begin()
+		 ; cur != type->properties.end() ; ++ cur) {
 
 	    if (! cur->second.qual.test_static())
 		  continue;
 
 	    if (debug_elaborate) {
-		  cerr << pclass->get_fileline() << ": netclass_t::elaborate_sig: "
+		  cerr << get_fileline() << ": PClass::elaborate_sig: "
 		       << "Elaborate static property " << cur->first
-		       << " as signal in scope " << scope_path(class_scope_)
+		       << " as signal in scope " << scope_path(class_scope)
 		       << "." << endl;
 	    }
 
 	    list<netrange_t> nil_list;
-	    ivl_type_t use_type = cur->second.type->elaborate_type(des, class_scope_);
-	    /* NetNet*sig = */ new NetNet(class_scope_, cur->first, NetNet::REG,
+	    ivl_type_t use_type = cur->second.type->elaborate_type(des, class_scope);
+	    /* NetNet*sig = */ new NetNet(class_scope, cur->first, NetNet::REG,
 				    nil_list, use_type);
       }
 
-      elaborate_sig_funcs(des, class_scope_, pclass->funcs);
-      elaborate_sig_tasks(des, class_scope_, pclass->tasks);
+      elaborate_sig_funcs(des, class_scope, funcs);
+      elaborate_sig_tasks(des, class_scope, tasks);
 }
 
 bool PGate::elaborate_sig(Design*, NetScope*) const
