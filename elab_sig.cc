@@ -392,30 +392,8 @@ void netclass_t::elaborate_sig(Design*des, PClass*pclass)
 				    nil_list, use_type);
       }
 
-      for (map<perm_string,PFunction*>::iterator cur = pclass->funcs.begin()
-		 ; cur != pclass->funcs.end() ; ++ cur) {
-	    if (debug_elaborate) {
-		  cerr << cur->second->get_fileline() << ": netclass_t::elaborate_sig: "
-		       << "Elaborate signals in function method " << cur->first << endl;
-	    }
-
-	    NetScope*scope = class_scope_->child( hname_t(cur->first) );
-	    ivl_assert(*cur->second, scope);
-	    cur->second->elaborate_sig(des, scope);
-      }
-
-      for (map<perm_string,PTask*>::iterator cur = pclass->tasks.begin()
-		 ; cur != pclass->tasks.end() ; ++ cur) {
-	    if (debug_elaborate) {
-		  cerr << cur->second->get_fileline() << ": netclass_t::elaborate_sig: "
-		       << "Elaborate signals in task method " << cur->first << endl;
-	    }
-
-	    NetScope*scope = class_scope_->child( hname_t(cur->first) );
-	    ivl_assert(*cur->second, scope);
-	    cur->second->elaborate_sig(des, scope);
-      }
-
+      elaborate_sig_funcs(des, class_scope_, pclass->funcs);
+      elaborate_sig_tasks(des, class_scope_, pclass->tasks);
 }
 
 bool PGate::elaborate_sig(Design*, NetScope*) const

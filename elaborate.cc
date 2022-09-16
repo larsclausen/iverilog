@@ -6338,31 +6338,8 @@ void netclass_t::elaborate(Design*des, PClass*pclass)
 	    des->add_process(top);
       }
 
-      for (map<perm_string,PFunction*>::iterator cur = pclass->funcs.begin()
-		 ; cur != pclass->funcs.end() ; ++ cur) {
-	    if (debug_elaborate) {
-		  cerr << cur->second->get_fileline() << ": netclass_t::elaborate: "
-		       << "Elaborate class " << scope_path(class_scope_)
-		       << " function method " << cur->first << endl;
-	    }
-
-	    NetScope*scope = class_scope_->child( hname_t(cur->first) );
-	    ivl_assert(*cur->second, scope);
-	    cur->second->elaborate(des, scope);
-      }
-
-      for (map<perm_string,PTask*>::iterator cur = pclass->tasks.begin()
-		 ; cur != pclass->tasks.end() ; ++ cur) {
-	    if (debug_elaborate) {
-		  cerr << cur->second->get_fileline() << ": netclass_t::elaborate: "
-		       << "Elaborate class " << scope_path(class_scope_)
-		       << " task method " << cur->first << endl;
-	    }
-
-	    NetScope*scope = class_scope_->child( hname_t(cur->first) );
-	    ivl_assert(*cur->second, scope);
-	    cur->second->elaborate(des, scope);
-      }
+      elaborate_functions(des, class_scope_, pclass->funcs);
+      elaborate_tasks(des, class_scope_, pclass->tasks);
 }
 
 bool PGenerate::elaborate(Design*des, NetScope*container) const
