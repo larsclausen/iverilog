@@ -656,6 +656,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <decl_assignment> variable_decl_assignment
 %type <decl_assignments> list_of_variable_decl_assignments
 %type <decl_assignments> list_of_variable_decl_assignments_with_type
+%type <decl_assignments> list_of_variable_decl_assignments_with_type2
 
 %type <data_type>  data_type data_type_opt data_type_or_implicit 
 %type <data_type>  simple_type_or_string let_formal_type
@@ -723,6 +724,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <type_plus_id> data_type_or_implicit_plus_id
 %type <type_plus_id> data_type_or_implicit_plus_id_dim
+%type <type_plus_id> data_type_plus_id_dim
 %type <type_plus_id> data_type_or_implicit_or_void_plus_id
 
 %token K_TAND
@@ -1223,14 +1225,14 @@ packed_array_data_type2 /* IEEE1800-2005: A.2.2.1 */
 	}
 	$$ = $1;
       }
-  | IDENTIFIER dimensions_opt
+  | IDENTIFIER dimensions
       { pform_set_type_referenced(@1, $1.text);
 	delete[]$1.text;
 	$$ = $1.type;
       }
   | PACKAGE_IDENTIFIER K_SCOPE_RES
       { lex_in_package_scope($1); }
-    IDENTIFIER dimensions_opt
+    IDENTIFIER dimensions
       { lex_in_package_scope(0);
 	$$ = $4.type;
 	delete[]$4.text;
@@ -1804,6 +1806,18 @@ loop_statement /* IEEE1800-2005: A.6.8 */
       }
   ;
 
+list_of_variable_decl_assignments_with_type2 /* IEEE1800-2005 A.2.3 */
+  :  data_type_plus_id_dim var_decl_initializer_opt
+      { std::list<decl_assignment_t*>*tmp = new std::list<decl_assignment_t*>;
+//	tmp->push_back($1);
+	$$ = tmp;
+      }
+  | list_of_variable_decl_assignments_with_type2 ',' variable_decl_assignment
+      { std::list<decl_assignment_t*>*tmp = $1;
+	tmp->push_back($3);
+	$$ = tmp;
+      }
+  ;
 
 list_of_variable_decl_assignments_with_type /* IEEE1800-2005 A.2.3 */
   : data_type_or_implicit_plus_id_dim var_decl_initializer_opt
@@ -2388,6 +2402,13 @@ tf_port_declaration /* IEEE1800-2005: A.2.7 */
       }
   ;
 
+data_type_plus_id_dim
+  : data_type2 IDENTIFIER dimensions_opt
+      { $$.type = $1;
+        $$.id = $2;
+      }
+  ;
+
 data_type_or_implicit_plus_id
   : IDENTIFIER
       { $$.type = 0;
@@ -2710,17 +2731,18 @@ block_item_decl
       { //if ($3) pform_make_var(@3, $3, attributes_in_context);
       }
 
-  | variable_lifetime_opt data_type list_of_variable_decl_assignments ';'
-      { if ($2) pform_make_var(@2, $3, $2, attributes_in_context);
+  | variable_lifetime_opt list_of_variable_decl_assignments_with_type2 ';'
+      { if ($2) pform_make_var(@2, $2, 0, attributes_in_context);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
   /* The extra `reg` is not valid (System)Verilog, this is a iverilog extension. */
+  /*
   | variable_lifetime_opt K_reg data_type list_of_variable_decl_assignments ';'
       { if ($3) pform_make_var(@3, $4, $3, attributes_in_context);
 	var_lifetime = LexicalScope::INHERITED;
       }
-
+*/
   | K_event event_variable_list ';'
       { if ($2) pform_make_events(@1, $2);
       }
@@ -2742,11 +2764,11 @@ block_item_decl
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
       }
-*/
   | variable_lifetime_opt data_type error ';'
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
       }
+*/
   | K_event error ';'
       { yyerror(@1, "error: syntax error in event variable list.");
 	yyerrok;
@@ -6682,14 +6704,14 @@ statement_item /* This is roughly statement_item in the LRM */
 		  delete $2;
 		  $$ = tmp;
 		}
-
+/*
   | hierarchy_identifier argument_list_parens_opt ';'
       { PCallTask*tmp = pform_make_call_task(@1, *$1, *$2);
 	delete $1;
 	delete $2;
 	$$ = tmp;
       }
-
+*/
   | hierarchy_identifier K_with '{' constraint_block_item_list_opt '}' ';'
       { /* ....randomize with { <constraints> } */
 	if ($1 && peek_tail_name(*$1) == "randomize") {
