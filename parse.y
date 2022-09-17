@@ -486,7 +486,11 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       class_type_t*class_type;
       real_type_t::type_t real_type;
       property_qualifier_t property_qualifier;
-      PPackage*package;
+
+      struct {
+	    char *text;
+	    PPackage*package;
+      } package_identifier;
 
       struct {
 	    char*text;
@@ -526,7 +530,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %token <text>      IDENTIFIER SYSTEM_IDENTIFIER STRING TIME_LITERAL
 %token <type_identifier> TYPE_IDENTIFIER
-%token <package>   PACKAGE_IDENTIFIER
+%token <package_identifier>   PACKAGE_IDENTIFIER
 %token <discipline> DISCIPLINE_IDENTIFIER
 %token <text>   PATHPULSE_IDENTIFIER
 %token <number> BASED_NUMBER DEC_NUMBER UNBASED_NUMBER
@@ -1240,7 +1244,9 @@ ps_type_identifier /* IEEE1800-2017: A.9.3 */
 	$$ = $1.type;
       }
   | PACKAGE_IDENTIFIER K_SCOPE_RES
-      { lex_in_package_scope($1); }
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
     TYPE_IDENTIFIER
       { lex_in_package_scope(0);
 	$$ = $4.type;
@@ -1254,7 +1260,9 @@ ps_type_identifier_dim /* IEEE1800-2017: A.9.3 */
 	$$ = pform_make_parray_type(@2, $1.type, $2);
       }
   | PACKAGE_IDENTIFIER K_SCOPE_RES
-      { lex_in_package_scope($1); }
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
     TYPE_IDENTIFIER dimensions_opt
       { lex_in_package_scope(0);
 	$$ = pform_make_parray_type(@5, $4.type, $5);
@@ -2046,11 +2054,13 @@ package_import_declaration /* IEEE1800-2005 A.2.1.3 */
 
 package_import_item
   : PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER
-      { pform_package_import(@2, $1, $3);
+      { pform_package_import(@2, $1.package, $3);
+	delete[] $1.text;
 	delete[]$3;
       }
   | PACKAGE_IDENTIFIER K_SCOPE_RES '*'
-      { pform_package_import(@2, $1, 0);
+      { pform_package_import(@2, $1.package, 0);
+	delete[] $1.text;
       }
   ;
 
@@ -2384,6 +2394,7 @@ tf_port_declaration /* IEEE1800-2005: A.2.7 */
 identifier_name
   : IDENTIFIER { $$ = $1; }
   | TYPE_IDENTIFIER { $$ = $1.text; }
+  | PACKAGE_IDENTIFIER { $$ = $1.text; }
 
 
   // This part is shared between data_type_or_implicit_plus_id and
@@ -3841,7 +3852,8 @@ expr_primary
       }
 
   | PACKAGE_IDENTIFIER K_SCOPE_RES hierarchy_identifier
-      { $$ = pform_package_ident(@2, $1, $3);
+      { $$ = pform_package_ident(@2, $1.package, $3);
+	delete[] $1.text;
 	delete $3;
       }
 
@@ -3873,8 +3885,9 @@ expr_primary
       }
   | PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER '(' expression_list_proper ')'
       { perm_string use_name = lex_strings.make($3);
-	PECallFunction*tmp = new PECallFunction($1, use_name, *$5);
+	PECallFunction*tmp = new PECallFunction($1.package, use_name, *$5);
 	FILE_NAME(tmp, @3);
+	delete[] $1.text;
 	delete[]$3;
 	$$ = tmp;
       }
@@ -6491,7 +6504,8 @@ statement_item /* This is roughly statement_item in the LRM */
 	$$ = tmp;
       }
   | K_TRIGGER PACKAGE_IDENTIFIER K_SCOPE_RES hierarchy_identifier
-      { PTrigger*tmp = pform_new_trigger(@4, $2, *$4);
+      { PTrigger*tmp = pform_new_trigger(@4, $2.package, *$4);
+	delete[] $2.text;
 	delete $4;
 	$$ = tmp;
       }

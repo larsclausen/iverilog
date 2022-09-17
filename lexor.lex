@@ -395,8 +395,8 @@ TU [munpf]
 	   return this as a PACKAGE_IDENTIFIER instead. */
       if (rc == IDENTIFIER && gn_system_verilog()) {
 	    if (PPackage*pkg = pform_test_package_identifier(yylval.text)) {
-		  delete[]yylval.text;
-		  yylval.package = pkg;
+		  yylval.package_identifier.text = yylval.text;
+		  yylval.package_identifier.package = pkg;
 		  rc = PACKAGE_IDENTIFIER;
 	    }
       }
@@ -419,8 +419,8 @@ TU [munpf]
       yylval.text = strdupnew(yytext+1);
       if (gn_system_verilog()) {
 	    if (PPackage*pkg = pform_test_package_identifier(yylval.text)) {
-		  delete[]yylval.text;
-		  yylval.package = pkg;
+		  yylval.package_identifier.text = yylval.text;
+		  yylval.package_identifier.package = pkg;
 		  return PACKAGE_IDENTIFIER;
 	    }
       }
@@ -466,7 +466,8 @@ TU [munpf]
 	    return KK_attribute;
 
       if (gn_system_verilog() && strcmp(yytext,"$unit") == 0) {
-	    yylval.package = pform_units.back();
+	    yylval.package_identifier.text = strdup(yytext);
+	    yylval.package_identifier.package = pform_units.back();
 	    return PACKAGE_IDENTIFIER;
       }
 
