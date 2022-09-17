@@ -1319,7 +1319,7 @@ builtin_type
 data_type /* IEEE1800-2005: A.2.2.1 */
   : builtin_type { $$ = $1; }
   | K_reg builtin_type { $$ = $2; }
-  | ps_type_identifier dimensions_opt { $$ = pform_make_parray_type(@2, $1, $2); }
+  | ps_type_identifier_dim { $$ = $1; }
   ;
 
 /* Data type or nothing, but not implicit */
@@ -2408,7 +2408,7 @@ data_type_or_implicit_plus_id_base
         $$.id = $1;
 	$$.ranges = nullptr;
       }
-  | atomic_type identifier_name
+  | builtin_type identifier_name
       { $$.type = $1;
 	$$.id = $2;
 	$$.ranges = nullptr;
@@ -2453,7 +2453,7 @@ data_type_plus_id
         $$.id = $1;
 	$$.ranges = nullptr;
       }
-  | atomic_type identifier_name
+  | builtin_type identifier_name
       { $$.type = $1;
 	$$.id = $2;
 	$$.ranges = nullptr;
@@ -3751,12 +3751,17 @@ expr_primary_or_typename
 
   /* There are a few special cases (notably $bits argument) where the
      expression may be a type name. Let the elaborator sort this out. */
-  | data_type
+  | builtin_type
       { PETypename*tmp = new PETypename($1);
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
-
+  | TYPE_IDENTIFIER
+      { PETypename*tmp = new PETypename($1.type);
+	FILE_NAME(tmp, @1);
+	delete[] $1.text;
+	$$ = tmp;
+      }
   ;
 
 expr_primary

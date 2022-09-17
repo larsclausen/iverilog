@@ -137,8 +137,37 @@ PExpr* pform_package_ident(const struct vlltype&loc,
 			   PPackage*pkg, pform_name_t*ident_name)
 {
       assert(ident_name);
+
+      if (ident_name->size() == 1) {
+	    auto cur = pkg->typedefs.find(peek_head_name(*ident_name));
+	    if (cur != pkg->typedefs.end()) {
+		  data_type_t *type = cur->second;
+		  auto &index = ident_name->front().index;
+		  if (!index.empty()) {
+			auto pdims = new std::list<pform_range_t>;
+			for (auto const &i : index) {
+			      switch (i.sel) {
+			      case index_component_t::SEL_BIT:
+			      case index_component_t::SEL_PART:
+				    pdims->push_back({i.msb, i.lsb});
+				    break;
+			      default:
+				    break;
+			      }
+			}
+		        type = new parray_type_t(type, pdims);
+			FILE_NAME(type, loc);
+		  }
+
+		  auto type_name = new PETypename(type);
+		  FILE_NAME(type_name, loc);
+		  return type_name;
+	    }
+      }
+
       PEIdent*tmp = new PEIdent(pkg, *ident_name);
       FILE_NAME(tmp, loc);
+
       return tmp;
 }
 
