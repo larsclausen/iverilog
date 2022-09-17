@@ -767,6 +767,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <type_id_range> data_type_or_implicit_plus_id
 %type <type_id_range> data_type_or_implicit_plus_id_dim
 %type <type_id_range> data_type_or_implicit_or_void_plus_id
+%type <type_id_range> data_type_plus_id
 
 %token K_TAND
 %nonassoc K_PLUS_EQ K_MINUS_EQ K_MUL_EQ K_DIV_EQ K_MOD_EQ K_AND_EQ K_OR_EQ
@@ -2431,6 +2432,24 @@ data_type_or_implicit_plus_id_dim
       { $$.type = $1.type;
         $$.id = $1.id;
 	$$.ranges = $2;
+      }
+  ;
+
+data_type_plus_id
+  : identifier_name 
+      { $$.type = nullptr;
+        $$.id = $1;
+	$$.ranges = nullptr;
+      }
+  | atomic_type identifier_name
+      { $$.type = $1;
+	$$.id = $2;
+	$$.ranges = nullptr;
+      }
+  | ps_type_identifier_dim identifier_name
+      { $$.type = $1;
+        $$.id = $2;
+	$$.ranges = nullptr;
       }
   ;
 
@@ -4856,31 +4875,25 @@ module_parameter_port_list_opt
   ;
 
 module_parameter
-  : parameter param_type parameter_assign
-  | localparam param_type parameter_assign
+  : parameter parameter_type_plus_assign
+  | localparam parameter_type_plus_assign
       { pform_requires_sv(@1, "Local parameter in module parameter port list");
       }
   ;
 
 module_parameter_port_list
   : module_parameter
-  | data_type_opt
-    { param_data_type = $1;
-      param_is_local = false;
-    }
-    parameter_assign
-    { pform_requires_sv(@3, "Omitting initial `parameter` in parameter port "
+  | parameter_type_opt_plus_assign
+    { pform_requires_sv(@1, "Omitting initial `parameter` in parameter port "
 			    "list");
     }
   | module_parameter_port_list ',' module_parameter
-  | module_parameter_port_list ',' data_type_opt
-    { if ($3) {
+  | module_parameter_port_list ',' parameter_type_opt_plus_assign
+  /*  { if ($3) {
 	    pform_requires_sv(@3, "Omitting `parameter`/`localparam` before "
 				  "data type in parameter port list");
-	    param_data_type = $3;
       }
-    }
-    parameter_assign
+    }*/
   ;
 
 module_item
@@ -5491,18 +5504,11 @@ net_type_or_var_opt
   | K_var { $$ = NetNet::REG; }
   ;
 
-  /* The param_type rule is just the data_type_or_implicit rule wrapped
-     with an assignment to para_data_type with the figured data type.
-     This is used by parameter_assign, which is found to the right of
-     the param_type in various rules. */
-
-param_type : data_type_or_implicit { param_data_type = $1; }
-
 parameter : K_parameter { param_is_local = false; };
 localparam : K_localparam { param_is_local = true; };
 
 parameter_declaration
-  : parameter_or_localparam param_type parameter_assign_list ';'
+  : parameter_or_localparam parameter_assign_list ';'
 
 parameter_or_localparam
   : parameter
@@ -5515,16 +5521,34 @@ parameter_or_localparam
      just behave differently when someone tries to override them. */
 
 parameter_assign_list
-  : parameter_assign
+  : parameter_type_plus_assign 
   | parameter_assign_list ',' parameter_assign
   ;
 
 parameter_assign
-  : IDENTIFIER initializer_opt parameter_value_ranges_opt
+  : identifier_name initializer_opt parameter_value_ranges_opt
       { pform_set_parameter(@1, lex_strings.make($1), param_is_local,
 			    param_data_type, $2, $3);
 	delete[]$1;
       }
+  ;
+
+parameter_type_plus_assign 
+  : data_type_or_implicit_plus_id initializer_opt parameter_value_ranges_opt
+    { param_data_type = $1.type;
+      pform_set_parameter(@1, lex_strings.make($1.id), param_is_local,
+			    param_data_type, $2, $3);
+	delete[]$1.id;
+    }
+  ;
+
+parameter_type_opt_plus_assign 
+  : data_type_plus_id initializer_opt parameter_value_ranges_opt
+    { param_data_type = $1.type;
+      pform_set_parameter(@1, lex_strings.make($1.id), param_is_local,
+			    param_data_type, $2, $3);
+	delete[]$1.id;
+    }
   ;
 
 parameter_value_ranges_opt : parameter_value_ranges { $$ = $1; } | { $$ = 0; } ;
