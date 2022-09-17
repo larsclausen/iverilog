@@ -707,7 +707,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <data_type>  data_type data_type_opt data_type_or_implicit implicit_type
 %type <data_type>  simple_type_or_string 
-%type <data_type>  packed_array_data_type atomic_type
+%type <data_type>  packed_array_data_type builtin_type
 
 %type <data_type>  ps_type_identifier ps_type_identifier_dim
 %type <data_type>  simple_packed_type
@@ -1299,7 +1299,7 @@ simple_packed_type /* Integer and vector types */
       }
   ;
 
-atomic_type
+builtin_type
   : simple_packed_type
       { $$ = $1;
       }
@@ -1317,8 +1317,8 @@ atomic_type
   ;
 
 data_type /* IEEE1800-2005: A.2.2.1 */
-  : atomic_type { $$ = $1; }
-  | K_reg atomic_type { $$ = $2; }
+  : builtin_type { $$ = $1; }
+  | K_reg builtin_type { $$ = $2; }
   | ps_type_identifier dimensions_opt { $$ = pform_make_parray_type(@2, $1, $2); }
   ;
 
