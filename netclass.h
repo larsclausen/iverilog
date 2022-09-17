@@ -116,6 +116,9 @@ class netclass_t : public ivl_type_s {
       const NetExpr* get_parameter(Design *des, perm_string name,
 				   ivl_type_t &par_type) const;
 
+    protected:
+      bool test_compatibility(ivl_type_t that) const;
+
     private:
       perm_string name_;
 	// If this is derived from another base class, point to it
