@@ -702,7 +702,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <decl_assignments_with_type> list_of_variable_decl_assignments_with_type
 
 %type <data_type>  data_type data_type_opt data_type_or_implicit implicit_type
-%type <data_type>  simple_type_or_string let_formal_type
+%type <data_type>  simple_type_or_string 
 %type <data_type>  packed_array_data_type atomic_type
 
 %type <data_type>  ps_type_identifier ps_type_identifier_dim
@@ -768,6 +768,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <type_id_range> data_type_or_implicit_plus_id_dim
 %type <type_id_range> data_type_or_implicit_or_void_plus_id
 %type <type_id_range> data_type_plus_id
+%type <type_id_range> let_formal_type_plus_id
 
 %token K_TAND
 %nonassoc K_PLUS_EQ K_MINUS_EQ K_MUL_EQ K_DIV_EQ K_MOD_EQ K_AND_EQ K_OR_EQ
@@ -5354,17 +5355,21 @@ let_port_list
 
   // FIXME: What about the attributes?
 let_port_item
-  : attribute_list_opt let_formal_type IDENTIFIER dimensions_opt initializer_opt
-      { perm_string tmp3 = lex_strings.make($3);
-        $$ = pform_make_let_port($2, tmp3, $4, $5);
+  : attribute_list_opt let_formal_type_plus_id initializer_opt
+      { perm_string tmp3 = lex_strings.make($2.id);
+        $$ = pform_make_let_port($2.type, tmp3, $2.ranges, $3);
+	delete[] $2.id;
       }
   ;
 
-let_formal_type
-  : data_type_or_implicit
+let_formal_type_plus_id
+  : data_type_or_implicit_plus_id_dim
       { $$ = $1; }
-  | K_untyped
-      { $$ = 0; }
+  | K_untyped identifier_name dimensions_opt
+      { $$.type = nullptr;
+        $$.id = $2;
+	$$.ranges = $3;
+      }
   ;
 
 module_item_list
