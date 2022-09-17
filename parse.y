@@ -1866,13 +1866,13 @@ variable_decl_assignment /* IEEE1800-2005 A.2.3 */
 
 
 loop_variables /* IEEE1800-2005: A.6.8 */
-  : loop_variables ',' IDENTIFIER
+  : loop_variables ',' identifier_name
       { std::list<perm_string>*tmp = $1;
 	tmp->push_back(lex_strings.make($3));
 	delete[]$3;
 	$$ = tmp;
       }
-  | IDENTIFIER
+  | identifier_name
       { std::list<perm_string>*tmp = new std::list<perm_string>;
 	tmp->push_back(lex_strings.make($1));
 	delete[]$1;
@@ -4543,7 +4543,7 @@ port_declaration
 	$$ = ptmp;
       }
   | attribute_list_opt
-    K_input K_wreal IDENTIFIER
+    K_input K_wreal identifier_name
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4);
 	ptmp = pform_module_port_reference(@2, name);
@@ -4587,7 +4587,7 @@ port_declaration
 	$$ = ptmp;
       }
   | attribute_list_opt
-    K_inout K_wreal IDENTIFIER
+    K_inout K_wreal identifier_name
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4);
 	ptmp = pform_module_port_reference(@2, name);
@@ -4629,7 +4629,7 @@ port_declaration
 	$$ = ptmp;
       }
   | attribute_list_opt
-    K_output K_wreal IDENTIFIER
+    K_output K_wreal identifier_name
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4);
 	ptmp = pform_module_port_reference(@2, name);
@@ -4757,7 +4757,7 @@ cont_assign_list
      items, and finally an end marker. */
 
 module
-  : attribute_list_opt module_start lifetime_opt IDENTIFIER
+  : attribute_list_opt module_start lifetime_opt identifier_name
       { pform_startmodule(@2, $4, $2==K_program, $2==K_interface, $3, $1); }
     module_package_import_list_opt
     module_parameter_port_list_opt
@@ -7098,13 +7098,13 @@ udp_port_list
 udp_reg_opt: K_reg  { $$ = true; } | { $$ = false; };
 
 udp_input_declaration_list
-        : K_input IDENTIFIER
+        : K_input identifier_name
 		{ std::list<perm_string>*tmp = new std::list<perm_string>;
 		  tmp->push_back(lex_strings.make($2));
 		  $$ = tmp;
 		  delete[]$2;
 		}
-	| udp_input_declaration_list ',' K_input IDENTIFIER
+	| udp_input_declaration_list ',' K_input identifier_name
 		{ std::list<perm_string>*tmp = $1;
 		  tmp->push_back(lex_strings.make($4));
 		  $$ = tmp;
