@@ -711,6 +711,7 @@ Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
 %type <data_type>  packed_array_data_type
 %type <data_type>  ps_type_identifier
 %type <data_type>  simple_packed_type
+%type <data_type>  class_scope
 %type <class_type> class_identifier
 %type <struct_member>  struct_union_member
 %type <struct_members> struct_union_member_list
@@ -1041,6 +1042,9 @@ class_item_qualifier_opt
   | { $$ = property_qualifier_t::make_none(); }
   ;
 
+class_scope
+  : ps_type_identifier K_SCOPE_RES { $$ = $1; }
+
 class_new /* IEEE1800-2005 A.2.4 */
   : K_new argument_list_parens_opt
       { std::list<PExpr*>*expr_list = $2;
@@ -1049,6 +1053,16 @@ class_new /* IEEE1800-2005 A.2.4 */
 	FILE_NAME(tmp, @1);
 	delete $2;
 	$$ = tmp;
+      }
+    // This can't be a class_scope_opt because it will lead to shfit/reduce
+    // conflicts with array_new
+  | class_scope K_new argument_list_parens_opt
+      { std::list<PExpr*>*expr_list = $3;
+	strip_tail_items(expr_list);
+	PENewClass *new_expr = new PENewClass(*expr_list, $1);
+	FILE_NAME(new_expr, @2);
+	delete $3;
+	$$ = new_expr;
       }
   | K_new hierarchy_identifier
       { PEIdent*tmpi = new PEIdent(*$2);
