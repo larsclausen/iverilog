@@ -1253,6 +1253,11 @@ ps_type_identifier /* IEEE1800-2017: A.9.3 */
 	delete[]$1.text;
 	$$ = $1.type;
       }
+  | IDENTIFIER
+      { pform_set_type_referenced(@1, $1);
+	delete[]$1;
+	$$ = nullptr;
+      }
   | PACKAGE_IDENTIFIER K_SCOPE_RES
       { lex_in_package_scope($1.package);
 	delete[] $1.text;
@@ -1262,6 +1267,16 @@ ps_type_identifier /* IEEE1800-2017: A.9.3 */
 	$$ = $4.type;
 	delete[]$4.text;
       }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
+    IDENTIFIER
+      { lex_in_package_scope(0);
+	$$ = $4.type;
+	delete[]$4.text;
+      }
+
 
 ps_type_identifier_dim /* IEEE1800-2017: A.9.3 */
  : TYPE_IDENTIFIER dimensions_opt
@@ -2272,7 +2287,7 @@ simple_type_or_string /* IEEE1800-2005: A.2.2.1 */
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
-  | ps_type_identifier
+//  | ps_type_identifier
   ;
 
 statement /* IEEE1800-2005: A.6.4 */
@@ -2416,12 +2431,7 @@ identifier_name
   // <TYPE_IDENTIFIER> <dimensions_opt> needs to be reduced in the same rule to
   // avoid conflicts.
 data_type_or_implicit_plus_id_base
-  : IDENTIFIER
-      { $$.type = nullptr;
-        $$.id = $1;
-	$$.ranges = nullptr;
-      }
-  | builtin_type identifier_name
+  : builtin_type identifier_name
       { $$.type = $1;
 	$$.id = $2;
 	$$.ranges = nullptr;
@@ -2444,6 +2454,18 @@ data_type_or_implicit_plus_id
 	$$.id = $1.text;
 	$$.ranges = nullptr;
       }
+  | IDENTIFIER dimensions_opt identifier_name
+     {       }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
+    IDENTIFIER dimensions_opt identifier_name
+      { lex_in_package_scope(0);
+	$$ = pform_make_parray_type(@5, $4.type, $5);
+	delete[]$4.text;
+      }
+
   | data_type_or_implicit_plus_id_base { $$ = $1; }
   ;
 
@@ -2452,6 +2474,22 @@ data_type_or_implicit_plus_id_dim
       { $$.type = nullptr;
 	$$.id = $1.text;
 	$$.ranges = $2;
+      }
+  | IDENTIFIER dimensions_opt
+      { $$.type = nullptr;
+        $$.id = $1;
+	$$.ranges = nullptr;
+      }
+  | IDENTIFIER dimensions_opt identifier_name dimensions_opt 
+     {       }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
+    IDENTIFIER dimensions_opt identifier_name dimensions_opt 
+      { lex_in_package_scope(0);
+	$$ = pform_make_parray_type(@5, $4.type, $5);
+	delete[]$4.text;
       }
   | data_type_or_implicit_plus_id_base dimensions_opt
       { $$.type = $1.type;
@@ -2470,6 +2508,17 @@ data_type_plus_id
       { $$.type = $1;
 	$$.id = $2;
 	$$.ranges = nullptr;
+      }
+  | IDENTIFIER dimensions_opt identifier_name
+     {       }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
+    IDENTIFIER dimensions_opt identifier_name
+      { lex_in_package_scope(0);
+	$$ = pform_make_parray_type(@5, $4.type, $5);
+	delete[]$4.text;
       }
   | ps_type_identifier_dim identifier_name
       { $$.type = $1;
@@ -4569,7 +4618,7 @@ port_declaration
 	delete[]$4;
 	$$ = ptmp;
       }
-  | attribute_list_opt K_input net_type_or_var_opt data_type_or_implicit_plus_id '=' expression
+  | attribute_list_opt K_input net_type_or_var_opt data_type_or_implicit_plus_id_dim '=' expression
       { pform_requires_sv(@5, "Default port value");
 	Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4.id);
@@ -4655,7 +4704,7 @@ port_declaration
 	delete[]$4;
 	$$ = ptmp;
       }
-  | attribute_list_opt K_output net_type_or_var_opt data_type_or_implicit_plus_id '=' expression
+  | attribute_list_opt K_output net_type_or_var_opt data_type_or_implicit_plus_id_dim '=' expression
       { Module::port_t*ptmp;
 	perm_string name = lex_strings.make($4.id);
 	NetNet::Type use_type = $3;
