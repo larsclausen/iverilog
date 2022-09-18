@@ -2030,9 +2030,10 @@ package_declaration /* IEEE1800-2005 A.1.2 */
     timeunits_declaration_opt
       { pform_set_scope_timescale(@1); }
     package_item_list_opt
-    K_endpackage label_opt
-      { pform_end_package_declaration(@1);
-	check_end_label(@10, "package", $3, $10);
+    K_endpackage
+      { pform_end_package_declaration(@1); }
+    label_opt
+      { check_end_label(@11, "package", $3, $11);
 	delete[]$3;
       }
   ;
