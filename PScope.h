@@ -190,6 +190,7 @@ class PScope : public LexicalScope {
       virtual ~PScope();
 
       perm_string pscope_name() const { return name_; }
+	  void clear_name() { name_ = perm_string(); }
 
 	/* These are the timescale for this scope. The value is
 	   set by the `timescale directive or, in SystemVerilog,

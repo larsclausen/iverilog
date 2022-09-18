@@ -421,6 +421,11 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
       std::vector<pform_tf_port_t>* tf_ports;
 
+      struct {
+	    std::vector<pform_tf_port_t>* ports;
+	    std::vector<Statement*>*statements;
+      } tf_ports_and_statements;
+
       pform_name_t*pform_name;
 
       ivl_discipline_t discipline;
@@ -632,7 +637,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %token K_timer K_transition K_units K_white_noise K_wreal
 %token K_zi_nd K_zi_np K_zi_zd K_zi_zp
 
-%type <flag>    from_exclude block_item_decls_opt
+%type <flag>    from_exclude
 %type <number>  number pos_neg_number
 %type <flag>    signing unsigned_signed_opt signed_unsigned_opt
 %type <flag>    import_export
@@ -671,9 +676,11 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <named_pexprs> enum_name_list enum_name
 %type <data_type> enum_data_type enum_base_type
 
-%type <tf_ports> tf_item_declaration tf_item_list tf_item_list_opt
+%type <tf_ports> tf_item_declaration tf_item_list
 %type <tf_ports> tf_port_declaration tf_port_item tf_port_item_list
 %type <tf_ports> tf_port_list tf_port_list_opt tf_port_list_parens_opt
+
+%type <tf_ports_and_statements> tf_item_list_and_statements
 
 %type <named_pexpr> modport_simple_port port_name parameter_value_byname
 %type <named_pexprs> port_name_list parameter_value_byname_list
@@ -710,6 +717,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <data_type>  data_type data_type_opt data_type_or_implicit implicit_type
 %type <data_type>  simple_type_or_string 
 %type <data_type>  packed_array_data_type builtin_type
+%type <data_type>  variable_lifetime_opt_plus_data_type
 
 %type <data_type>  ps_type_identifier ps_type_identifier_dim
 %type <data_type>  simple_packed_type
@@ -746,6 +754,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <statement> simple_immediate_assertion_statement
 %type <statement> procedural_assertion_statement
 %type <statement_list> statement_or_null_list statement_or_null_list_opt
+%type <statement_list> block_items_decls_and_statements
 
 %type <statement> analog_statement
 
@@ -952,13 +961,12 @@ class_item /* IEEE1800-2005: A.1.8 */
 	current_function = pform_push_constructor_scope(@3);
       }
     tf_port_list_parens_opt ';'
-    block_item_decls_opt
-    statement_or_null_list_opt
+    block_items_decls_and_statements
     K_endfunction endnew_opt
       { current_function->set_ports($5);
 	pform_set_constructor_return(current_function);
 	pform_set_this_class(@3, current_function);
-	current_function_set_statement(@3, $8);
+	current_function_set_statement(@3, $7);
 	pform_pop_scope();
 	current_function = 0;
       }
@@ -1500,6 +1508,13 @@ for_step /* IEEE1800-2005: A.6.8 */
       { $$ = $1; }
   ;
 
+tf_item_list_and_statements
+ : tf_item_list statement_or_null_list_opt { $$ = {$1, $2}; }
+ | statement_or_null_list_opt { $$ = {nullptr, $1}; }
+
+block_items_decls_and_statements
+ : block_item_decls statement_or_null_list_opt { $$ = $2; }
+ | statement_or_null_list_opt  { $$ = $1; }
 
   /* The function declaration rule matches the function declaration
      header, then pushes the function scope. This causes the
@@ -1510,19 +1525,18 @@ function_declaration /* IEEE1800-2005: A.2.6 */
       { assert(current_function == 0);
 	current_function = pform_push_function_scope(@1, $3.id, $2);
       }
-    tf_item_list_opt
-    statement_or_null_list_opt
+    tf_item_list_and_statements
     K_endfunction
-      { current_function->set_ports($6);
+      { current_function->set_ports($6.ports);
 	current_function->set_return($3.type);
-	current_function_set_statement($7 ? @7 : @3, $7);
+	current_function_set_statement(@3, $6.statements);
 	pform_set_this_class(@3, current_function);
 	pform_pop_scope();
 	current_function = 0;
       }
     label_opt
       { // Last step: check any closing name.
-	check_end_label(@10, "function", $3.id, $10);
+	check_end_label(@9, "function", $3.id, $9);
 	delete[]$3.id;
       }
 
@@ -1531,12 +1545,11 @@ function_declaration /* IEEE1800-2005: A.2.6 */
 	current_function = pform_push_function_scope(@1, $3.id, $2);
       }
     '(' tf_port_list_opt ')' ';'
-    block_item_decls_opt
-    statement_or_null_list_opt
+    block_items_decls_and_statements
     K_endfunction
       { current_function->set_ports($6);
 	current_function->set_return($3.type);
-	current_function_set_statement($10 ? @10 : @3, $10);
+	current_function_set_statement($9 ? @9 : @3, $9);
 	pform_set_this_class(@3, current_function);
 	pform_pop_scope();
 	current_function = 0;
@@ -1546,7 +1559,7 @@ function_declaration /* IEEE1800-2005: A.2.6 */
       }
     label_opt
       { // Last step: check any closing name.
-	check_end_label(@13, "function", $3.id, $13);
+	check_end_label(@12, "function", $3.id, $12);
 	delete[]$3.id;
       }
 
@@ -2263,9 +2276,8 @@ simple_type_or_string /* IEEE1800-2005: A.2.2.1 */
   ;
 
 statement /* IEEE1800-2005: A.6.4 */
-  : attribute_list_opt statement_item
-      { pform_bind_attributes($2->attributes, $1);
-	$$ = $2;
+  : statement_item
+      { $$ = $1;
       }
   ;
 
@@ -2316,18 +2328,17 @@ task_declaration /* IEEE1800-2005: A.2.7 */
       { assert(current_task == 0);
 	current_task = pform_push_task_scope(@1, $3, $2);
       }
-    tf_item_list_opt
-    statement_or_null_list_opt
+    tf_item_list_and_statements
     K_endtask
-      { current_task->set_ports($6);
-	current_task_set_statement(@3, $7);
+      { current_task->set_ports($6.ports);
+	current_task_set_statement(@3, $6.statements);
 	pform_set_this_class(@3, current_task);
 	pform_pop_scope();
 	current_task = 0;
-	if ($7 && $7->size() > 1) {
-	      pform_requires_sv(@7, "Task body with multiple statements");
+	if ($6.statements && $6.statements->size() > 1) {
+	      pform_requires_sv(@6, "Task body with multiple statements");
 	}
-	delete $7;
+	delete $6.statements;
       }
     label_opt
       { // Last step: check any closing name. This is done late so
@@ -2335,7 +2346,7 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 	// label_opt but still have the pform_endmodule() called
 	// early enough that the lexor can know we are outside the
 	// module.
-	check_end_label(@10, "task", $3, $10);
+	check_end_label(@9, "task", $3, $9);
 	delete[]$3;
       }
 
@@ -2344,11 +2355,10 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 	current_task = pform_push_task_scope(@1, $3, $2);
       }
     tf_port_list_opt ')' ';'
-    block_item_decls_opt
-    statement_or_null_list_opt
+    block_items_decls_and_statements
     K_endtask
       { current_task->set_ports($6);
-	current_task_set_statement(@3, $10);
+	current_task_set_statement(@3, $9);
 	pform_set_this_class(@3, current_task);
 	pform_pop_scope();
 	if (generation_flag < GN_VER2005 && $6 == 0) {
@@ -2356,7 +2366,7 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 		   << "\" has an empty port declaration list!" << endl;
 	}
 	current_task = 0;
-	if ($10) delete $10;
+	if ($9) delete $9;
       }
     label_opt
       { // Last step: check any closing name. This is done late so
@@ -2364,7 +2374,7 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 	// label_opt but still have the pform_endmodule() called
 	// early enough that the lexor can know we are outside the
 	// module.
-	check_end_label(@13, "task", $3, $13);
+	check_end_label(@12, "task", $3, $12);
 	delete[]$3;
       }
 
@@ -2660,7 +2670,7 @@ variable_dimension /* IEEE1800-2005: A.2.5 */
       }
   ;
 
-variable_lifetime_opt
+variable_lifetime
   : lifetime
       { if (pform_requires_sv(@1, "Overriding default variable lifetime") &&
 	    $1 != pform_peek_scope()->default_lifetime) {
@@ -2669,7 +2679,15 @@ variable_lifetime_opt
 	}
 	var_lifetime = $1;
       }
+
+variable_lifetime_opt
+  : variable_lifetime
   |
+  ;
+
+variable_lifetime_opt_plus_data_type
+  : data_type { $$ = $1; }
+  | variable_lifetime data_type { $$ = $2; }
   ;
 
   /* Verilog-2001 supports attribute lists, which can be attached to a
@@ -2743,9 +2761,8 @@ block_item_decl
 	pform_make_var(@1,  $3.decl_assignments, data_type, attributes_in_context);
 	var_lifetime = LexicalScope::INHERITED;
       }
-
-  | variable_lifetime_opt data_type list_of_variable_decl_assignments ';'
-      { if ($2) pform_make_var(@2, $3, $2, attributes_in_context);
+  | variable_lifetime_opt_plus_data_type list_of_variable_decl_assignments ';'
+      { if ($1) pform_make_var(@1, $2, $1, attributes_in_context);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
@@ -2778,7 +2795,7 @@ block_item_decl
 	yyerrok;
       }
 */
-  | variable_lifetime_opt data_type error ';'
+  | variable_lifetime_opt_plus_data_type error ';'
       { yyerror(@1, "error: syntax error in variable list.");
 	yyerrok;
       }
@@ -2800,11 +2817,6 @@ block_item_decl
 block_item_decls
 	: block_item_decl
 	| block_item_decls block_item_decl
-	;
-
-block_item_decls_opt
-	: block_item_decls { $$ = true; }
-	| { $$ = false; }
 	;
 
   /* Type declarations are parsed here. The rule actions call pform
@@ -4187,14 +4199,6 @@ expr_primary
 	    FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
-  ;
-
-  /* A tf_item_list is shared between functions and tasks to match
-     declarations of ports. We check later to make sure there are no
-     output or inout ports actually used for functions. */
-tf_item_list_opt /* IEEE1800-2017: A.2.7 */
-  : tf_item_list { $$ = $1; }
-  |              { $$ = 0; }
   ;
 
 tf_item_list /* IEEE1800-2017: A.2.7 */
@@ -6418,34 +6422,25 @@ statement_item /* This is roughly statement_item in the LRM */
       { PBlock*tmp = pform_push_block_scope(@1, $2, PBlock::BL_SEQ);
 	current_block_stack.push(tmp);
       }
-    block_item_decls_opt
-      { if (!$2) {
-	    if ($4) {
+    block_items_decls_and_statements
+    K_end label_opt
+      { PBlock*tmp;
+	pform_pop_scope();
+	assert(! current_block_stack.empty());
+	tmp = current_block_stack.top();
+	current_block_stack.pop();
+
+	if (!$2) {
+	    if (!tmp->wires.empty() || !tmp->events.empty()) {
 		  pform_requires_sv(@4, "Variable declaration in unnamed block");
 	    } else {
-		  /* If there are no declarations in the scope then just delete it. */
-		  pform_pop_scope();
-		  assert(! current_block_stack.empty());
-		  PBlock*tmp = current_block_stack.top();
-		  current_block_stack.pop();
-		  delete tmp;
+		  tmp->clear_name();
 	    }
 	}
-      }
-    statement_or_null_list_opt K_end label_opt
-      { PBlock*tmp;
-	if ($2 || $4) {
-	    pform_pop_scope();
-	    assert(! current_block_stack.empty());
-	    tmp = current_block_stack.top();
-	    current_block_stack.pop();
-	} else {
-	    tmp = new PBlock(PBlock::BL_SEQ);
-	    FILE_NAME(tmp, @1);
-	}
-	if ($6) tmp->set_statement(*$6);
-	delete $6;
-	check_end_label(@8, "block", $2, $8);
+
+	if ($4) tmp->set_statement(*$4);
+	delete $4;
+	check_end_label(@6, "block", $2, $6);
 	delete[]$2;
 	$$ = tmp;
       }
@@ -6460,36 +6455,25 @@ statement_item /* This is roughly statement_item in the LRM */
       { PBlock*tmp = pform_push_block_scope(@1, $2, PBlock::BL_PAR);
 	current_block_stack.push(tmp);
       }
-    block_item_decls_opt
-      {
-        if (!$2) {
-	    if ($4) {
+    block_items_decls_and_statements
+    join_keyword label_opt
+      { PBlock*tmp;
+	pform_pop_scope();
+	assert(! current_block_stack.empty());
+	tmp = current_block_stack.top();
+	current_block_stack.pop();
+	tmp->set_join_type($5);
+
+	if (!$2) {
+	    if (!tmp->wires.empty() || !tmp->events.empty()) {
 		  pform_requires_sv(@4, "Variable declaration in unnamed block");
 	    } else {
-		  /* If there are no declarations in the scope then just delete it. */
-		  pform_pop_scope();
-		  assert(! current_block_stack.empty());
-		  PBlock*tmp = current_block_stack.top();
-		  current_block_stack.pop();
-		  delete tmp;
+		  tmp->clear_name();
 	    }
 	}
-      }
-    statement_or_null_list_opt join_keyword label_opt
-      { PBlock*tmp;
-	if ($2 || $4) {
-	    pform_pop_scope();
-	    assert(! current_block_stack.empty());
-	    tmp = current_block_stack.top();
-	    current_block_stack.pop();
-	    tmp->set_join_type($7);
-	} else {
-	    tmp = new PBlock($7);
-	    FILE_NAME(tmp, @1);
-	}
-	if ($6) tmp->set_statement(*$6);
-	delete $6;
-	check_end_label(@8, "fork", $2, $8);
+	if ($4) tmp->set_statement(*$4);
+	delete $4;
+	check_end_label(@6, "fork", $2, $6);
 	delete[]$2;
 	$$ = tmp;
       }
@@ -6735,6 +6719,15 @@ statement_item /* This is roughly statement_item in the LRM */
       { PCallTask*tmp = pform_make_call_task(@1, *$1, *$2);
 	delete $1;
 	delete $2;
+	$$ = tmp;
+      }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER argument_list_parens_opt ';'
+      { pform_name_t name;
+	name.push_back(name_component_t(lex_strings.make($3)));
+	PCallTask*tmp = new PCallTask($1.package, name, *$4);
+	FILE_NAME(tmp, @3);
+	delete $4;
+	delete[] $3;
 	$$ = tmp;
       }
 
