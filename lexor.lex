@@ -321,6 +321,48 @@ TU [munpf]
 <EDGES>"z0" { return K_edge_descriptor; }
 <EDGES>"z1" { return K_edge_descriptor; }
 
+[a-zA-Z_][a-zA-Z0-9$_]*/[ \t\b\f\r\n]*[;,().] {
+      int rc = lexor_keyword_code(yytext, yyleng);
+      switch (rc) {
+	  case IDENTIFIER:
+	    yylval.text = strdupnew(yytext);
+	    if (strncmp(yylval.text,"PATHPULSE$", 10) == 0)
+		  rc = PATHPULSE_IDENTIFIER;
+	    break;
+
+	  case K_edge:
+	    BEGIN(EDGES);
+	    break;
+
+	  case K_module:
+	  case K_macromodule:
+	    in_module = true;
+	    break;
+
+	  case K_endmodule:
+	    in_module = false;
+	    break;
+
+	  case K_primitive:
+	    in_UDP = true;
+	    break;
+
+	  case K_endprimitive:
+	    in_UDP = false;
+	    break;
+
+	  case K_table:
+	    BEGIN(UDPTABLE);
+	    break;
+
+	  default:
+	    yylval.text = 0;
+	    break;
+      }
+
+      return rc;
+  }
+
 [a-zA-Z_][a-zA-Z0-9$_]* {
       int rc = lexor_keyword_code(yytext, yyleng);
       switch (rc) {

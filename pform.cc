@@ -737,6 +737,13 @@ PEIdent* pform_new_ident(const struct vlltype&loc, const pform_name_t&name)
       if (gn_system_verilog())
 	    check_potential_imports(loc, name.front().name, false);
 
+       if(name.size() == 1) {
+	  auto data_type = pform_test_type_identifier(loc, peek_head_name(name).str());
+	  if (data_type) {
+		return reinterpret_cast<PEIdent*>(new PETypename(data_type));
+	  }
+      }
+
       return new PEIdent(name);
 }
 
