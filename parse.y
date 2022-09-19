@@ -742,6 +742,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <porttype> port_direction port_direction_opt
 %type <vartype> integer_vector_type
 %type <parmvalue> parameter_value_opt
+%type <text> identifier_plus_parameter_value_opt
 
 %type <event_exprs> event_expression_list
 %type <event_expr> event_expression
@@ -4384,6 +4385,8 @@ gate_instance
       }
   ;
 
+module_gate_instance_list
+
 gate_instance_list
   : gate_instance_list ',' gate_instance
       { $1->push_back(*$3);
@@ -5182,7 +5185,7 @@ module_item
   /* block_item_decl rule is shared with task blocks and named
      begin/end. Careful to pass attributes to the block_item_decl. */
 
-  | attribute_list_opt { attributes_in_context = $1; } block_item_decl
+  | attribute_list_opt block_item_decl
       { delete attributes_in_context;
 	attributes_in_context = 0;
       }
@@ -5250,19 +5253,19 @@ module_item
      but then can have parameter lists. */
 
 	| attribute_list_opt
-	  IDENTIFIER parameter_value_opt gate_instance_list ';'
-		{ perm_string tmp1 = lex_strings.make($2);
-		  pform_make_modgates(@2, tmp1, $3, $4, $1);
-		  delete[]$2;
+	  module_gate_instance_list ';'
+		{ /*perm_string tmp1 = lex_strings.make($2);
+		  pform_make_modgates(@2, tmp1, nullptr, $3, $1);
+		  delete[]$2;*/
 		}
-
+/*
         | attribute_list_opt
-	  IDENTIFIER parameter_value_opt error ';'
+	  identifier_plus_parameter_value_opt error ';'
 		{ yyerror(@2, "error: Invalid module instantiation");
 		  delete[]$2;
 		  if ($1) delete $1;
 		}
-
+*/
   /* Continuous assignment can have an optional drive strength, then
      an optional delay3 that applies to all the assignments in the
      cont_assign_list. */
@@ -5708,6 +5711,10 @@ from_exclude : K_from { $$ = false; } | K_exclude { $$ = true; } ;
      The parameter value by name syntax is OVI enhancement BTF-B06 as
      approved by WG1364 on 6/28/1998. */
 
+identifier_plus_parameter_value_opt
+ : identifier_name { $$ = $1; }
+ | identifier_name parameter_value_opt { $$ = $1; }
+
 parameter_value_opt
 	: '#' '(' expression_list_with_nuls ')'
 		{ struct parmvalue_t*tmp = new struct parmvalue_t;
@@ -5749,8 +5756,6 @@ parameter_value_opt
 			  "assignment list.");
 		  $$ = 0;
 		}
-	|
-		{ $$ = 0; }
 	;
 
 parameter_value_byname
@@ -6810,6 +6815,7 @@ statement_item /* This is roughly statement_item in the LRM */
 	delete[] $3;
 	$$ = tmp;
       }
+      /*
   | PACKAGE_IDENTIFIER K_SCOPE_RES TYPE_IDENTIFIER argument_list_parens_opt ';'
       { pform_name_t name;
 	name.push_back(name_component_t(lex_strings.make($3)));
@@ -6819,6 +6825,7 @@ statement_item /* This is roughly statement_item in the LRM */
 	delete[] $3;
 	$$ = tmp;
       }
+      */
   | hierarchy_identifier K_with '{' constraint_block_item_list_opt '}' ';'
       { /* ....randomize with { <constraints> } */
 	if ($1 && peek_tail_name(*$1) == "randomize") {
