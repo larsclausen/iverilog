@@ -42,7 +42,8 @@ void pform_start_class_declaration(const struct vlltype&loc,
 				   class_type_t*type,
 				   data_type_t*base_type,
 				   list<PExpr*>*base_exprs,
-				   LexicalScope::lifetime_t lifetime)
+				   LexicalScope::lifetime_t lifetime,
+				   vector<data_type_t*> *implements)
 {
       PClass*class_scope = pform_push_class_scope(loc, type->name, lifetime);
       class_scope->type = type;

@@ -429,6 +429,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       struct_type_t*struct_type;
 
       data_type_t*data_type;
+      std::vector<data_type_t*> *data_type_list;
       class_type_t*class_type;
       real_type_t::type_t real_type;
       property_qualifier_t property_qualifier;
@@ -644,6 +645,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <data_type>  packed_array_data_type
 %type <data_type>  ps_type_identifier
 %type <data_type>  simple_packed_type
+%type <data_type_list> interface_class_list class_declaration_implements_opt
+%type <data_type_list> interface_class_declaration_extends_opt
 %type <class_type> class_identifier
 %type <struct_member>  struct_union_member
 %type <struct_members> struct_union_member_list
@@ -780,15 +783,16 @@ block_identifier_opt /* */
   ;
 
 class_declaration /* IEEE1800-2005: A.1.2 */
-  : K_virtual_opt K_class lifetime_opt class_identifier class_declaration_extends_opt ';'
-      { pform_start_class_declaration(@2, $4, $5.type, $5.exprs, $3); }
+  : K_virtual_opt K_class lifetime_opt class_identifier class_declaration_extends_opt
+    class_declaration_implements_opt ';'
+      { pform_start_class_declaration(@2, $4, $5.type, $5.exprs, $3, $6); }
     class_items_opt K_endclass
       { // Process a class.
-	pform_end_class_declaration(@9);
+	pform_end_class_declaration(@10);
       }
     class_declaration_endlabel_opt
       { // Wrap up the class.
-	check_end_label(@11, "class", $4->name, $11);
+	check_end_label(@12, "class", $4->name, $12);
       }
   ;
 
@@ -853,6 +857,11 @@ class_declaration_extends_opt /* IEEE1800-2005: A.1.2 */
       }
   |
       { $$.type = 0; $$.exprs = 0; }
+  ;
+
+class_declaration_implements_opt /* IEEE1800-2017: A.1.2 */
+  : K_implements interface_class_list  { $$ = $2; }
+  | { $$ = nullptr; }
   ;
 
   /* The class_items_opt and class_items rules together implement the
@@ -990,6 +999,63 @@ class_new /* IEEE1800-2005 A.2.4 */
 	$$ = tmp;
       }
   ;
+
+interface_class_list
+  : ps_type_identifier
+    {
+      $$ = new std::vector<data_type_t *>(1, $1);
+    }
+  | interface_class_list ps_type_identifier
+    {
+      $1->push_back($2);
+      $$ = $1;
+    }
+
+
+interface_class_declaration_extends_opt /* IEEE1800-2017: A.1.2 */
+  : K_extends interface_class_list { $$ = $2; }
+  | { $$ = 0; }
+  ;
+
+interface_class_declaration /* IEEE1800-2017: A.1.2 */
+  : K_interface K_class class_identifier interface_class_declaration_extends_opt
+      { pform_start_class_declaration(@2, $3, nullptr, nullptr,
+				      LexicalScope::INHERITED, $4);
+      }
+    interface_class_items_opt K_endclass
+      { // Process a class.
+	pform_end_class_declaration(@7);
+      }
+    class_declaration_endlabel_opt
+      { // Wrap up the class.
+	check_end_label(@9, "class", $3->name, $9);
+      }
+
+interface_class_items_opt /* IEEE1800-2017: A.1.2 */
+  : interface_class_items
+  |
+  ;
+
+interface_class_items /* IEEE1800-2017: A.1.2 */
+  : interface_class_item
+  | interface_class_items interface_class_item
+  ;
+
+interface_class_item /* IEEE1800-2017 A.1.2 */
+  : type_declaration
+  | K_pure K_virtual K_function data_type_or_implicit_or_void
+    IDENTIFIER tf_port_list_parens_opt ';'
+  | K_pure K_virtual K_task IDENTIFIER tf_port_list_parens_opt ';'
+  | parameter_declaration
+    /* Empty interface class item */
+  | ';'
+  | error ';'
+      { yyerror(@2, "error: invalid interface class item.");
+	yyerrok;
+      }
+  ;
+
+
 
   /* The concurrent_assertion_item pulls together the
      concurrent_assertion_statement and checker_instantiation rules. */
@@ -1998,7 +2064,8 @@ package_item /* IEEE1800-2005 A.1.10 */
   | function_declaration
   | task_declaration
   | data_declaration
-  | class_declaration
+  | attribute_list_opt class_declaration
+  | attribute_list_opt interface_class_declaration
   ;
 
 package_item_list
@@ -5067,7 +5134,9 @@ module_item
   | timeunits_declaration
       { pform_error_in_generate(@1, "timeunit declaration"); }
 
-  | class_declaration
+  | attribute_list_opt class_declaration
+
+  | attribute_list_opt interface_class_declaration
 
   | task_declaration
 
