@@ -46,6 +46,10 @@ class vvp_cobject : public vvp_object {
 
       void shallow_copy(const vvp_object*that);
 
+	  class_type::vfunc_t get_vfunc(size_t vid) const {
+		return defn_->get_vfunc(vid);
+	  }
+
     private:
       const class_type* defn_;
 	// For now, only support 32bit bool signed properties.

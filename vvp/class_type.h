@@ -37,6 +37,11 @@ class class_type : public __vpiHandle {
       struct inst_x;
       typedef inst_x*inst_t;
 
+	  struct vfunc_t {
+		__vpiScope *scope;
+		vvp_code_t cptr;
+	  };
+
     public:
       explicit class_type(const std::string&nam, size_t nprop);
       ~class_type();
@@ -71,6 +76,12 @@ class class_type : public __vpiHandle {
 
       void copy_property(inst_t dst, size_t idx, inst_t src) const;
 
+	  vfunc_t get_vfunc(size_t vid) const {
+		if (vid >= vtable_.size())
+			return {nullptr, nullptr};
+		return vtable_[vid];
+	  }
+
     public: // VPI related methods
       int get_type_code(void) const;
 
@@ -82,6 +93,9 @@ class class_type : public __vpiHandle {
 	    class_property_t*type;
       };
       std::vector<prop_t> properties_;
+
+	  std::vector<vfunc_t> vtable_;
+
       size_t instance_size_;
 };
 

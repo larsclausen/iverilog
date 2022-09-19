@@ -1469,6 +1469,71 @@ static bool do_callf_void(vthread_t thr, vthread_t child)
       }
 }
 
+static class_type::vfunc_t obj_get_vfunc(vthread_t thr, vvp_code_t cp)
+{
+	  unsigned vid = cp->number;
+
+	  vvp_object_t &obj = thr->peek_object();
+      vvp_cobject*cobj = obj.peek<vvp_cobject>();
+      assert(cobj);
+
+	  return cobj->get_vfunc(vid);
+}
+
+bool of_VCALLF_OBJ(vthread_t thr, vvp_code_t cp)
+{
+	  auto vfunc = obj_get_vfunc(thr, cp);
+	  vthread_t child = vthread_new(vfunc.cptr, vfunc.scope);
+	  return do_callf_void(thr, child);
+}
+
+bool of_VCALLF_REAL(vthread_t thr, vvp_code_t cp)
+{
+	  auto vfunc = obj_get_vfunc(thr, cp);
+	  vthread_t child = vthread_new(vfunc.cptr, vfunc.scope);
+
+	// This is the return value. Push a place-holder value. The function
+	// will replace this with the actual value using a %ret/real instruction.
+      thr->push_real(0.0);
+      child->args_real.push_back(0);
+
+      return do_callf_void(thr, child);
+}
+
+bool of_VCALLF_STR(vthread_t thr, vvp_code_t cp)
+{
+	  auto vfunc = obj_get_vfunc(thr, cp);
+	  vthread_t child = vthread_new(vfunc.cptr, vfunc.scope);
+
+      thr->push_str("");
+      child->args_str.push_back(0);
+
+      return do_callf_void(thr, child);
+}
+
+bool of_VCALLF_VEC4(vthread_t thr, vvp_code_t cp)
+{
+	  auto vfunc = obj_get_vfunc(thr, cp);
+	  vthread_t child = vthread_new(vfunc.cptr, vfunc.scope);
+
+      vpiScopeFunction*scope_func = dynamic_cast<vpiScopeFunction*>(vfunc.scope);
+      assert(scope_func);
+
+	// This is the return value. Push a place-holder value. The function
+	// will replace this with the actual value using a %ret/real instruction.
+      thr->push_vec4(vvp_vector4_t(scope_func->get_func_width(), scope_func->get_func_init_val()));
+      child->args_vec4.push_back(0);
+
+      return do_callf_void(thr, child);
+}
+
+bool of_VCALLF_VOID(vthread_t thr, vvp_code_t cp)
+{
+	  auto vfunc = obj_get_vfunc(thr, cp);
+	  vthread_t child = vthread_new(vfunc.cptr, vfunc.scope);
+      return do_callf_void(thr, child);
+}
+
 bool of_CALLF_OBJ(vthread_t thr, vvp_code_t cp)
 {
       vthread_t child = vthread_new(cp->cptr2, cp->scope);
@@ -3358,17 +3423,11 @@ bool of_FORCE_WR(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
-/*
- * The %fork instruction causes a new child to be created and pushed
- * in front of any existing child. This causes the new child to be
- * added to the list of children, and for me to be the parent of the
- * new child.
- */
-bool of_FORK(vthread_t thr, vvp_code_t cp)
+static bool fork_common(vthread_t thr, __vpiScope *scope, vvp_code_t cptr)
 {
-      vthread_t child = vthread_new(cp->cptr2, cp->scope);
+      vthread_t child = vthread_new(cptr, scope);
 
-      if (cp->scope->is_automatic()) {
+      if (scope->is_automatic()) {
               /* The context allocated for this child is the top entry
                  on the write context stack. */
             child->wt_context = thr->wt_context;
@@ -3387,6 +3446,24 @@ bool of_FORK(vthread_t thr, vvp_code_t cp)
 	    schedule_vthread(child, 0, true);
       }
       return true;
+}
+
+
+/*
+ * The %fork instruction causes a new child to be created and pushed
+ * in front of any existing child. This causes the new child to be
+ * added to the list of children, and for me to be the parent of the
+ * new child.
+ */
+bool of_FORK(vthread_t thr, vvp_code_t cp)
+{
+	  return fork_common(thr, cp->scope, cp->cptr2);
+}
+
+bool of_VFORK(vthread_t thr, vvp_code_t cp)
+{
+	  auto vfunc = obj_get_vfunc(thr, cp);
+	  return fork_common(thr, vfunc.scope, vfunc.cptr);
 }
 
 bool of_FREE(vthread_t thr, vvp_code_t cp)
