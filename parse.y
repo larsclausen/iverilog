@@ -817,6 +817,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %nonassoc one_timeunits_declaration
 %nonassoc K_timeunit K_timeprecision
 
+%nonassoc '['
+
 %%
 
 
@@ -1345,6 +1347,7 @@ data_type /* IEEE1800-2005: A.2.2.1 */
   : builtin_type { $$ = $1; }
   | K_reg builtin_type { $$ = $2; }
   | ps_type_identifier_dim { $$ = $1; }
+
   ;
 
 /* Data type or nothing, but not implicit */
@@ -1599,23 +1602,23 @@ function_declaration /* IEEE1800-2005: A.2.6 */
   ;
 
 genvar_iteration /* IEEE1800-2012: A.4.2 */
-  : IDENTIFIER '=' expression
+  : identifier_name '=' expression
       { $$.text = $1;
         $$.expr = $3;
       }
-  | IDENTIFIER K_INCR
+  | identifier_name K_INCR
       { $$.text = $1;
         $$.expr = pform_genvar_inc_dec(@1, $1, true);
       }
-  | IDENTIFIER K_DECR
+  | identifier_name K_DECR
       { $$.text = $1;
         $$.expr = pform_genvar_inc_dec(@1, $1, false);
       }
-  | K_INCR IDENTIFIER
+  | K_INCR identifier_name 
       { $$.text = $2;
         $$.expr = pform_genvar_inc_dec(@1, $2, true);
       }
-  | K_DECR IDENTIFIER
+  | K_DECR identifier_name 
       { $$.text = $2;
         $$.expr = pform_genvar_inc_dec(@1, $2, false);
       }
@@ -1733,7 +1736,7 @@ loop_statement /* IEEE1800-2005: A.6.8 */
       // statement in a synthetic named block. We can name the block
       // after the variable that we are creating, that identifier is
       // safe in the controlling scope.
-  | K_for '(' K_var_opt data_type identifier_name '=' expression ';' expression ';' for_step ')'
+  | K_for '(' K_var data_type identifier_name '=' expression ';' expression ';' for_step ')'
       { static unsigned for_counter = 0;
 	char for_block_name [64];
 	snprintf(for_block_name, sizeof for_block_name, "$ivl_for_loop%u", for_counter);
@@ -2937,6 +2940,18 @@ enum_base_type /* IEEE 1800-2012 A.2.2.1 */
   | ps_type_identifier_dim
       {  $$ = $1;
       }
+  | IDENTIFIER dimensions_opt identifier_name
+     {       }
+  | PACKAGE_IDENTIFIER K_SCOPE_RES
+      { lex_in_package_scope($1.package);
+	delete[] $1.text;
+      }
+    IDENTIFIER dimensions_opt identifier_name
+      { lex_in_package_scope(0);
+	$$ = pform_make_parray_type(@5, $4.type, $5);
+	delete[]$4.text;
+      }
+
    |
       { $$ = new atom_type_t(atom_type_t::INT, true);
         FILE_NAME($$, @0);
@@ -3305,16 +3320,16 @@ nature_item
   : K_units '=' STRING ';'
       { delete[] $3; }
   | K_abstol '=' expression ';'
-  | K_access '=' IDENTIFIER ';'
+  | K_access '=' identifier_name ';'
       { pform_nature_access(@1, $3); delete[] $3; }
-  | K_idt_nature '=' IDENTIFIER ';'
+  | K_idt_nature '=' identifier_name ';'
       { delete[] $3; }
-  | K_ddt_nature '=' IDENTIFIER ';'
+  | K_ddt_nature '=' identifier_name ';'
       { delete[] $3; }
   ;
 
 config_declaration
-  : K_config IDENTIFIER ';'
+  : K_config identifier_name ';'
     K_design lib_cell_identifiers ';'
     list_of_config_rule_statements
     K_endconfig
@@ -3479,9 +3494,9 @@ event_expression
      or explicit as a named branch. Elaboration will check that the
      function name really is a nature attribute identifier. */
 branch_probe_expression
-  : IDENTIFIER '(' IDENTIFIER ',' IDENTIFIER ')'
+  : identifier_name '(' identifier_name ',' identifier_name ')'
       { $$ = pform_make_branch_probe_expression(@1, $1, $3, $5); }
-  | IDENTIFIER '(' IDENTIFIER ')'
+  | identifier_name '(' identifier_name ')'
       { $$ = pform_make_branch_probe_expression(@1, $1, $3); }
   ;
 
@@ -3820,12 +3835,14 @@ expr_primary_or_typename
 	FILE_NAME(tmp, @1);
 	$$ = tmp;
       }
+/*
   | TYPE_IDENTIFIER
       { PETypename*tmp = new PETypename($1.type);
 	FILE_NAME(tmp, @1);
 	delete[] $1.text;
 	$$ = tmp;
       }
+*/
   ;
 
 expr_primary
@@ -3952,7 +3969,7 @@ expr_primary
 	delete[]$1;
 	$$ = tmp;
       }
-  | PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER '(' expression_list_proper ')'
+  | PACKAGE_IDENTIFIER K_SCOPE_RES identifier_name '(' expression_list_proper ')'
       { perm_string use_name = lex_strings.make($3);
 	PECallFunction*tmp = new PECallFunction($1.package, use_name, *$5);
 	FILE_NAME(tmp, @3);
@@ -4416,17 +4433,30 @@ switchtype
      names. */
 
 hierarchy_identifier
-    : IDENTIFIER
+    : IDENTIFIER dimensions_opt
         { $$ = new pform_name_t;
 	  $$->push_back(name_component_t(lex_strings.make($1)));
 	  delete[]$1;
 	}
-    | hierarchy_identifier '.' identifier_name
+    | TYPE_IDENTIFIER dimensions_opt
+        { $$ = new pform_name_t;
+	  $$->push_back(name_component_t(lex_strings.make($1)));
+	  delete[]$1;
+	}
+    | hierarchy_identifier '.' IDENTIFIER dimensions_opt
         { pform_name_t * tmp = $1;
 	  tmp->push_back(name_component_t(lex_strings.make($3)));
 	  delete[]$3;
 	  $$ = tmp;
 	}
+    | hierarchy_identifier '.' TYPE_IDENTIFIER dimensions_opt
+        { pform_name_t * tmp = $1;
+	  tmp->push_back(name_component_t(lex_strings.make($3)));
+	  delete[]$3;
+	  $$ = tmp;
+	}
+
+	/*
     | hierarchy_identifier '[' expression ']'
         { pform_name_t * tmp = $1;
 	  name_component_t&tail = tmp->back();
@@ -4477,6 +4507,7 @@ hierarchy_identifier
 	  tail.index.push_back(itmp);
 	  $$ = tmp;
 	}
+	*/
     ;
 
   /* This is a list of identifiers. The result is a list of strings,
@@ -4922,7 +4953,7 @@ label_opt
   ;
 
 module_attribute_foreign
-	: K_PSTAR IDENTIFIER K_integer IDENTIFIER '=' STRING ';' K_STARP { $$ = 0; }
+	: K_PSTAR identifier_name K_integer identifier_name '=' STRING ';' K_STARP { $$ = 0; }
 	| { $$ = 0; }
 	;
 
@@ -6229,13 +6260,13 @@ specify_simple_path
 	;
 
 specify_path_identifiers
-	: IDENTIFIER
+	: identifier_name 
 		{ std::list<perm_string>*tmp = new std::list<perm_string>;
 		  tmp->push_back(lex_strings.make($1));
 		  $$ = tmp;
 		  delete[]$1;
 		}
-	| IDENTIFIER '[' expr_primary ']'
+	| identifier_name '[' expr_primary ']'
 		{ if (gn_specify_blocks_flag) {
 			yywarn(@4, "Bit selects are not currently supported "
 				   "in path declarations. The declaration "
@@ -6246,7 +6277,7 @@ specify_path_identifiers
 		  $$ = tmp;
 		  delete[]$1;
 		}
-	| IDENTIFIER '[' expr_primary polarity_operator expr_primary ']'
+	| identifier_name '[' expr_primary polarity_operator expr_primary ']'
 		{ if (gn_specify_blocks_flag) {
 			yywarn(@4, "Part selects are not currently supported "
 				   "in path declarations. The declaration "
@@ -6257,13 +6288,13 @@ specify_path_identifiers
 		  $$ = tmp;
 		  delete[]$1;
 		}
-	| specify_path_identifiers ',' IDENTIFIER
+	| specify_path_identifiers ',' identifier_name
 		{ std::list<perm_string>*tmp = $1;
 		  tmp->push_back(lex_strings.make($3));
 		  $$ = tmp;
 		  delete[]$3;
 		}
-	| specify_path_identifiers ',' IDENTIFIER '[' expr_primary ']'
+	| specify_path_identifiers ',' identifier_name '[' expr_primary ']'
 		{ if (gn_specify_blocks_flag) {
 			yywarn(@4, "Bit selects are not currently supported "
 				   "in path declarations. The declaration "
@@ -6274,7 +6305,7 @@ specify_path_identifiers
 		  $$ = tmp;
 		  delete[]$3;
 		}
-	| specify_path_identifiers ',' IDENTIFIER '[' expr_primary polarity_operator expr_primary ']'
+	| specify_path_identifiers ',' identifier_name '[' expr_primary polarity_operator expr_primary ']'
 		{ if (gn_specify_blocks_flag) {
 			yywarn(@4, "Part selects are not currently supported "
 				   "in path declarations. The declaration "
@@ -6288,13 +6319,13 @@ specify_path_identifiers
 	;
 
 specparam
-	: IDENTIFIER '=' expression
+	: identifier_name '=' expression
 		{ PExpr*tmp = $3;
 		  pform_set_specparam(@1, lex_strings.make($1),
 		                      specparam_active_range, tmp);
 		  delete[]$1;
 		}
-	| IDENTIFIER '=' expression ':' expression ':' expression
+	| identifier_name '=' expression ':' expression ':' expression
                 { PExpr*tmp = 0;
 		  switch (min_typ_max_flag) {
 		      case MIN:
@@ -6779,7 +6810,15 @@ statement_item /* This is roughly statement_item in the LRM */
 	delete[] $3;
 	$$ = tmp;
       }
-
+  | PACKAGE_IDENTIFIER K_SCOPE_RES TYPE_IDENTIFIER argument_list_parens_opt ';'
+      { pform_name_t name;
+	name.push_back(name_component_t(lex_strings.make($3)));
+	PCallTask*tmp = new PCallTask($1.package, name, *$4);
+	FILE_NAME(tmp, @3);
+	delete $4;
+	delete[] $3;
+	$$ = tmp;
+      }
   | hierarchy_identifier K_with '{' constraint_block_item_list_opt '}' ';'
       { /* ....randomize with { <constraints> } */
 	if ($1 && peek_tail_name(*$1) == "randomize") {
