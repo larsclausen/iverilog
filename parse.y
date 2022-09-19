@@ -785,7 +785,7 @@ block_identifier_opt /* */
 class_declaration /* IEEE1800-2005: A.1.2 */
   : K_virtual_opt K_class lifetime_opt class_identifier class_declaration_extends_opt
     class_declaration_implements_opt ';'
-      { pform_start_class_declaration(@2, $4, $5.type, $5.exprs, $3, $6); }
+      { pform_start_class_declaration(@2, $4, $5.type, $5.exprs, $3, $1, $6); }
     class_items_opt K_endclass
       { // Process a class.
 	pform_end_class_declaration(@10);
@@ -1020,7 +1020,7 @@ interface_class_declaration_extends_opt /* IEEE1800-2017: A.1.2 */
 interface_class_declaration /* IEEE1800-2017: A.1.2 */
   : K_interface K_class class_identifier interface_class_declaration_extends_opt
       { pform_start_class_declaration(@2, $3, nullptr, nullptr,
-				      LexicalScope::INHERITED, $4);
+				      LexicalScope::INHERITED, false, $4);
       }
     interface_class_items_opt K_endclass
       { // Process a class.

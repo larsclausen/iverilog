@@ -174,6 +174,7 @@ extern void pform_start_class_declaration(const struct vlltype&loc,
 					  data_type_t*base_type,
 					  std::list<PExpr*>*base_exprs,
 					  LexicalScope::lifetime_t lifetime,
+					  bool virtual_class,
 					  std::vector<data_type_t*> *implements);
 extern void pform_class_property(const struct vlltype&loc,
 				 property_qualifier_t pq,
