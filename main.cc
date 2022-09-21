@@ -54,6 +54,7 @@ const char NOTICE[] =
 #endif
 # include  "pform.h"
 # include  "parse_api.h"
+# include  "parse.h"
 # include  "PGenerate.h"
 # include  "netlist.h"
 # include  "target.h"
@@ -911,6 +912,7 @@ int main(int argc, char*argv[])
       int opt;
 
       struct tms cycles[5];
+      VLdebug = 1;
 
 #if defined(TRAP_SIGINT_FOR_DEBUG)
       signal(SIGINT, &signals_handler);
