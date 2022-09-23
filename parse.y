@@ -587,6 +587,7 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 
 %type <text> event_variable label_opt class_declaration_endlabel_opt
 %type <text> block_identifier_opt
+%type <text> parallel_block sequential_block
 %type <perm_strings> event_variable_list
 %type <perm_strings> list_of_identifiers loop_variables
 %type <port_list> list_of_port_identifiers list_of_variable_port_identifiers
@@ -6198,6 +6199,13 @@ spec_notifier
 		{ args_after_notifier = 0; delete[]$1; }
 	;
 
+parallel_block
+ : K_fork label_opt { $$ = $2; }
+ | IDENTIFIER ':' K_fork { $$ = $1; }
+
+sequential_block
+ : K_begin label_opt { $$ = $2; }
+ | IDENTIFIER ':' K_begin { $$ = $1; }
 
 statement_item /* This is roughly statement_item in the LRM */
 
@@ -6240,12 +6248,12 @@ statement_item /* This is roughly statement_item in the LRM */
      the declarations. The scope is popped at the end of the block. */
 
   /* In SystemVerilog an unnamed block can contain variable declarations. */
-  | K_begin label_opt
-      { PBlock*tmp = pform_push_block_scope(@1, $2, PBlock::BL_SEQ);
+  | sequential_block {}
+      { PBlock*tmp = pform_push_block_scope(@1, $1, PBlock::BL_SEQ);
 	current_block_stack.push(tmp);
       }
     block_item_decls_opt
-      { if (!$2) {
+      { if (!$1) {
 	    if ($4) {
 		  pform_requires_sv(@4, "Variable declaration in unnamed block");
 	    } else {
@@ -6260,7 +6268,7 @@ statement_item /* This is roughly statement_item in the LRM */
       }
     statement_or_null_list_opt K_end label_opt
       { PBlock*tmp;
-	if ($2 || $4) {
+	if ($1 || $4) {
 	    pform_pop_scope();
 	    assert(! current_block_stack.empty());
 	    tmp = current_block_stack.top();
@@ -6271,8 +6279,8 @@ statement_item /* This is roughly statement_item in the LRM */
 	}
 	if ($6) tmp->set_statement(*$6);
 	delete $6;
-	check_end_label(@8, "block", $2, $8);
-	delete[]$2;
+	check_end_label(@8, "block", $1, $8);
+	delete[]$1;
 	$$ = tmp;
       }
 
@@ -6282,13 +6290,13 @@ statement_item /* This is roughly statement_item in the LRM */
      code generator can do the right thing. */
 
   /* In SystemVerilog an unnamed block can contain variable declarations. */
-  | K_fork label_opt
-      { PBlock*tmp = pform_push_block_scope(@1, $2, PBlock::BL_PAR);
+  |  parallel_block {} 
+      { PBlock*tmp = pform_push_block_scope(@1, $1, PBlock::BL_PAR);
 	current_block_stack.push(tmp);
       }
     block_item_decls_opt
       {
-        if (!$2) {
+        if (!$1) {
 	    if ($4) {
 		  pform_requires_sv(@4, "Variable declaration in unnamed block");
 	    } else {
@@ -6303,7 +6311,7 @@ statement_item /* This is roughly statement_item in the LRM */
       }
     statement_or_null_list_opt join_keyword label_opt
       { PBlock*tmp;
-	if ($2 || $4) {
+	if ($1 || $4) {
 	    pform_pop_scope();
 	    assert(! current_block_stack.empty());
 	    tmp = current_block_stack.top();
@@ -6315,8 +6323,8 @@ statement_item /* This is roughly statement_item in the LRM */
 	}
 	if ($6) tmp->set_statement(*$6);
 	delete $6;
-	check_end_label(@8, "fork", $2, $8);
-	delete[]$2;
+	check_end_label(@8, "fork", $1, $8);
+	delete[]$1;
 	$$ = tmp;
       }
 
