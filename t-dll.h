@@ -745,6 +745,7 @@ struct ivl_signal_s {
 	// This is the type for the signal
       ivl_type_t net_type;
       unsigned local_  : 1;
+      unsigned auto_  : 1;
 
       unsigned forced_net_ : 1;
 

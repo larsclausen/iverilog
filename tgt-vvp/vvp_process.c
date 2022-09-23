@@ -620,6 +620,7 @@ static int show_stmt_block_named(ivl_statement_t net, ivl_scope_t scope)
       int rc;
       unsigned out_id, sub_id;
       ivl_scope_t subscope = ivl_stmt_block_scope(net);
+      unsigned int vec_count = 0, real_count = 0, str_count = 0;
 
       out_id = transient_id++;
       sub_id = transient_id++;
@@ -631,7 +632,45 @@ static int show_stmt_block_named(ivl_statement_t net, ivl_scope_t scope)
       fprintf(vvp_out, "    .scope S_%p;\n", subscope);
       fprintf(vvp_out, "t_%u ;\n", sub_id);
 
+      for (unsigned int idx = 0; idx < ivl_scope_sigs(subscope); idx += 1) {
+	    ivl_signal_t sig = ivl_scope_sig(subscope, idx);
+
+	    if (signal_on_stack(sig)) {
+			switch (ivl_signal_data_type(sig)) {
+			case IVL_VT_STRING:
+				fprintf(vvp_out, "    %%pushi/str \"\";\n");
+				str_count++;
+				break;
+			case IVL_VT_REAL:
+				fprintf(vvp_out, "    %%pushi/real 0, 0;\n");
+				real_count++;
+				break;
+			case IVL_VT_BOOL:
+				fprintf(vvp_out, "    %%pushi/vec4 0, 0, %d;\n",
+						ivl_signal_width(sig));
+				vec_count++;
+				break;
+			case IVL_VT_LOGIC:
+				fprintf(vvp_out, "    %%pushi/vec4 0, 0, %d;\n",
+						ivl_signal_width(sig));
+				vec_count++;
+				break;
+			default:
+				assert(0);
+				break;
+			}
+		}
+      }
+
       rc = show_stmt_block(net, subscope);
+
+      if (vec_count != 0)
+	    fprintf(vvp_out, "    %%pop/vec4 %d;\n", vec_count);
+      if (real_count != 0)
+	    fprintf(vvp_out, "    %%pop/real %d;\n", real_count);
+      if (str_count != 0)
+	    fprintf(vvp_out, "    %%pop/str %d;\n", str_count);
+
       fprintf(vvp_out, "    %%end;\n");
 	/* Return to the previous scope. */
       fprintf(vvp_out, "    .scope S_%p;\n", scope);
@@ -2549,12 +2588,55 @@ int draw_task_definition(ivl_scope_t scope)
 {
       int rc = 0;
       ivl_statement_t def = ivl_scope_def(scope);
+      unsigned int vec_count = 0, real_count = 0, str_count = 0, obj_count = 0;
 
       fprintf(vvp_out, "TD_%s ;\n", vvp_mangle_id(ivl_scope_name(scope)));
+
+      for (unsigned int idx = 0; idx < ivl_scope_sigs(scope); idx += 1) {
+	    ivl_signal_t sig = ivl_scope_sig(scope, idx);
+
+	    if (signal_on_stack(sig)) {
+			switch (ivl_signal_data_type(sig)) {
+			case IVL_VT_STRING:
+				fprintf(vvp_out, "    %%pushi/str \"\";\n");
+				str_count++;
+				break;
+			case IVL_VT_REAL:
+				fprintf(vvp_out, "    %%pushi/real 0, 0;\n");
+				real_count++;
+				break;
+			case IVL_VT_BOOL:
+				fprintf(vvp_out, "    %%pushi/vec4 0, 0, %d;\n",
+						ivl_signal_width(sig));
+				vec_count++;
+				break;
+			case IVL_VT_LOGIC:
+				fprintf(vvp_out, "    %%pushi/vec4 0, 0, %d;\n",
+						ivl_signal_width(sig));
+				vec_count++;
+				break;
+			case IVL_VT_CLASS:
+				fprintf(vvp_out, "    %%null;\n");
+				obj_count++;
+				break;
+			default:
+				assert(0);
+				break;
+			}
+		}
+      }
 
       assert(def);
       rc += show_statement(def, scope);
 
+      if (vec_count != 0)
+	    fprintf(vvp_out, "    %%pop/vec4 %d;\n", vec_count);
+      if (real_count != 0)
+	    fprintf(vvp_out, "    %%pop/real %d;\n", real_count);
+      if (str_count != 0)
+	    fprintf(vvp_out, "    %%pop/str %d;\n", str_count);
+      if (obj_count != 0)
+	    fprintf(vvp_out, "    %%pop/obj %d;\n", obj_count);
       fprintf(vvp_out, "    %%end;\n");
 
       thread_count += 1;
@@ -2563,16 +2645,5 @@ int draw_task_definition(ivl_scope_t scope)
 
 int draw_func_definition(ivl_scope_t scope)
 {
-      int rc = 0;
-      ivl_statement_t def = ivl_scope_def(scope);
-
-      fprintf(vvp_out, "TD_%s ;\n", vvp_mangle_id(ivl_scope_name(scope)));
-
-      assert(def);
-      rc += show_statement(def, scope);
-
-      fprintf(vvp_out, "    %%end;\n");
-
-      thread_count += 1;
-      return rc;
+      return draw_task_definition(scope);
 }

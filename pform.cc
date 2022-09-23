@@ -967,11 +967,15 @@ PCallTask* pform_make_call_task(const struct vlltype&loc,
 
 void pform_make_var(const struct vlltype&loc,
 		    std::list<decl_assignment_t*>*assign_list,
-		    data_type_t*data_type, std::list<named_pexpr_t>*attr)
+		    data_type_t*data_type, std::list<named_pexpr_t>*attr,
+		    LexicalScope::lifetime_t lifetime)
 {
       static const struct str_pair_t str = { IVL_DR_STRONG, IVL_DR_STRONG };
+      LexicalScope::lifetime_t default_lifetime = find_lifetime(lifetime);
+      bool is_auto = default_lifetime == LexicalScope::AUTOMATIC;
 
-      pform_makewire(loc, 0, str, assign_list, NetNet::REG, data_type, attr);
+      pform_makewire(loc, 0, str, assign_list, NetNet::REG, data_type, attr,
+		     is_auto);
 }
 
 void pform_make_foreach_declarations(const struct vlltype&loc,
@@ -2661,7 +2665,8 @@ void pform_makewire(const struct vlltype&li,
 		    std::list<decl_assignment_t*>*assign_list,
 		    NetNet::Type type,
 		    data_type_t*data_type,
-		    list<named_pexpr_t>*attr)
+		    list<named_pexpr_t>*attr,
+		    bool is_auto)
 {
       if (is_compilation_unit(lexical_scope) && !gn_system_verilog()) {
 	    VLerror(li, "error: variable declarations must be contained within a module.");
@@ -2674,6 +2679,7 @@ void pform_makewire(const struct vlltype&li,
 		 ; cur != assign_list->end() ; ++ cur) {
 	    decl_assignment_t* curp = *cur;
 	    PWire *wire = pform_makewire(li, curp->name, type, &curp->index);
+	    wire->set_auto(is_auto);
 	    wires->push_back(wire);
       }
 

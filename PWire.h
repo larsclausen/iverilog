@@ -97,12 +97,16 @@ class PWire : public PNamedItem {
       void set_net(NetNet::Type t);
       void set_port(NetNet::PortType pt);
 
+      bool is_auto() const { return is_auto_; }
+      void set_auto(bool is_auto) { is_auto_ = is_auto; }
+
     private:
       perm_string name_;
       NetNet::Type type_;
       NetNet::PortType port_type_;
       ivl_variable_type_t data_type_;
       bool signed_;
+      bool is_auto_;
 
 	// These members hold expressions for the bit width of the
 	// wire. If they do not exist, the wire is 1 bit wide. If they

@@ -2496,8 +2496,6 @@ variable_lifetime_opt
   : lifetime
       { if (pform_requires_sv(@1, "Overriding default variable lifetime") &&
 	    $1 != pform_peek_scope()->default_lifetime) {
-	      yyerror(@1, "sorry: overriding the default variable lifetime "
-			  "is not yet supported.");
 	}
 	var_lifetime = $1;
       }
@@ -2572,18 +2570,18 @@ block_item_decl
 	      data_type = new vector_type_t(IVL_VT_LOGIC, false, 0);
 	      FILE_NAME(data_type, @1);
 	}
-	pform_make_var(@1, $4, data_type, attributes_in_context);
+	pform_make_var(@1, $4, data_type, attributes_in_context, var_lifetime);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
   | variable_lifetime_opt data_type list_of_variable_decl_assignments ';'
-      { if ($2) pform_make_var(@2, $3, $2, attributes_in_context);
+      { if ($2) pform_make_var(@2, $3, $2, attributes_in_context, var_lifetime);
 	var_lifetime = LexicalScope::INHERITED;
       }
 
   /* The extra `reg` is not valid (System)Verilog, this is a iverilog extension. */
   | variable_lifetime_opt K_reg data_type list_of_variable_decl_assignments ';'
-      { if ($3) pform_make_var(@3, $4, $3, attributes_in_context);
+      { if ($3) pform_make_var(@3, $4, $3, attributes_in_context, var_lifetime);
 	var_lifetime = LexicalScope::INHERITED;
       }
 

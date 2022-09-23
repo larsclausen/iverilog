@@ -300,6 +300,16 @@ int signal_is_return_value(ivl_signal_t sig)
       return 0;
 }
 
+int signal_on_stack(ivl_signal_t sig)
+{
+      ivl_scope_t sig_scope = ivl_signal_scope(sig);
+      if (ivl_scope_is_auto(sig_scope))
+	    return 0;
+      return ivl_signal_auto(sig);
+}
+
+
+
 /*
  * This tests a bufz device against an output receiver, and determines
  * if the device can be skipped. If this function returns false, then a
@@ -442,6 +452,9 @@ static const char *local_flag_str( ivl_signal_t sig )
  */
 static void draw_reg_in_scope(ivl_signal_t sig)
 {
+	  if (signal_on_stack(sig))
+		return;
+
       int msb;
       int lsb;
       switch (ivl_signal_packed_dimensions(sig)) {

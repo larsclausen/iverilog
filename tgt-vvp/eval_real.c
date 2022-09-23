@@ -314,6 +314,13 @@ static void draw_signal_real_real(ivl_expr_t expr)
 {
       ivl_signal_t sig = ivl_expr_signal(expr);
 
+      if (signal_on_stack(sig)) {
+	    assert(ivl_signal_dimensions(sig) == 0);
+	    fprintf(vvp_out, "    %%stackload/real S_%p, 0; Load %s (draw_signal_real_real)\n",
+		    ivl_signal_scope(sig), ivl_signal_basename(sig));
+	    return;
+      }
+
 	/* Special Case: If the signal is the return value of the function,
 	   then use a different opcode to get the value. */
       if (signal_is_return_value(sig)) {

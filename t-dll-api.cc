@@ -2560,6 +2560,11 @@ extern "C" int ivl_signal_local(ivl_signal_t net)
       return net->local_;
 }
 
+extern "C" int ivl_signal_auto(ivl_signal_t net)
+{
+      assert(net);
+      return net->auto_;
+}
 extern "C" int ivl_signal_signed(ivl_signal_t net)
 {
       assert(net);

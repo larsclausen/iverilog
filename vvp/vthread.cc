@@ -126,11 +126,11 @@ struct vthread_s {
       {
 	    stack_vec4_.push_back(val);
       }
-      inline const vvp_vector4_t& peek_vec4(unsigned depth)
+      inline const vvp_vector4_t& peek_vec4(int depth)
       {
 	    unsigned size = stack_vec4_.size();
-	    assert(depth < size);
-	    unsigned use_index = size-1-depth;
+	    //assert(depth < size);
+	    unsigned use_index = depth < 0 ? ~depth : size-1-depth;
 	    return stack_vec4_[use_index];
       }
       inline vvp_vector4_t& peek_vec4(void)
@@ -139,10 +139,10 @@ struct vthread_s {
 	    assert(use_index >= 1);
 	    return stack_vec4_[use_index-1];
       }
-      inline void poke_vec4(unsigned depth, const vvp_vector4_t&val)
+      inline void poke_vec4(int depth, const vvp_vector4_t&val)
       {
-	    assert(depth < stack_vec4_.size());
-	    unsigned use_index = stack_vec4_.size()-1-depth;
+	    //assert(depth < stack_vec4_.size());
+	    unsigned use_index = depth < 0 ? ~depth : stack_vec4_.size()-1-depth;
 	    stack_vec4_[use_index] = val;
       }
       inline void pop_vec4(unsigned cnt)
@@ -168,16 +168,16 @@ struct vthread_s {
       {
 	    stack_real_.push_back(val);
       }
-      inline double peek_real(unsigned depth)
+      inline double peek_real(int depth)
       {
-	    assert(depth < stack_real_.size());
-	    unsigned use_index = stack_real_.size()-1-depth;
+//	    assert(depth < stack_real_.size());
+	    unsigned use_index = depth < 0 ? ~depth : stack_real_.size()-1-depth;
 	    return stack_real_[use_index];
       }
-      inline void poke_real(unsigned depth, double val)
+      inline void poke_real(int depth, double val)
       {
-	    assert(depth < stack_real_.size());
-	    unsigned use_index = stack_real_.size()-1-depth;
+//	    assert(depth < stack_real_.size());
+	    unsigned use_index = depth < 0 ? ~depth : stack_real_.size()-1-depth;
 	    stack_real_[use_index] = val;
       }
       inline void pop_real(unsigned cnt)
@@ -207,16 +207,16 @@ struct vthread_s {
       {
 	    stack_str_.push_back(val);
       }
-      inline string&peek_str(unsigned depth)
+      inline string&peek_str(int depth)
       {
-	    assert(depth<stack_str_.size());
-	    unsigned use_index = stack_str_.size()-1-depth;
+//	    assert(depth<stack_str_.size());
+	    unsigned use_index = depth < 0 ? ~depth : stack_str_.size()-1-depth;
 	    return stack_str_[use_index];
       }
-      inline void poke_str(unsigned depth, const string&val)
+      inline void poke_str(int depth, const string&val)
       {
-	    assert(depth < stack_str_.size());
-	    unsigned use_index = stack_str_.size()-1-depth;
+//	    assert(depth < stack_str_.size());
+	    unsigned use_index = depth < 0 ? ~depth : stack_str_.size()-1-depth;
 	    stack_str_[use_index] = val;
       }
       inline void pop_str(unsigned cnt)
@@ -5352,14 +5352,14 @@ bool of_REPLICATE(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
-static void poke_val(vthread_t fun_thr, unsigned depth, double val)
+static void poke_val(vthread_t thr, unsigned depth, double val)
 {
-      fun_thr->parent->poke_real(depth, val);
+      thr->poke_real(depth, val);
 }
 
-static void poke_val(vthread_t fun_thr, unsigned depth, string val)
+static void poke_val(vthread_t thr, unsigned depth, string val)
 {
-      fun_thr->parent->poke_str(depth, val);
+      thr->poke_str(depth, val);
 }
 
 static size_t get_max(vthread_t fun_thr, double&)
@@ -5417,7 +5417,7 @@ static bool ret(vthread_t thr, vvp_code_t cp)
       unsigned depth = get_depth(fun_thr, index, val);
 	// Use the depth to put the value into the stack of
 	// the parent thread.
-      poke_val(fun_thr, depth, val);
+      poke_val(fun_thr->parent, depth, val);
       return true;
 }
 
@@ -5477,19 +5477,19 @@ bool of_RET_VEC4(vthread_t thr, vvp_code_t cp)
       return true;
 }
 
-static void push_from_parent(vthread_t thr, vthread_t fun_thr, unsigned depth, double&)
+static void push_from_stack(vthread_t thr, vthread_t stack_thr, unsigned depth, double&)
 {
-      thr->push_real(fun_thr->parent->peek_real(depth));
+      thr->push_real(stack_thr->peek_real(depth));
 }
 
-static void push_from_parent(vthread_t thr, vthread_t fun_thr, unsigned depth, string&)
+static void push_from_stack(vthread_t thr, vthread_t stack_thr, unsigned depth, string&)
 {
-      thr->push_str(fun_thr->parent->peek_str(depth));
+      thr->push_str(stack_thr->peek_str(depth));
 }
 
-static void push_from_parent(vthread_t thr, vthread_t fun_thr, unsigned depth, vvp_vector4_t&)
+static void push_from_stack(vthread_t thr, vthread_t stack_thr, unsigned depth, vvp_vector4_t&)
 {
-      thr->push_vec4(fun_thr->parent->peek_vec4(depth));
+      thr->push_vec4(stack_thr->peek_vec4(depth));
 }
 
 template <typename ELEM>
@@ -5504,7 +5504,7 @@ static bool retload(vthread_t thr, vvp_code_t cp)
       unsigned depth = get_depth(fun_thr, index, type);
 	// Use the depth to extract the values from the stack
 	// of the parent thread.
-      push_from_parent(thr, fun_thr, depth, type);
+      push_from_stack(thr, fun_thr->parent, depth, type);
       return true;
 }
 
@@ -5530,6 +5530,127 @@ bool of_RETLOAD_STR(vthread_t thr, vvp_code_t cp)
 bool of_RETLOAD_VEC4(vthread_t thr, vvp_code_t cp)
 {
       return retload<vvp_vector4_t>(thr, cp);
+}
+
+template <typename ELEM>
+static bool stackload(vthread_t thr, vvp_code_t cp)
+{
+      __vpiScope*scope = static_cast<__vpiScope*>(cp->handle);
+      size_t index = cp->bit_idx[0];
+      ELEM type;
+
+      vthread_t stack_thr = thr;
+      while (stack_thr && stack_thr->parent_scope != scope)
+	    stack_thr = stack_thr->parent;
+
+      push_from_stack(thr, stack_thr, ~index, type);
+      return true;
+}
+
+/*
+ * %stackload/real <scope> <index>
+ */
+bool of_STACKLOAD_REAL(vthread_t thr, vvp_code_t cp)
+{
+      return stackload<double>(thr, cp);
+}
+
+/*
+ * %stackload/str <scope> <index>
+ */
+bool of_STACKLOAD_STR(vthread_t thr, vvp_code_t cp)
+{
+      return stackload<string>(thr, cp);
+}
+
+/*
+ * %stackload/vec4 <scope> <index>
+ */
+bool of_STACKLOAD_VEC4(vthread_t thr, vvp_code_t cp)
+{
+      return stackload<vvp_vector4_t>(thr, cp);
+}
+#if 0
+/*
+ * %stackload/obj <scope> <index>
+ */
+bool of_STACKLOAD_OBJ(vthread_t thr, vvp_code_t cp)
+{
+      return stackload<vvp_object_t>(thr, cp);
+}
+#endif
+template <typename ELEM>
+static bool stackstore(vthread_t thr, vvp_code_t cp)
+{
+     __vpiScope*scope = static_cast<__vpiScope*>(cp->handle);
+      int32_t index = (int32_t)cp->bit_idx[0];
+      ELEM val;
+      pop_value(thr, val, 0);
+
+      vthread_t stack_thr = thr;
+      while (stack_thr && stack_thr->parent_scope != scope)
+	    stack_thr = stack_thr->parent;
+
+	// Use the depth to put the value into the stack of
+	// the parent thread.
+      poke_val(stack_thr, index, val);
+      return true;
+}
+
+/*
+ * %stackstore/real <scope> <index>
+ */
+bool of_STACKSTORE_REAL(vthread_t thr, vvp_code_t cp)
+{
+      return stackstore<double>(thr, cp);
+}
+
+/*
+ * %stackstore/str <scope> <index>
+ */
+bool of_STACKSTORE_STR(vthread_t thr, vvp_code_t cp)
+{
+      return stackstore<string>(thr, cp);
+}
+
+/*
+ * %stackstore/vec4 <scope>, <index>, <offset>
+ */
+bool of_STACKSTORE_VEC4(vthread_t thr, vvp_code_t cp)
+{
+     __vpiScope*scope = static_cast<__vpiScope*>(cp->handle);
+      int32_t stack_index = ~(int32_t)cp->bit_idx[0];
+      unsigned off_index = cp->bit_idx[1];
+
+      vthread_t stack_thr = thr;
+      while (stack_thr && stack_thr->parent_scope != scope)
+	    stack_thr = stack_thr->parent;
+
+      vvp_vector4_t&val = thr->peek_vec4();
+
+      int64_t off = off_index ? thr->words[off_index].w_int : 0;
+      unsigned int sig_value_size = stack_thr->peek_vec4(stack_index).size();
+
+      if (off_index!=0 && thr->flags[4] == BIT4_1) {
+	    thr->pop_vec4(1);
+	    return true;
+      }
+
+      if (!resize_rval_vec(val, off, sig_value_size)) {
+	    thr->pop_vec4(1);
+	    return true;
+      }
+
+      if (off == 0 && val.size() == sig_value_size) {
+	    stack_thr->poke_vec4(stack_index, val);
+      } else {
+	    vvp_vector4_t tmp_dst = stack_thr->peek_vec4(stack_index);
+	    tmp_dst.set_vec(off, val);
+	    stack_thr->poke_vec4(stack_index, tmp_dst);
+      }
+
+      thr->pop_vec4(1);
+      return true;
 }
 
 /*

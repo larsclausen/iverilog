@@ -766,6 +766,10 @@ class NetNet  : public NetObj, public PortType {
       bool local_flag() const { return local_flag_; }
       void local_flag(bool f) { local_flag_ = f; }
 
+      bool is_auto() const { return is_auto_; }
+      void set_auto(bool is_auto) { is_auto_ = is_auto; }
+
+
 	// NetESignal objects may reference this object. Keep a
 	// reference count so that I keep track of them.
       void incr_eref();
@@ -801,6 +805,7 @@ class NetNet  : public NetObj, public PortType {
       Type   type_    : 5;
       PortType port_type_ : 3;
       bool local_flag_: 1;
+	  bool is_auto_: 1;
       ivl_type_t net_type_;
       ivl_discipline_t discipline_;
 

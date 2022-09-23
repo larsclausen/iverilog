@@ -253,8 +253,13 @@ void eval_logic_into_integer(ivl_expr_t expr, unsigned ix)
 		      }
 		}
 		const char*type = ivl_signal_signed(sig) ? "/s" : "";
-		fprintf(vvp_out, "    %%ix/getv%s %u, v%p_%u;\n", type, ix,
-		                 sig, word);
+		if (signal_on_stack(sig)) {
+			draw_eval_vec4(expr);
+			fprintf(vvp_out, "    %%ix/vec4%s %u;\n", type, ix);
+		} else {
+			fprintf(vvp_out, "    %%ix/getv%s %u, v%p_%u;\n", type, ix,
+							 sig, word);
+		}
 		break;
 	  }
 

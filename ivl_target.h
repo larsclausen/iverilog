@@ -2038,6 +2038,7 @@ extern int         ivl_signal_module_port_index(ivl_signal_t net);
 extern int         ivl_signal_signed(ivl_signal_t net);
 extern int         ivl_signal_integer(ivl_signal_t net);
 extern int         ivl_signal_local(ivl_signal_t net);
+extern int         ivl_signal_auto(ivl_signal_t net);
 extern unsigned    ivl_signal_forced_net(ivl_signal_t net);
 extern unsigned    ivl_signal_npath(ivl_signal_t net);
 extern ivl_delaypath_t ivl_signal_path(ivl_signal_t net, unsigned idx);

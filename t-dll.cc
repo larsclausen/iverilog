@@ -2594,6 +2594,7 @@ void dll_target::signal(const NetNet*net)
 
       obj->net_type = net->net_type();
       obj->local_ = net->local_flag()? 1 : 0;
+      obj->auto_ = net->is_auto()? 1 : 0;
       obj->forced_net_ = (net->type() != NetNet::REG) &&
                          (net->peek_lref() > 0) ? 1 : 0;
       obj->discipline = net->get_discipline();

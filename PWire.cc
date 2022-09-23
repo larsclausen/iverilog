@@ -31,7 +31,7 @@ PWire::PWire(perm_string n,
 	     ivl_variable_type_t dt,
 	     PWSRType rt)
 : name_(n), type_(t), port_type_(pt), data_type_(dt),
-  signed_(false),
+  signed_(false), is_auto_(false),
   port_set_(false), net_set_(false), is_scalar_(false),
   error_cnt_(0), set_data_type_(0), discipline_(0)
 {

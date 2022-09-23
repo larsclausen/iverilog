@@ -114,7 +114,10 @@ static void get_vec_from_lval_slice(ivl_lval_t lval, struct vec_slice_info*slice
 
 	    slice->type = SLICE_SIMPLE_VECTOR;
 	    slice->u_.simple_vector.use_word = use_word;
-	    if (signal_is_return_value(sig)) {
+		if (signal_on_stack(sig)) {
+		  fprintf(vvp_out, "    %%stackload/vec4 S_%p, 0;\n",
+				  ivl_signal_scope(sig));
+		} else if (signal_is_return_value(sig)) {
 		  assert(use_word==0);
 		  fprintf(vvp_out, "    %%retload/vec4 0;\n");
 	    } else {
@@ -128,7 +131,10 @@ static void get_vec_from_lval_slice(ivl_lval_t lval, struct vec_slice_info*slice
 	    slice->type = SLICE_PART_SELECT_STATIC;
 	    slice->u_.part_select_static.part_off = part_off;
 
-	    if (signal_is_return_value(sig)) {
+		if (signal_on_stack(sig)) {
+		  fprintf(vvp_out, "    %%stackload/vec4 S_%p, 0;\n",
+				  ivl_signal_scope(sig));
+		} else if (signal_is_return_value(sig)) {
 		  assert(use_word==0);
 		  fprintf(vvp_out, "    %%retload/vec4 0;\n");
 	    } else {
@@ -224,6 +230,51 @@ static void get_vec_from_lval(ivl_statement_t net, struct vec_slice_info*slices)
 
 }
 
+static void put_vec_to_stack_slice(ivl_signal_t sig, struct vec_slice_info*slice)
+{
+      int part_off_idx;
+
+	/* If the slice of the l-value is a BOOL variable, then cast
+	   the data to a BOOL vector so that the stores can be valid. */
+      if (ivl_signal_data_type(sig) == IVL_VT_BOOL) {
+	    fprintf(vvp_out, "    %%cast2;\n");
+      }
+
+      switch (slice->type) {
+	  default:
+	    fprintf(vvp_out, " ; XXXX slice->type=%d\n", slice->type);
+	    assert(0);
+	    break;
+
+	  case SLICE_SIMPLE_VECTOR:
+	    assert(slice->u_.simple_vector.use_word == 0);
+	    fprintf(vvp_out, "    %%stackstore/vec4 S_%p, 0, 0;\n",
+				ivl_signal_scope(sig));
+		break;
+
+	  case SLICE_PART_SELECT_STATIC:
+	    part_off_idx = allocate_word();
+	    fprintf(vvp_out, "    %%ix/load %d, %lu, 0;\n",
+		    part_off_idx, slice->u_.part_select_static.part_off);
+	    fprintf(vvp_out, "    %%flag_set/imm 4, 0;\n");
+	    fprintf(vvp_out, "    %%stackstore/vec4 S_%p, 0, %d;\n",
+				ivl_signal_scope(sig), part_off_idx);
+	    clr_word(part_off_idx);
+	    break;
+
+	  case SLICE_PART_SELECT_DYNAMIC:
+	    fprintf(vvp_out, "    %%flag_mov 4, %u;\n",
+		    slice->u_.part_select_dynamic.x_flag);
+	    fprintf(vvp_out, "    %%stackstore/vec4 S_%p, 0, %d;\n",
+				ivl_signal_scope(sig),
+				slice->u_.part_select_dynamic.word_idx_reg);
+	    clr_word(slice->u_.part_select_dynamic.word_idx_reg);
+	    clr_flag(slice->u_.part_select_dynamic.x_flag);
+	    break;
+
+      }
+}
+
 static void put_vec_to_ret_slice(ivl_signal_t sig, struct vec_slice_info*slice,
 				 unsigned wid)
 {
@@ -278,6 +329,10 @@ static void put_vec_to_lval_slice(ivl_lval_t lval, struct vec_slice_info*slice,
 	/* Special Case: If the l-value signal is named after its scope,
 	   and the scope is a function, then this is an assign to a return
 	   value and should be handled differently. */
+      if (signal_on_stack(sig)) {
+	    put_vec_to_stack_slice(sig, slice);
+	    return;
+      }
       if (signal_is_return_value(sig)) {
 	    put_vec_to_ret_slice(sig, slice, wid);
 	    return;
@@ -479,7 +534,10 @@ static void store_vec4_to_lval(ivl_statement_t net)
 		    /* No offset expression, so use simpler store function. */
 		  assert(lsig);
 		  assert(lwid == ivl_signal_width(lsig));
-		  if (signal_is_return_value(lsig)) {
+		  if (signal_on_stack(lsig)) {
+			fprintf(vvp_out, "    %%stackstore/vec4 S_%p, 0, 0; Load %s (draw_signal_vec4)\n",
+				ivl_signal_scope(lsig), ivl_signal_basename(lsig));
+		  } else if (signal_is_return_value(lsig)) {
 			fprintf(vvp_out, "    %%ret/vec4 0, 0, %u;  Assign to %s (store_vec4_to_lval)\n",
 				lwid, ivl_signal_basename(lsig));
 		  } else {
@@ -702,6 +760,13 @@ static void put_real_to_lval(ivl_lval_t lval, struct real_lval_info*slice)
 {
       ivl_signal_t sig = ivl_lval_sig(lval);
 
+      if (signal_on_stack(sig)) {
+	    assert(ivl_signal_dimensions(sig) == 0);
+	    fprintf(vvp_out, "    %%stackstore/real S_%p, 0; Store %s (draw_signal_real_real)\n",
+		    ivl_signal_scope(sig), ivl_signal_basename(sig));
+	    return;
+      }
+
 	/* Special Case: If the l-value signal is named after its scope,
 	   and the scope is a function, then this is an assign to a return
 	   value and should be handled differently. */
@@ -751,6 +816,13 @@ static void store_real_to_lval(ivl_lval_t lval)
 
       var = ivl_lval_sig(lval);
       assert(var != 0);
+
+      if (signal_on_stack(var)) {
+	    assert(ivl_signal_dimensions(var) == 0);
+	    fprintf(vvp_out, "    %%stackstore/real S_%p, 0; Store %s (draw_signal_real_real)\n",
+		    ivl_signal_scope(var), ivl_signal_basename(var));
+	    return;
+      }
 
 	/* Special Case: If the l-value signal is named after its scope,
 	   and the scope is a function, then this is an assign to a return
@@ -849,6 +921,14 @@ static int show_stmt_assign_sig_string(ivl_statement_t net)
 
       assert(ivl_stmt_lvals(net) == 1);
       assert(ivl_stmt_opcode(net) == 0);
+
+      if (signal_on_stack(var)) {
+	    assert(ivl_signal_dimensions(var) == 0);
+	    draw_eval_string(rval);
+	    fprintf(vvp_out, "    %%stackstore/str S_%p, 0; Store %s (draw_signal_real_real)\n",
+		    ivl_signal_scope(var), ivl_signal_basename(var));
+	    return 0;
+      }
 
 	/* Special case: If the l-value signal (string) is named after
 	   its scope, and the scope is a function, then this is an
