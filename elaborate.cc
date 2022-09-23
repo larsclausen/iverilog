@@ -4126,6 +4126,45 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 
 	    NetExpr*rv = new NetESignal(port);
 
+	    ivl_type_t lv_type = lv->net_type();
+
+	    if (lv_type) {
+		  if (lv_type->type_compatible(port->net_type())) {
+			cerr << get_fileline() << ": error: type of `"
+			     << *parms_[parms_idx]
+			     << "` is not compatbile with the type of port "
+			     << (idx+1) << " `" << port->name() << "` of task `"
+			     << task->basename() << "`."
+			     << endl;
+
+			cerr << get_fileline() << ":      : " << "expression type=";
+			if (lv->net_type())
+			      lv->net_type()->debug_dump(cerr);
+			else
+			      cerr << "<nil>";
+			cerr << endl;
+
+			cerr << get_fileline() << ":      : " << "port type=";
+			if (port->net_type())
+			      port->net_type()->debug_dump(cerr);
+			else
+			      cerr << "<nil>";
+			cerr << endl;
+
+			des->errors++;
+			continue;
+		  }
+	    } else if (!port->net_type()->packed()) {
+		cerr << get_fileline() << ": error: type of `"
+		     << *parms_[parms_idx]
+		     << "` is not compatbile with the type of port "
+		     << (idx+1) << " `" << port->name() << "` of task `"
+		     << task->basename() << "`."
+		     << endl;
+		  des->errors++;
+		  continue;
+	    }
+
 	      /* Handle any implicit cast. */
 	    unsigned lv_width = count_lval_width(lv);
 	    if (lv->expr_type() != rv->expr_type()) {
@@ -4140,8 +4179,6 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 			rv = cast_to_int4(rv, lv_width);
 			break;
 		      default:
-			  /* Don't yet know how to handle this. */
-			ivl_assert(*this, 0);
 			break;
 		  }
 	    }
