@@ -168,11 +168,6 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 		 << "Elaborate l-value ident expression: " << *this << endl;
       }
 
-	/* Try to detect the special case that we are in a method and
-	   the identifier is a member of the class. */
-      if (NetAssign_*tmp = elaborate_lval_method_class_member_(des, scope))
-	    return tmp;
-
 	/* Normally find the name in the passed scope. But if this is
 	   imported from a package, then located the variable from the
 	   package scope. */
@@ -191,8 +186,11 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 	   and reg will remain nil. */
       pform_name_t base_path = path_;
       pform_name_t member_path;
+      ivl_type_t par_type;
+      ivl_type_t cls_val;
       while (reg == 0 && !base_path.empty()) {
-	    symbol_search(this, des, use_scope, base_path, reg, par, eve);
+	    symbol_search(this, des, use_scope, base_path, reg, par, eve,
+			  par_type, cls_val);
 	      // Found it!
 	    if (reg != 0) break;
 	      // Not found. Try to pop another name off the base_path
@@ -200,6 +198,11 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 	    member_path.push_front( base_path.back() );
 	    base_path.pop_back();
       }
+
+	/* Try to detect the special case that we are in a method and
+	   the identifier is a member of the class. */
+      if (cls_val)
+	    return elaborate_lval_method_class_member_(des, scope);
 
 
 	/* The l-value must be a variable. If not, then give up and

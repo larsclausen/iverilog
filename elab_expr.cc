@@ -4324,10 +4324,6 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	    ivl_assert(*this, use_scope);
       }
 
-      if (NetExpr* tmp = elaborate_expr_class_member_(des, scope, 0, flags)) {
-	    return tmp;
-      }
-
       symbol_search(this, des, use_scope, path_, net, par, eve, par_type, cls_val);
 
       if (net == 0 && gn_system_verilog() && path_.size() >= 2) {
@@ -4364,6 +4360,10 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 						     member_comp, 0, flags);
 	    }
       }
+
+      if (cls_val)
+	     return elaborate_expr_class_member_(des, scope,
+						 use_scope->class_def());
 
       if (net == 0) {
             cerr << get_fileline() << ": error: Unable to bind variable `"
@@ -4486,17 +4486,13 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
  * fail. Otherwise, return a NetEProperty.
  */
 NetExpr* PEIdent::elaborate_expr_class_member_(Design*des, NetScope*scope,
-					       unsigned, unsigned) const
+					       const netclass_t *class_type) const
 {
       if (!gn_system_verilog())
 	    return 0;
       if (scope->parent() == 0)
 	    return 0;
       if (path_.size() != 1)
-	    return 0;
-
-      const netclass_t*class_type = find_class_containing_scope(*this, scope);
-      if (class_type == 0)
 	    return 0;
 
       const name_component_t&name_comp = path_.back();
@@ -4612,17 +4608,6 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 		 << endl;
       }
 
-	// Special case: Detect the special situation that this name
-	// is the name of a variable in the class, and this is a class
-	// method. We sense that this might be the case by noting that
-	// the parent scope of where we are working is a
-	// NetScope::CLASS, the path_ is a single component, and the
-	// name is a property of the class. If that turns out to be
-	// the case, then handle this specially.
-      if (NetExpr*tmp = elaborate_expr_class_member_(des, scope, expr_wid, flags)) {
-	    return tmp;
-      }
-
       if (path_.size() > 1) {
             if (NEED_CONST & flags) {
                   cerr << get_fileline() << ": error: A hierarchical reference"
@@ -4656,6 +4641,20 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 	// named "c". symbol_search() handles this for us.
       symbol_search_results sr;
       symbol_search(this, des, use_scope, path_, &sr);
+
+      if (sr.cls_val) {
+	      // Special case: Detect the special situation that this name
+	      // is the name of a variable in the class, and this is a class
+	      // method. We sense that this might be the case by noting that
+	      // the parent scope of where we are working is a
+	      // NetScope::CLASS, the path_ is a single component, and the
+	      // name is a property of the class. If that turns out to be
+	      // the case, then handle this specially.
+	    auto expr = elaborate_expr_class_member_(des, scope,
+						sr.scope->class_def());
+	    if (expr)
+		  return expr;
+      }
 
 	// If the identifier name is a parameter name, then return
 	// the parameter value.

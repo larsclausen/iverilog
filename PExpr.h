@@ -507,8 +507,7 @@ class PEIdent : public PExpr {
 
       NetExpr*elaborate_expr_class_member_(Design*des,
 					   NetScope*scope,
-					   unsigned expr_wid,
-					   unsigned flags) const;
+					   const netclass_t *class_type) const;
 
       NetExpr *elaborate_expr_class_field_(Design*des, NetScope*scope,
 					   NetNet*net,
