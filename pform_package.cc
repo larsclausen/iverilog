@@ -134,7 +134,7 @@ void pform_package_import(const struct vlltype&loc, PPackage*pkg, const char*ide
 }
 
 PExpr* pform_package_ident(const struct vlltype&loc,
-			   PPackage*pkg, pform_name_t*ident_name)
+			   perm_string pkg, pform_name_t*ident_name)
 {
       assert(ident_name);
       PEIdent*tmp = new PEIdent(pkg, *ident_name);

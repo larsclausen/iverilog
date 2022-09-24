@@ -4818,10 +4818,13 @@ cerr << endl;
 		  const NetExpr*par = 0;
 		  NetEvent*     eve = 0;
 
-		  NetScope*use_scope = scope;
-		  if (id->package()) {
-			use_scope = des->find_package(id->package()->pscope_name());
-			ivl_assert(*this, use_scope);
+		  NetScope*use_scope = id->id_scope(des, scope);
+		  if (!use_scope) {
+			cerr << get_fileline() << ":error :"
+			     << "can not find scope for named event `"
+			     << eve->name() << "`." << endl;
+			des->errors++;
+			continue;
 		  }
 
 		  NetScope*found_in = symbol_search(this, des, use_scope,

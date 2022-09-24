@@ -171,11 +171,8 @@ NetAssign_* PEIdent::elaborate_lval(Design*des,
 	/* Normally find the name in the passed scope. But if this is
 	   imported from a package, then located the variable from the
 	   package scope. */
-      NetScope*use_scope = scope;
-      if (package_) {
-	    use_scope = des->find_package(package_->pscope_name());
-	    ivl_assert(*this, use_scope);
-      }
+      NetScope*use_scope = scope = id_scope(des, scope);
+      ivl_assert(*this, use_scope);
 
 	/* Try to find the base part of the path that names the
 	   variable. The remainer is the member path. For example, if

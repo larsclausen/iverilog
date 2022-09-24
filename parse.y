@@ -27,6 +27,7 @@
 # include  "pform.h"
 # include  "Statement.h"
 # include  "PSpec.h"
+# include  "PPackage.h"
 # include  <stack>
 # include  <cstring>
 # include  <sstream>
@@ -3791,9 +3792,14 @@ expr_primary
 
   | package_scope hierarchy_identifier
       { lex_in_package_scope(0);
-	$$ = pform_package_ident(@2, $1, $2);
+	$$ = pform_package_ident(@2, $1->pscope_name(), $2);
 	delete $2;
       }
+  | class_scope hierarchy_identifier
+      { $$ = pform_package_ident(@2, $1->name, $2);
+	delete $2;
+      }
+
 
   /* An identifier followed by an expression list in parentheses is a
      function call. If a system identifier, then a system function

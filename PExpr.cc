@@ -370,17 +370,17 @@ const verireal& PEFNumber::value() const
 }
 
 PEIdent::PEIdent(const pform_name_t&that)
-: package_(0), path_(that), no_implicit_sig_(false)
+: package_(), path_(that), no_implicit_sig_(false)
 {
 }
 
 PEIdent::PEIdent(perm_string s, bool no_implicit_sig)
-: package_(0), no_implicit_sig_(no_implicit_sig)
+: package_(), no_implicit_sig_(no_implicit_sig)
 {
       path_.push_back(name_component_t(s));
 }
 
-PEIdent::PEIdent(PPackage*pkg, const pform_name_t&that)
+PEIdent::PEIdent(perm_string pkg, const pform_name_t&that)
 : package_(pkg), path_(that), no_implicit_sig_(true)
 {
 }

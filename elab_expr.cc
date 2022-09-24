@@ -4074,10 +4074,13 @@ unsigned PEIdent::test_width_parameter_(const NetExpr *par, width_mode_t&mode)
 
 unsigned PEIdent::test_width(Design*des, NetScope*scope, width_mode_t&mode)
 {
-      NetScope*use_scope = scope;
-      if (package_) {
-	    use_scope = des->find_package(package_->pscope_name());
-	    ivl_assert(*this, use_scope);
+      NetScope*use_scope = id_scope(des, scope);
+      if (!use_scope) {
+	    expr_type_   = IVL_VT_NO_TYPE;
+	    expr_width_  = 0;
+	    min_width_   = 0;
+	    signed_flag_ = false;
+	    return 0;
       }
 
       if (unsigned tmp = test_width_method_(des, scope, mode)) {
@@ -4318,10 +4321,10 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
       ivl_type_t    par_type = 0;
       NetEvent*     eve = 0;
 
-      NetScope*use_scope = scope;
-      if (package_) {
-	    use_scope = des->find_package(package_->pscope_name());
-	    ivl_assert(*this, use_scope);
+      NetScope*use_scope = id_scope(des, scope);
+      if (!use_scope) {
+	    des->errors++;
+	    return nullptr;
       }
 
       symbol_search(this, des, use_scope, path_, net, par, eve, par_type, cls_val);
@@ -4628,10 +4631,12 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 
 	// If this identifier is pulled from a package, then switch
 	// the scope we are using.
-      NetScope*use_scope = scope;
-      if (package_) {
-	    use_scope = des->find_package(package_->pscope_name());
-	    ivl_assert(*this, use_scope);
+      NetScope*use_scope = id_scope(des, scope);
+      if (!use_scope) {
+	    cerr << get_fileline() << ": error: Unable to bind wire/reg/memory "
+		   "`" << path_ << "' in `" << scope_path(scope) << "'" << endl;
+	    des->errors++;
+	    return nullptr;
       }
 
 	// Find the net/parameter/event object that this name refers

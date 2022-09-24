@@ -205,7 +205,7 @@ extern void pform_package_import(const struct vlltype&loc,
 				 PPackage*pkg, const char*ident);
 
 extern PExpr* pform_package_ident(const struct vlltype&loc,
-				  PPackage*pkg, pform_name_t*ident);
+				  perm_string pkg, pform_name_t*ident);
 
 /*
  * Interface related functions.

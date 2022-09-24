@@ -320,7 +320,7 @@ class PEIdent : public PExpr {
 
     public:
       explicit PEIdent(perm_string, bool no_implicit_sig=false);
-      explicit PEIdent(PPackage*pkg, const pform_name_t&name);
+      explicit PEIdent(perm_string pkg, const pform_name_t&name);
       explicit PEIdent(const pform_name_t&);
       ~PEIdent();
 
@@ -366,12 +366,23 @@ class PEIdent : public PExpr {
       virtual bool is_collapsible_net(Design*des, NetScope*scope,
                                       NetNet::PortType port_type) const;
 
-      const PPackage* package() const { return package_; }
+      const perm_string package() const { return package_; }
 
       const pform_name_t& path() const { return path_; }
 
+      NetScope *id_scope(Design *des, NetScope *scope) const {
+	    if (!package_)
+		  return scope;
+
+	    NetScope *class_scope = des->find_scope(scope, hname_t(package_),
+						    NetScope::CLASS);
+	    if (class_scope)
+		  return class_scope;
+	    return des->find_package(package_);
+      }
+
     private:
-      PPackage*package_;
+      perm_string package_;
       pform_name_t path_;
       bool no_implicit_sig_;
 
