@@ -1267,6 +1267,9 @@ ps_type_identifier /* IEEE1800-2017: A.9.3 */
 	$$ = $2.type;
 	delete[]$2.text;
       }
+  | class_scope TYPE_IDENTIFIER 
+    { $$ = $2.type;
+    }
   ;
 
 /* Data types that can have packed dimensions directly attached to it */
