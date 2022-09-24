@@ -391,7 +391,7 @@ void PEConcat::dump(ostream&out) const
 
 void PECallFunction::dump(ostream &out) const
 {
-      if (package_) out << package_->pscope_name() << "::";
+      if (package_) out << package_ << "::";
 
       out << path_ << "(";
 

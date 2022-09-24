@@ -2591,14 +2591,14 @@ NetExpr* PECallFunction::elaborate_expr_pkg_(Design*des, NetScope*scope,
       if (debug_elaborate) {
 	    cerr << get_fileline() << ": PECallFunction::elaborate_expr_pkg_: "
 		 << "Elaborate " << path_
-		 << " as function in package " << package_->pscope_name()
+		 << " as function in package " << package_
 		 << "." << endl;
       }
 
 	// Find the package that contains this definition, and use the
 	// package scope as the search starting point for the function
 	// definition.
-      NetScope*pscope = des->find_package(package_->pscope_name());
+      NetScope*pscope = func_scope(des, scope);
       ivl_assert(*this, pscope);
 
       NetFuncDef*def = des->find_function(pscope, path_);
@@ -2621,10 +2621,12 @@ NetExpr* PECallFunction::elaborate_expr(Design*des, NetScope*scope,
 		 << "path_: " << path_ << endl;
 	    cerr << get_fileline() << ": PECallFunction::elaborate_expr: "
 		 << "expr_wid: " << expr_wid << endl;
+#if 0		 
 	    if (package_)
 		  cerr << get_fileline() << ": PECallFunction::elaborate_expr: "
 		       << "package_: " << package_->pscope_name()
 		       << " at " << package_->get_fileline() << endl;
+#endif
       }
 
       if (peek_tail_name(path_)[0] == '$')

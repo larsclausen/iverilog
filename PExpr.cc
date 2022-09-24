@@ -206,11 +206,11 @@ PEBShift::~PEBShift()
 }
 
 PECallFunction::PECallFunction(const pform_name_t&n, const vector<PExpr *> &parms)
-: package_(0), path_(n), parms_(parms), is_overridden_(false)
+: package_(), path_(n), parms_(parms), is_overridden_(false)
 {
 }
 
-PECallFunction::PECallFunction(PPackage*pkg, const pform_name_t&n, const vector<PExpr *> &parms)
+PECallFunction::PECallFunction(perm_string pkg, const pform_name_t&n, const vector<PExpr *> &parms)
 : package_(pkg), path_(n), parms_(parms), is_overridden_(false)
 {
 }
@@ -223,7 +223,7 @@ static pform_name_t pn_from_ps(perm_string n)
       return tmp;
 }
 
-PECallFunction::PECallFunction(PPackage*pkg, perm_string n, const list<PExpr *> &parms)
+PECallFunction::PECallFunction(perm_string pkg, perm_string n, const list<PExpr *> &parms)
 : package_(pkg), path_(pn_from_ps(n)), parms_(parms.size()), is_overridden_(false)
 {
       int tmp_idx = 0;
@@ -234,18 +234,18 @@ PECallFunction::PECallFunction(PPackage*pkg, perm_string n, const list<PExpr *> 
 }
 
 PECallFunction::PECallFunction(perm_string n, const vector<PExpr*>&parms)
-: package_(0), path_(pn_from_ps(n)), parms_(parms), is_overridden_(false)
+: package_(), path_(pn_from_ps(n)), parms_(parms), is_overridden_(false)
 {
 }
 
 PECallFunction::PECallFunction(perm_string n)
-: package_(0), path_(pn_from_ps(n)), is_overridden_(false)
+: package_(), path_(pn_from_ps(n)), is_overridden_(false)
 {
 }
 
 // NOTE: Anachronism. Try to work all use of svector out.
 PECallFunction::PECallFunction(const pform_name_t&n, const list<PExpr *> &parms)
-: package_(0), path_(n), parms_(parms.size()), is_overridden_(false)
+: package_(), path_(n), parms_(parms.size()), is_overridden_(false)
 {
       int tmp_idx = 0;
       assert(parms_.size() == parms.size());
@@ -255,7 +255,7 @@ PECallFunction::PECallFunction(const pform_name_t&n, const list<PExpr *> &parms)
 }
 
 PECallFunction::PECallFunction(perm_string n, const list<PExpr*>&parms)
-: package_(0), path_(pn_from_ps(n)), parms_(parms.size()), is_overridden_(false)
+: package_(), path_(pn_from_ps(n)), parms_(parms.size()), is_overridden_(false)
 {
       int tmp_idx = 0;
       assert(parms_.size() == parms.size());

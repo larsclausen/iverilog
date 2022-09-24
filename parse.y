@@ -3832,10 +3832,17 @@ expr_primary
       }
   | package_scope IDENTIFIER { lex_in_package_scope(0); } '(' expression_list_with_nuls ')'
       { perm_string use_name = lex_strings.make($2);
-	PECallFunction*tmp = new PECallFunction($1, use_name, *$5);
+	PECallFunction*tmp = new PECallFunction($1->pscope_name(), use_name, *$5);
+	FILE_NAME(tmp, @3);
+	delete[]$3;
+	delete $5;
+	$$ = tmp;
+      }
+  | class_scope IDENTIFIER '(' expression_list_with_nuls ')'
+      { perm_string use_name = lex_strings.make($2);
+	PECallFunction*tmp = new PECallFunction($1->name, use_name, *$4);
 	FILE_NAME(tmp, @2);
 	delete[]$2;
-	delete $5;
 	$$ = tmp;
       }
   | SYSTEM_IDENTIFIER '('  ')'

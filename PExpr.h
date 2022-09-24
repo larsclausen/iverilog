@@ -891,11 +891,10 @@ class PECallFunction : public PExpr {
     public:
       explicit PECallFunction(const pform_name_t&n, const std::vector<PExpr *> &parms);
 	// Call function defined in package.
-      explicit PECallFunction(PPackage*pkg, perm_string n, const std::vector<PExpr *> &parms);
-      explicit PECallFunction(PPackage*pkg, perm_string n, const std::list<PExpr *> &parms);
+      explicit PECallFunction(perm_string pkg, perm_string n, const std::list<PExpr *> &parms);
 
 	// Used to convert a user function called as a task
-      explicit PECallFunction(PPackage*pkg, const pform_name_t&n, const std::vector<PExpr *> &parms);
+      explicit PECallFunction(perm_string pkg, const pform_name_t&n, const std::vector<PExpr *> &parms);
 
 	// Call of system function (name is not hierarchical)
       explicit PECallFunction(perm_string n, const std::vector<PExpr *> &parms);
@@ -922,8 +921,20 @@ class PECallFunction : public PExpr {
       virtual unsigned test_width(Design*des, NetScope*scope,
 				  width_mode_t&mode);
 
+      NetScope *func_scope(Design *des, NetScope *scope) const {
+	    if (!package_)
+		  return scope;
+
+	    NetScope *class_scope = des->find_scope(scope, hname_t(package_),
+						    NetScope::CLASS);
+	    if (class_scope)
+		  return class_scope;
+	    return des->find_package(package_);
+      }
+
+
     private:
-      PPackage*package_;
+      perm_string package_;
       pform_name_t path_;
       std::vector<PExpr *> parms_;
 

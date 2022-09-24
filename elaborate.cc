@@ -3961,7 +3961,7 @@ NetProc* PCallTask::elaborate_function_(Design*des, NetScope*scope) const
 	    return elaborate_void_function_(des, scope, func);
 
 	// Generate a function call version of this task call.
-      PExpr*rval = new PECallFunction(package_, path_, parms_);
+      PExpr*rval = new PECallFunction(package_->pscope_name(), path_, parms_);
       rval->set_file(get_file());
       rval->set_lineno(get_lineno());
 	// Generate an assign to nothing.
