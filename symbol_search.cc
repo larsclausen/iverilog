@@ -177,7 +177,7 @@ bool symbol_search(const LineInfo*li, Design*des, NetScope*scope,
 
 		    // Static items are just normal signals and are found above.
 		  if (scope->type() == NetScope::CLASS) {
-			netclass_t*clsnet = scope->find_class(des, scope->basename());
+			const netclass_t*clsnet = scope->class_def();
 			int pidx = clsnet->property_idx_from_name(path_tail.name);
 			if (pidx >= 0) {
 			      ivl_type_t prop_type = clsnet->get_prop_type(pidx);
