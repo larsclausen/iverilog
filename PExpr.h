@@ -418,6 +418,10 @@ class PEIdent : public PExpr {
 				     std::list<long>&prefix_indices) const;
 
     private:
+
+      NetAssign_ *elaborate_lval_var_(Design *des, NetScope *scope,
+				      bool is_force, bool is_cassign,
+				      NetNet *reg, pform_name_t tail_path) const;
       NetAssign_*elaborate_lval_method_class_member_(Design*, NetScope*) const;
       NetAssign_*elaborate_lval_net_word_(Design*, NetScope*, NetNet*,
 					  bool need_const_idx) const;
