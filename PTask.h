@@ -45,7 +45,7 @@ class PTaskFunc : public PScope, public PNamedItem {
 
       void set_ports(std::vector<pform_tf_port_t>*p);
 
-      void set_this(class_type_t*use_type, PWire*this_wire);
+      void set_this(class_type_t*use_type);
 
 	// If this task is a method of a class, this returns a pointer
 	// to the class type.

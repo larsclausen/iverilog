@@ -501,6 +501,8 @@ Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
       property_qualifier_t property_qualifier;
       PPackage*package;
 
+      PTaskFunc *tf;
+
       struct {
 	    char*text;
 	    data_type_t*type;
@@ -725,6 +727,7 @@ Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
 %type <property_qualifier> class_item_qualifier_list property_qualifier_list
 %type <property_qualifier> class_item_qualifier_opt property_qualifier_opt
 %type <property_qualifier> random_qualifier
+%type <property_qualifier> method_qualifier_opt
 
 %type <ranges> variable_dimension
 %type <ranges> dimensions_opt dimensions
@@ -766,6 +769,8 @@ Module::port_t *module_declare_port(const YYLTYPE&loc, char *id,
 %type <lifetime> lifetime lifetime_opt
 
 %type <case_quality> unique_priority
+
+%type <tf> task_declaration function_declaration
 
 %type <genvar_iter> genvar_iteration
 
@@ -974,10 +979,16 @@ class_item /* IEEE1800-2005: A.1.8 */
     /* IEEE1800-1017: A.1.9 Class items: Class methods... */
 
   | method_qualifier_opt task_declaration
-      { /* The task_declaration rule puts this into the class */ }
+      { /* The task_declaration rule puts this into the class */
+        if (!$1.test_static())
+	      pform_set_this_class(@2, $2);
+      }
 
   | method_qualifier_opt function_declaration
-      { /* The function_declaration rule puts this into the class */ }
+      { /* The function_declaration rule puts this into the class */
+        if (!$1.test_static())
+	      pform_set_this_class(@2, $2);
+      }
 
     /* External class method definitions... */
 
@@ -1523,8 +1534,9 @@ for_step /* IEEE1800-2005: A.6.8 */
      instead of the module. */
 function_declaration /* IEEE1800-2005: A.2.6 */
   : K_function lifetime_opt data_type_or_implicit_or_void IDENTIFIER ';'
-      { assert(current_function == 0);
+      <tf>{ assert(current_function == 0);
 	current_function = pform_push_function_scope(@1, $4, $2);
+	$$ = current_function;
       }
     tf_item_list_opt
     statement_or_null_list_opt
@@ -1532,7 +1544,6 @@ function_declaration /* IEEE1800-2005: A.2.6 */
       { current_function->set_ports($7);
 	current_function->set_return($3);
 	current_function_set_statement($8? @8 : @4, $8);
-	pform_set_this_class(@4, current_function);
 	pform_pop_scope();
 	current_function = 0;
       }
@@ -1540,20 +1551,21 @@ function_declaration /* IEEE1800-2005: A.2.6 */
       { // Last step: check any closing name.
 	check_end_label(@11, "function", $4, $11);
 	delete[]$4;
+	$$ = $6;
       }
 
   | K_function lifetime_opt data_type_or_implicit_or_void IDENTIFIER
-      { assert(current_function == 0);
+      <tf>{ assert(current_function == 0);
 	current_function = pform_push_function_scope(@1, $4, $2);
+	$$ = current_function;
       }
     '(' tf_port_list_opt ')' ';'
     block_item_decls_opt
     statement_or_null_list_opt
     K_endfunction
-      { current_function->set_ports($7);
+      { $5->set_ports($7);
 	current_function->set_return($3);
 	current_function_set_statement($11? @11 : @4, $11);
-	pform_set_this_class(@4, current_function);
 	pform_pop_scope();
 	current_function = 0;
 	if ($7 == 0) {
@@ -1564,6 +1576,7 @@ function_declaration /* IEEE1800-2005: A.2.6 */
       { // Last step: check any closing name.
 	check_end_label(@14, "function", $4, $14);
 	delete[]$4;
+	$$ = $5;
       }
 
   /* Detect and recover from some errors. */
@@ -1901,14 +1914,10 @@ loop_variables /* IEEE1800-2005: A.6.8 */
       }
   ;
 
-method_qualifier /* IEEE1800-2005: A.1.8 */
-  : K_virtual
+method_qualifier_opt /* IEEE1800-2005: A.1.8 */
+  : K_virtual { $$ = property_qualifier_t::make_virtual(); }
   | class_item_qualifier
-  ;
-
-method_qualifier_opt
-  : method_qualifier
-  |
+  | { $$ = property_qualifier_t::make_none(); }
   ;
 
 modport_declaration /* IEEE1800-2012: A.2.9 */
@@ -2336,15 +2345,15 @@ streaming_concatenation /* IEEE1800-2005: A.8.1 */
 task_declaration /* IEEE1800-2005: A.2.7 */
 
   : K_task lifetime_opt IDENTIFIER ';'
-      { assert(current_task == 0);
+      <tf>{ assert(current_task == 0);
 	current_task = pform_push_task_scope(@1, $3, $2);
+	$$ = current_task;
       }
     tf_item_list_opt
     statement_or_null_list_opt
     K_endtask
-      { current_task->set_ports($6);
+      { $5->set_ports($6);
 	current_task_set_statement(@3, $7);
-	pform_set_this_class(@3, current_task);
 	pform_pop_scope();
 	current_task = 0;
 	if ($7 && $7->size() > 1) {
@@ -2360,19 +2369,20 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 	// module.
 	check_end_label(@10, "task", $3, $10);
 	delete[]$3;
+	$$ = $5;
       }
 
   | K_task lifetime_opt IDENTIFIER '('
-      { assert(current_task == 0);
+      <tf>{ assert(current_task == 0);
 	current_task = pform_push_task_scope(@1, $3, $2);
+	$$ = current_task;
       }
     tf_port_list_opt ')' ';'
     block_item_decls_opt
     statement_or_null_list_opt
     K_endtask
-      { current_task->set_ports($6);
+      { $5->set_ports($6);
 	current_task_set_statement(@3, $10);
-	pform_set_this_class(@3, current_task);
 	pform_pop_scope();
 	if (generation_flag < GN_VER2005 && $6 == 0) {
 	      cerr << @3 << ": warning: task definition for \"" << $3
@@ -2389,6 +2399,7 @@ task_declaration /* IEEE1800-2005: A.2.7 */
 	// module.
 	check_end_label(@13, "task", $3, $13);
 	delete[]$3;
+	$$ = $5;
       }
 
   | K_task lifetime_opt IDENTIFIER error K_endtask

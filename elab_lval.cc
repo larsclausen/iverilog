@@ -405,9 +405,12 @@ NetAssign_* PEIdent::elaborate_lval_method_class_member_(Design*des,
 
       NetNet*this_net = scope_method->find_signal(perm_string::literal(THIS_TOKEN));
       if (this_net == 0) {
-	    cerr << get_fileline() << ": internal error: "
-		 << "Unable to find 'this' port of " << scope_path(scope_method)
-		 << "." << endl;
+	    // If it is a static method there is no this
+	    cerr << get_fileline() << ": error: " 
+	         << "non-static propery `" << member_name
+		 << "` can not be accessed in static method."
+		 << endl;
+	    des->errors++;
 	    return 0;
       }
 

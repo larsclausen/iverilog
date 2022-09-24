@@ -19,6 +19,8 @@
 
 # include "config.h"
 # include  "PTask.h"
+# include  "netlist.h"
+# include  "PWire.h"
 # include  <cassert>
 
 using namespace std;
@@ -43,21 +45,25 @@ void PTaskFunc::set_ports(vector<pform_tf_port_t>*p)
       ports_ = p;
 }
 
-void PTaskFunc::set_this(class_type_t*type, PWire*this_wire)
+void PTaskFunc::set_this(class_type_t*type)
 {
       assert(this_type_ == 0);
       this_type_ = type;
 
+      perm_string this_name = perm_string::literal(THIS_TOKEN);
+
+      PWire *wire = new PWire(this_name, NetNet::REG, NetNet::PINPUT,
+			      IVL_VT_NO_TYPE, SR_BOTH);
+      wire->set_data_type(type);
+      //FILE_NAME(wire, *this);
+
+      wires[this_name] = wire;
+
 	// Push a synthesis argument that is the "this" value.
       if (ports_==0)
 	    ports_ = new vector<pform_tf_port_t>;
-
-      size_t use_size = ports_->size();
-      ports_->resize(use_size + 1);
-      for (size_t idx = use_size ; idx > 0 ; idx -= 1)
-	    ports_->at(idx) = ports_->at(idx-1);
-
-      ports_->at(0) = pform_tf_port_t(this_wire);
+      
+      ports_->insert(ports_->begin(), pform_tf_port_t(wire));
 }
 
 PTask::PTask(perm_string name, LexicalScope*parent, bool is_auto__)
