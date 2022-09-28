@@ -2409,11 +2409,11 @@ const NetScope* NetEScope::scope() const
 }
 
 NetESignal::NetESignal(NetNet*n)
-: NetExpr(n->vector_width()), net_(n), enum_type_(n->enumeration()), word_(0)
+: NetExpr(n->net_type()), net_(n), word_(0)
 {
       net_->incr_eref();
       set_line(*n);
-      cast_signed_base_(net_->get_signed());
+      expr_width(n->vector_width());
 }
 
 NetESignal::NetESignal(NetNet*n, NetExpr*w)
@@ -2421,7 +2421,10 @@ NetESignal::NetESignal(NetNet*n, NetExpr*w)
 {
       net_->incr_eref();
       set_line(*n);
-      cast_signed_base_(net_->get_signed());
+
+      // If it is an array we don't have a type for it yet.
+      if (word)
+	    set_net_type(n->net_type());
 }
 
 NetESignal::~NetESignal()
@@ -2432,11 +2435,6 @@ NetESignal::~NetESignal()
 perm_string NetESignal::name() const
 {
       return net_->name();
-}
-
-const netenum_t* NetESignal::enumeration() const
-{
-      return enum_type_;
 }
 
 const NetExpr* NetESignal::word_index() const
