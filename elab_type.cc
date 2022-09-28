@@ -231,7 +231,8 @@ static ivl_type_t elaborate_darray_check_type(Design *des, const LineInfo &li,
       if (dynamic_cast<const netvector_t*>(type) ||
 	  dynamic_cast<const netparray_t*>(type) ||
 	  dynamic_cast<const netreal_t*>(type) ||
-	  dynamic_cast<const netstring_t*>(type))
+	  dynamic_cast<const netstring_t*>(type) ||
+	  dynamic_cast<const netenum_t*>(type))
 	    return type;
 
       cerr << li.get_fileline() << ": Sorry: "
