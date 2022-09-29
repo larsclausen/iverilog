@@ -84,6 +84,9 @@ class netvector_t : public ivl_type_s {
       static netvector_t scalar_logic;
       static const netvector_t*integer_type(bool is_signed = true);
 
+	  static const netvector_t* vector_type(unsigned int wid, bool is_signed,
+											ivl_variable_type_t base_type);
+
     private:
       bool test_compatibility(ivl_type_t that) const;
 
