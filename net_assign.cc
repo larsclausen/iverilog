@@ -156,12 +156,6 @@ ivl_variable_type_t NetAssign_::expr_type() const
 
 const ivl_type_s* NetAssign_::net_type() const
 {
-        // We don't have types for array signals yet.
-      if (sig_->unpacked_dimensions()) {
-	    if (!word_)
-		  return nullptr;
-      }
-
       if (nest_) {
 	    const ivl_type_s*ntype = nest_->net_type();
 	    if (member_.nil())
@@ -190,6 +184,19 @@ const ivl_type_s* NetAssign_::net_type() const
 	    ivl_type_t tmp = class_type->get_prop_type(pidx);
 	    return tmp;
       }
+
+      if (word_)
+	    ntype = sig->element_type();
+      else
+	    ntype
+
+
+        // We don't have types for array signals yet.
+      if (sig_->unpacked_dimensions()) {
+	    if (!word_)
+		  return nullptr;
+      }
+
 
       const ivl_type_s *ntype = sig_->net_type();
       const netdarray_t*darray = dynamic_cast<const netdarray_t*>(ntype);

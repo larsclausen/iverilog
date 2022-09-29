@@ -2413,7 +2413,8 @@ NetESignal::NetESignal(NetNet*n)
 {
       net_->incr_eref();
       set_line(*n);
-      expr_width(n->vector_width());
+      cast_signed_base_(net_->get_signed());
+      expr_width(net_->vector_width());
 }
 
 NetESignal::NetESignal(NetNet*n, NetExpr*w)
@@ -2425,6 +2426,7 @@ NetESignal::NetESignal(NetNet*n, NetExpr*w)
       // If it is an array we don't have a type for it yet.
       if (word)
 	    set_net_type(n->net_type());
+      cast_signed_base_(net_->get_signed());
 }
 
 NetESignal::~NetESignal()
