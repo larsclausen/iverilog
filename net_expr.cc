@@ -356,12 +356,12 @@ const netenum_t* NetENetenum::netenum() const
 }
 
 NetENew::NetENew(ivl_type_t t)
-: obj_type_(t), size_(0), init_val_(0)
+: NetExpr(t), size_(0), init_val_(0)
 {
 }
 
 NetENew::NetENew(ivl_type_t t, NetExpr*size, NetExpr*init_val)
-: obj_type_(t), size_(size), init_val_(init_val)
+: NetExpr(t), size_(size), init_val_(init_val)
 {
 }
 
@@ -392,31 +392,23 @@ NetEProperty::NetEProperty(NetNet*net, perm_string pnam, NetExpr*idx)
       ivl_type_t prop_type = use_type->get_prop_type(pidx_);
       expr_width(prop_type->packed_width());
       cast_signed(prop_type->get_signed());
+      set_net_type(prop_type);
 }
 
 NetEProperty::~NetEProperty()
 {
 }
 
-ivl_variable_type_t NetEProperty::expr_type() const
-{
-      const netclass_t*use_type = dynamic_cast<const netclass_t*>(net_->net_type());
-      assert(use_type);
-
-      ivl_type_t prop_type = use_type->get_prop_type(pidx_);
-      return prop_type->base_type();
-}
-
 NetESelect::NetESelect(NetExpr*exp, NetExpr*base, unsigned wid,
                        ivl_select_type_t sel_type)
-: expr_(exp), base_(base), use_type_(0), sel_type_(sel_type)
+: expr_(exp), base_(base), sel_type_(sel_type)
 {
       expr_width(wid);
 }
 
 NetESelect::NetESelect(NetExpr*exp, NetExpr*base, unsigned wid,
                        ivl_type_t use_type)
-: expr_(exp), base_(base), use_type_(use_type), sel_type_(IVL_SEL_OTHER)
+: NetExpr(use_type), expr_(exp), base_(base), sel_type_(IVL_SEL_OTHER)
 {
       expr_width(wid);
 }
@@ -444,8 +436,8 @@ ivl_select_type_t NetESelect::select_type() const
 
 ivl_variable_type_t NetESelect::expr_type() const
 {
-      if (use_type_)
-	    return use_type_->base_type();
+      if (net_type())
+	    return net_type()->base_type();
 
       ivl_variable_type_t type = expr_->expr_type();
 
@@ -456,11 +448,6 @@ ivl_variable_type_t NetESelect::expr_type() const
 	    return IVL_VT_BOOL;
 
       return type;
-}
-
-const netenum_t* NetESelect::enumeration() const
-{
-      return dynamic_cast<const netenum_t*> (use_type_);
 }
 
 NetESFunc::NetESFunc(const char*n, ivl_variable_type_t t,
