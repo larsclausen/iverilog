@@ -93,6 +93,11 @@ const char* PExpr::width_mode_name(width_mode_t mode)
       }
 }
 
+PEAssign::PEAssign(PExpr *lval, PExpr *rval, char op)
+: lval_(lval), rval_(rval), op_(op)
+{
+}
+
 PEAssignPattern::PEAssignPattern()
 {
 }

@@ -197,6 +197,26 @@ class PExpr : public LineInfo {
 
 std::ostream& operator << (std::ostream&, const PExpr&);
 
+class PEAssign : public PExpr {
+    public:
+      explicit PEAssign(PExpr *lval, PExpr *rval, char op);
+      ~PEAssign() = default;
+
+      void dump(std::ostream&) const;
+
+      virtual unsigned test_width(Design*des, NetScope*scope, width_mode_t&mode);
+      virtual NetExpr*elaborate_expr(Design*des, NetScope*scope,
+				     ivl_type_t type, unsigned flags) const;
+
+      virtual NetExpr*elaborate_expr(Design*des, NetScope*scope,
+				     unsigned expr_wid,
+                                     unsigned flags) const;
+private:
+      std::unique_ptr<PExpr> lval_;
+      std::unique_ptr<PExpr> rval_;
+      char op_;
+};
+
 class PEAssignPattern : public PExpr {
     public:
       explicit PEAssignPattern();

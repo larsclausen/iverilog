@@ -3259,11 +3259,18 @@ branch_probe_expression
       { $$ = pform_make_branch_probe_expression(@1, $1, $3); }
   ;
 
+
+assign_expression
+  : '(' compressed_statement ')'
+  | '(' lpvalue '=' expression ')'
+
 expression
   : expr_primary_or_typename
       { $$ = $1; }
   | inc_or_dec_expression
       { $$ = $1; }
+  | assign_expression
+      { $$ = nullptr; }
   | inside_expression
       { $$ = $1; }
   | '+' attribute_list_opt expr_primary %prec UNARY_PREC

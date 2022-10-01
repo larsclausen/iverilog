@@ -1204,6 +1204,13 @@ static void draw_unary_inc_dec(ivl_expr_t sub, bool incr, bool pre)
       }
 }
 
+static void draw_assign_expr_vec4(ivl_expr_t expr)
+{
+      draw_eval_vec4(rval);
+      fprintf(vvp_out, "    %%dup/vec4;\n");
+	  store_vec4_to_lval(net);
+}
+
 static void draw_unary_vec4(ivl_expr_t expr)
 {
       ivl_expr_t sub = ivl_expr_oper1(expr);

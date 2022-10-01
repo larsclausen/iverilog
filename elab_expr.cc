@@ -189,6 +189,18 @@ NetExpr* PExpr::elaborate_expr(Design*des, NetScope*, unsigned, unsigned) const
       return 0;
 }
 
+unsigned int PEAssign::test_width(Design *des, NetScope *scope,
+								  width_mode_t &mode)
+{
+	expr_width_ = lval_->test_width(des, scope, mode);
+
+	expr_type_   = lval_->expr_type();
+	min_width_   = lval_->min_width();
+	signed_flag_ = lval_->has_sign();
+
+	return expr_width_;
+}
+
 /*
  * For now, assume that assignment patterns are for dynamic
  * objects. This is not really true as this expression type, fully
