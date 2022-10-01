@@ -1636,7 +1636,7 @@ loop_statement /* IEEE1800-2005: A.6.8 */
 	decl_assignment_t*tmp_assign = new decl_assignment_t;
 	tmp_assign->name = lex_strings.make($5);
 	assign_list.push_back(tmp_assign);
-	pform_make_var(@5, &assign_list, $4);
+	pform_make_var(@5, &assign_list, $4, nullptr, LexicalScope::AUTOMATIC);
       }
     statement_or_null
       { pform_name_t tmp_hident;

@@ -989,7 +989,8 @@ void pform_make_foreach_declarations(const struct vlltype&loc,
 	    assign_list.push_back(tmp_assign);
       }
 
-      pform_make_var(loc, &assign_list, &size_type);
+      pform_make_var(loc, &assign_list, &size_type, nullptr,
+					 LexicalScope::AUTOMATIC);
 }
 
 PForeach* pform_make_foreach(const struct vlltype&loc,
