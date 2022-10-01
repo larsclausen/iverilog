@@ -449,6 +449,9 @@ void PEEvent::dump(ostream&out) const
       }
       out << *expr_;
 
+      if (condition_)
+	    out << " iif " << *condition_;
+
 }
 
 void PEFNumber::dump(ostream &out) const

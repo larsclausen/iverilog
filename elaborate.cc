@@ -4818,6 +4818,26 @@ cerr << endl;
 		  continue;
 	    }
 
+	    NetNet *cond_expr = nullptr;
+	    if (expr_[idx]->condition()) {
+		  NetExpr*cond = elab_and_eval(des, scope, expr_[idx]->condition(), -1);
+		  if (!cond) {
+			cerr << get_fileline() << ": error: "
+				"Failed to evaluate event expression '"
+			     << *expr_[idx] << "'." << endl;
+			des->errors += 1;
+			continue;
+		  }
+		  cond = condition_reduce(cond);
+		  cond_expr = cond->synthesize(des, scope,cond);
+		  if (!cond_expr) {
+			expr_[idx]->dump(cerr);
+			cerr << endl;
+			des->errors += 1;
+			continue;
+		  }
+	    }
+
 	    NetNet*expr = tmp->synthesize(des, scope, tmp);
 	    if (expr == 0) {
 		  expr_[idx]->dump(cerr);
@@ -4831,6 +4851,10 @@ cerr << endl;
 
 	    unsigned pins = (expr_[idx]->type() == PEEvent::ANYEDGE)
 		  ? expr->pin_count() : 1;
+	    if (cond_expr)
+		  pins++;
+
+	    assert(expr->pin_count() == 1);
 
 	    NetEvProbe*pr;
 	    switch (expr_[idx]->type()) {
@@ -4859,8 +4883,10 @@ cerr << endl;
 		  assert(0);
 	    }
 
-	    for (unsigned p = 0 ;  p < pr->pin_count() ; p += 1)
+	    for (unsigned p = 0 ;  p < pr->pin_count(); p += 1)
 		  connect(pr->pin(p), expr->pin(p));
+	    if (cond_expr)
+		  connect(pr->pin(1), cond_expr->pin(0));
 
 	    des->add_node(pr);
 	    expr_count += 1;

@@ -462,6 +462,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
       std::list<index_component_t> *dimensions;
 
       LexicalScope::lifetime_t lifetime;
+
+      PEEvent::edge_t edge;
 };
 
 %token <text>      IDENTIFIER SYSTEM_IDENTIFIER STRING TIME_LITERAL
@@ -699,6 +701,8 @@ static void current_function_set_statement(const YYLTYPE&loc, std::vector<Statem
 %type <case_quality> unique_priority
 
 %type <genvar_iter> genvar_iteration
+
+%type <edge> event_edge
 
 %token K_TAND
 %nonassoc K_PLUS_EQ K_MINUS_EQ K_MUL_EQ K_DIV_EQ K_MOD_EQ K_AND_EQ K_OR_EQ
@@ -3224,29 +3228,26 @@ event_expression_list
 		}
 	;
 
+
+event_edge
+  : K_posedge { $$ = PEEvent::POSEDGE; }
+  | K_negedge { $$ = PEEvent::NEGEDGE; }
+  | K_edge { $$ = PEEvent::EDGE; pform_requires_sv(@1, "Edge event"); }
+  | { $$ = PEEvent::ANYEDGE; }
+  ;
+
 event_expression
-	: K_posedge expression
-		{ PEEvent*tmp = new PEEvent(PEEvent::POSEDGE, $2);
-		  FILE_NAME(tmp, @1);
-		  $$ = tmp;
-		}
-	| K_negedge expression
-		{ PEEvent*tmp = new PEEvent(PEEvent::NEGEDGE, $2);
-		  FILE_NAME(tmp, @1);
-		  $$ = tmp;
-		}
-	| K_edge expression
-		{ PEEvent*tmp = new PEEvent(PEEvent::EDGE, $2);
-		  FILE_NAME(tmp, @1);
-		  $$ = tmp;
-		  pform_requires_sv(@1, "Edge event");
-		}
-	| expression
-		{ PEEvent*tmp = new PEEvent(PEEvent::ANYEDGE, $1);
-		  FILE_NAME(tmp, @1);
-		  $$ = tmp;
-		}
-	;
+  : event_edge expression
+    { PEEvent*event = new PEEvent($1, $2);
+      FILE_NAME(event, @$);
+      $$ = event;
+    }
+  | event_edge expression K_iff expression
+    { PEEvent*event = new PEEvent($1, $2, $4);
+      FILE_NAME(event, @$);
+      $$ = event;
+    }
+  ;
 
   /* A branch probe expression applies a probe function (potential or
      flow) to a branch. The branch may be implicit as a pair of nets

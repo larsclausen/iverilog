@@ -275,12 +275,13 @@ class PEEvent : public PExpr {
       enum edge_t {ANYEDGE, POSEDGE, NEGEDGE, EDGE, POSITIVE};
 
 	// Use this constructor to create events based on edges or levels.
-      PEEvent(edge_t t, PExpr*e);
+      PEEvent(edge_t t, PExpr*e, PExpr *c = nullptr);
 
       ~PEEvent();
 
       edge_t type() const;
       PExpr* expr() const;
+      PExpr* condition() const;
 
       virtual void dump(std::ostream&) const;
 
@@ -289,6 +290,7 @@ class PEEvent : public PExpr {
     private:
       edge_t type_;
       PExpr *expr_;
+      std::unique_ptr<PExpr> condition_;
 };
 
 /*
