@@ -5306,17 +5306,31 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       NetESignal*idx_exp = new NetESignal(idx_sig);
       idx_exp->set_line(*this);
 
-	// Make an initialization expression for the index.
-      NetESFunc*init_expr = new NetESFunc("$low", &netvector_t::atom2s32, 1);
+      NetExpr *init_expr;
+      NetESFunc *high_exp;
+      NetEBComp *cond_expr;
+      if (array_sig->data_type() == IVL_VT_STRING) {
+	      // Make an initialization expression for the index.
+	    init_expr = new NetEConst(verinum(0));
+
+	      // Make a condition expression: idx < str.len
+	    high_exp = new NetESFunc("$ivl_string_method$len", &netvector_t::atom2s32, 1);
+	    high_exp->parm(0, array_exp);
+
+	    cond_expr = new NetEBComp('<', idx_exp, high_exp);
+      } else {
+	      // Make an initialization expression for the index.
+	    NetESFunc*init_func_expr = new NetESFunc("$low", &netvector_t::atom2s32, 1);
+	    init_func_expr->parm(0, array_exp);
+	    init_expr = init_func_expr;
+
+	      // Make a condition expression: idx <= $high(array)
+	    high_exp = new NetESFunc("$high", &netvector_t::atom2s32, 1);
+	    high_exp->parm(0, array_exp);
+	    cond_expr = new NetEBComp('L', idx_exp, high_exp);
+      }
       init_expr->set_line(*this);
-      init_expr->parm(0, array_exp);
-
-	// Make a condition expression: idx <= $high(array)
-      NetESFunc*high_exp = new NetESFunc("$high", &netvector_t::atom2s32, 1);
       high_exp->set_line(*this);
-      high_exp->parm(0, array_exp);
-
-      NetEBComp*cond_expr = new NetEBComp('L', idx_exp, high_exp);
       cond_expr->set_line(*this);
 
 	/* Elaborate the statement that is contained in the foreach
