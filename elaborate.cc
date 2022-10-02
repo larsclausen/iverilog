@@ -5215,6 +5215,12 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       symbol_search_results sr;
       symbol_search(this, des, scope, array_var_, &sr);
 
+      NetProc*sub;
+      if (statement_)
+	    sub = statement_->elaborate(des, scope);
+      else
+	    sub = new NetBlock(NetBlock::SEQU, 0);
+
       if (sr.cls_val) {
 	    const netclass_t*class_scope = sr.scope->class_def();
 		  
@@ -5245,7 +5251,7 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
 		  return 0;
 	    }
 
-	    return elaborate_static_array_(des, scope, dims);
+	    return elaborate_static_array_(des, scope, sub, dims);
       }
 
       NetNet*array_sig = sr.net;
@@ -5278,12 +5284,10 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       }
 
 	// Classic arrays are processed this way.
-      if (array_sig->data_type()==IVL_VT_BOOL)
-	    return elaborate_static_array_(des, scope, dims);
-      if (array_sig->data_type()==IVL_VT_LOGIC)
-	    return elaborate_static_array_(des, scope, dims);
-      if (array_sig->unpacked_dimensions() >= index_vars_.size())
-	    return elaborate_static_array_(des, scope, dims);
+      if (array_sig->data_type()==IVL_VT_BOOL ||
+          array_sig->data_type()==IVL_VT_LOGIC ||
+          array_sig->unpacked_dimensions() >= index_vars_.size())
+	    return elaborate_static_array_(des, scope, sub, dims);
 
 	// At this point, we know that the array is dynamic so we
 	// handle that slightly differently, using run-time tests.
@@ -5309,9 +5313,9 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       NetExpr *init_expr;
       NetESFunc *high_exp;
       NetEBComp *cond_expr;
-      if (array_sig->data_type() == IVL_VT_STRING) {
+      if (array_sig->net_type() == &netstring_t::type_string) {
 	      // Make an initialization expression for the index.
-	    init_expr = new NetEConst(verinum(0));
+	    init_expr = make_const_val_s(0);
 
 	      // Make a condition expression: idx < str.len
 	    high_exp = new NetESFunc("$ivl_string_method$len", &netvector_t::atom2s32, 1);
@@ -5360,6 +5364,7 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
  * and possibly do some optimizations.
  */
 NetProc* PForeach::elaborate_static_array_(Design*des, NetScope*scope,
+					   NetProc *sub,
 					   const vector<netrange_t>&dims) const
 {
       if (debug_elaborate) {
@@ -5367,11 +5372,6 @@ NetProc* PForeach::elaborate_static_array_(Design*des, NetScope*scope,
 		 << "Handle as array with static dimensions." << endl;
       }
 
-      NetProc*sub;
-      if (statement_)
-	    sub = statement_->elaborate(des, scope);
-      else
-	    sub = new NetBlock(NetBlock::SEQU, 0);
       NetForLoop*stmt = 0;
 
       if (index_vars_.size() > dims.size()) {
@@ -5379,6 +5379,7 @@ NetProc* PForeach::elaborate_static_array_(Design*des, NetScope*scope,
 	         << "(" << index_vars_.size() << ") must not exceed number of "
 		 << "array dimensions (" << dims.size() << ")." << endl;
 	    des->errors++;
+	    delete sub;
 	    return nullptr;
       }
 
