@@ -5200,20 +5200,6 @@ NetForce* PForce::elaborate(Design*des, NetScope*scope) const
       return dev;
 }
 
-static void find_property_in_class(const LineInfo&loc, const NetScope*scope, perm_string name, const netclass_t*&found_in, int&property)
-{
-      found_in = find_class_containing_scope(loc, scope);
-      property = -1;
-
-      if (found_in==0) return;
-
-      property = found_in->property_idx_from_name(name);
-      if (property < 0) {
-	    found_in = 0;
-	    return;
-      }
-}
-
 /*
  * The foreach statement can be written as a for statement like so:
  *
@@ -5226,31 +5212,20 @@ static void find_property_in_class(const LineInfo&loc, const NetScope*scope, per
 NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
 {
 	// Locate the signal for the array variable
-      pform_name_t array_name;
-      array_name.push_back(name_component_t(array_var_));
-      NetNet*array_sig = des->find_signal(scope, array_name);
+      symbol_search_results sr;
+      symbol_search(this, des, scope, array_var_, &sr);
 
-	// And if necessary, look for the class property that is
-	// referenced.
-      const netclass_t*class_scope = 0;
-      int class_property = -1;
-      if (array_sig == 0)
-	    find_property_in_class(*this, scope, array_var_, class_scope, class_property);
+      if (sr.cls_val) {
+	    const netclass_t*class_scope = sr.scope->class_def();
+		  
+	    if (debug_elaborate && class_scope) {
+		  cerr << get_fileline() << ": PForeach::elaborate: "
+		   << "Found array_sig property (" << sr.path_tail
+		   << ") in class " << class_scope->get_name()
+		   << " as " << *sr.cls_val << "." << endl;
+	    }
 
-      if (debug_elaborate && array_sig) {
-	    cerr << get_fileline() << ": PForeach::elaborate: "
-		 << "Found array_sig in " << scope_path(array_sig->scope()) << "." << endl;
-      }
-
-      if (debug_elaborate && class_scope) {
-	    cerr << get_fileline() << ": PForeach::elaborate: "
-		 << "Found array_sig property (" << class_property
-		 << ") in class " << class_scope->get_name()
-		 << " as " << *class_scope->get_prop_type(class_property) << "." << endl;
-      }
-
-      if (class_scope!=0 && class_property >= 0) {
-	    ivl_type_t ptype = class_scope->get_prop_type(class_property);
+	    ivl_type_t ptype = sr.cls_val;
 	    const netsarray_t*atype = dynamic_cast<const netsarray_t*> (ptype);
 	    if (atype == 0) {
 		  cerr << get_fileline() << ": error: "
@@ -5273,10 +5248,12 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
 	    return elaborate_static_array_(des, scope, dims);
       }
 
+      NetNet*array_sig = sr.net;
+
       if (array_sig == 0) {
 	    cerr << get_fileline() << ": error:"
-		 << " Unable to find foreach array " << array_name
-		 << " in scope " << scope_path(scope)
+		 << " Unable to find foreach array `" << array_var_ 
+		 << "` in scope " << scope_path(scope)
 		 << "." << endl;
 	    des->errors += 1;
 	    return 0;
@@ -5285,6 +5262,8 @@ NetProc* PForeach::elaborate(Design*des, NetScope*scope) const
       ivl_assert(*this, array_sig);
 
       if (debug_elaborate) {
+	    cerr << get_fileline() << ": PForeach::elaborate: "
+		 << "Found array_sig in " << scope_path(array_sig->scope()) << "." << endl;
 	    cerr << get_fileline() << ": PForeach::elaborate: "
 		 << "Scan array " << array_sig->name()
 		 << " of " << array_sig->data_type()

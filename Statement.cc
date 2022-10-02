@@ -348,7 +348,7 @@ PForce::~PForce()
       delete expr_;
 }
 
-PForeach::PForeach(perm_string av, const list<perm_string>&ix, Statement*s)
+PForeach::PForeach(pform_name_t av, const list<perm_string>&ix, Statement*s)
 : array_var_(av), index_vars_(ix.size()), statement_(s)
 {
       size_t idx = 0;

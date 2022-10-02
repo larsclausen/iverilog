@@ -1704,7 +1704,11 @@ loop_statement /* IEEE1800-2005: A.6.8 */
 	pform_make_foreach_declarations(@1, $5);
       }
     statement_or_null
-      { PForeach*tmp_for = pform_make_foreach(@1, $3, $5, $9);
+      { pform_name_t path;
+	path.push_back(name_component_t(lex_strings.make($3)));
+	delete[] $3;
+
+	PForeach*tmp_for = pform_make_foreach(@1, path, $5, $9);
 
 	pform_pop_scope();
 	vector<Statement*>tmp_for_list(1);

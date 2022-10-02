@@ -466,7 +466,7 @@ class PForce  : public Statement {
 
 class PForeach : public Statement {
     public:
-      explicit PForeach(perm_string var, const std::list<perm_string>&ix, Statement*stmt);
+      explicit PForeach(pform_name_t var, const std::list<perm_string>&ix, Statement*stmt);
       ~PForeach();
 
       virtual NetProc* elaborate(Design*des, NetScope*scope) const;
@@ -479,7 +479,7 @@ class PForeach : public Statement {
 				       const std::vector<netrange_t>&dims) const;
 
     private:
-      perm_string array_var_;
+      pform_name_t array_var_;
       std::vector<perm_string> index_vars_;
       Statement*statement_;
 };

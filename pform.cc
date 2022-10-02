@@ -991,13 +991,10 @@ void pform_make_foreach_declarations(const struct vlltype&loc,
 }
 
 PForeach* pform_make_foreach(const struct vlltype&loc,
-			     char*name,
+			     const pform_name_t &path,
 			     list<perm_string>*loop_vars,
 			     Statement*stmt)
 {
-      perm_string use_name = lex_strings.make(name);
-      delete[]name;
-
       if (loop_vars==0 || loop_vars->empty()) {
 	    cerr << loc.get_fileline() << ": error: "
 		 << "No loop variables at all in foreach index." << endl;
@@ -1005,7 +1002,7 @@ PForeach* pform_make_foreach(const struct vlltype&loc,
       }
 
       ivl_assert(loc, loop_vars);
-      PForeach*fe = new PForeach(use_name, *loop_vars, stmt);
+      PForeach*fe = new PForeach(path, *loop_vars, stmt);
       FILE_NAME(fe, loc);
 
       delete loop_vars;
