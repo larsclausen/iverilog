@@ -4385,10 +4385,18 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
       ivl_type_t check_type = ntype;
       if (const netdarray_t*array_type = dynamic_cast<const netdarray_t*> (ntype)) {
             if (array_type->type_compatible(net->net_type())) {
-                  NetESignal*tmp = new NetESignal(net);
-                  tmp->set_line(*this);
-                  return tmp;
-            }
+		  NetExpr*tmp = new NetESignal(net);
+		  tmp->set_line(*this);
+		  if (net->data_type() == IVL_VT_QUEUE &&
+		      ntype->base_type() == IVL_VT_DARRAY) {
+			NetESFunc*size = new NetESFunc("$size", &netvector_t::atom2u32, 1);
+			size->set_line(*this);
+			size->parm(0, tmp);
+			tmp = new NetENew(ntype, size, tmp);
+		  }
+		  tmp->set_line(*this);
+		  return tmp;
+	   }
 
               // Icarus allows a dynamic array to be initialised with a
               // single elementary value, so try that next.
