@@ -196,6 +196,10 @@ const ivl_type_s* NetAssign_::net_type() const
       if (darray && word_)
 	    ntype = darray->element_type();
 
+        // Selected type can have its own data type
+      if (base_)
+	    return part_data_type_;
+
       if (!base_  && !more)
 	    return ntype;
 
@@ -223,11 +227,13 @@ NetNet* NetAssign_::sig() const
 }
 
 void NetAssign_::set_part(NetExpr*base, unsigned wid,
-                          ivl_select_type_t sel_type)
+                          ivl_select_type_t sel_type,
+			  ivl_type_t part_data_type)
 {
       base_ = base;
       lwid_ = wid;
       sel_type_ = sel_type;
+      part_data_type_ = part_data_type;
 }
 
 void NetAssign_::set_property(const perm_string&mname)
