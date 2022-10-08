@@ -1260,6 +1260,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 	// increases, and use_width shrinks.
       unsigned long off = 0;
       unsigned long use_width = struct_type->packed_width();
+      ivl_type_t member_type;
 
       pform_name_t completed_path;
       do {
@@ -1331,6 +1332,8 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 		  return false;
 	    }
 
+	    member_type = member->net_type;
+
 	    if (const netvector_t*mem_vec = dynamic_cast<const netvector_t*>(member->net_type)) {
 		    // If the member type is a netvector_t, then it is a
 		    // vector of atom or scaler objects. For example, if the
@@ -1400,6 +1403,7 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
 
 			off += loff;
 			use_width = lwid * tail_wid;
+			member_type = nullptr;
 		  }
 
 		    // The netvector_t only has atom elements, to
@@ -1564,7 +1568,8 @@ bool PEIdent::elaborate_lval_net_packed_member_(Design*des, NetScope*scope,
       }
 
       if (packed_base == 0) {
-	    lv->set_part(new NetEConst(verinum(off)), use_width);
+	    lv->set_part(new NetEConst(verinum(off)), use_width,
+			 IVL_SEL_OTHER, member_type);
 	    return true;
       }
 

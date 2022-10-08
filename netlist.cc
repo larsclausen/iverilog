@@ -2423,7 +2423,7 @@ NetESignal::NetESignal(NetNet*n, NetExpr*w)
       set_line(*n);
 
       // If it is an array we don't have a type for it yet.
-      if (word)
+      if (word_)
 	    set_net_type(n->net_type());
 }
 
