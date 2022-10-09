@@ -36,6 +36,8 @@ class netdarray_t : public netarray_t {
 	// A dynamic array may have a type that is signed.
       inline bool get_signed() const { return element_type()->get_signed(); }
 
+      std::string get_typename() const;
+
 	// Use the packed width to pass the element width
       long packed_width() const { return element_type()->packed_width(); }
 

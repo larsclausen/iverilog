@@ -52,3 +52,7 @@ bool netdarray_t::test_compatibility(ivl_type_t that) const
 
       return element_type()->type_compatible(elem_type);
 }
+
+std::string netdarray_t::get_typename() const {
+      return element_type()->get_typename() + "$[]";
+}

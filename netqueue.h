@@ -38,6 +38,8 @@ class netqueue_t : public netdarray_t {
 	// IVL_VT_QUEUE for queues.
       ivl_variable_type_t base_type() const;
 
+      std::string get_typename() const;
+
       long max_idx(void) const { return max_idx_; }
 
       std::ostream& debug_dump(std::ostream&) const;

@@ -19,6 +19,7 @@
  */
 
 # include  "netparray.h"
+# include <sstream>
 
 using namespace std;
 
@@ -68,6 +69,16 @@ vector<netrange_t> netparray_t::slice_dimensions() const
       return res;
 }
 
+std::string netparray_t::get_typename() const
+{
+      std::stringstream ss;
+
+      ss << element_type()->get_typename();
+      ss << static_dimensions();
+
+      return ss.str();
+}
+
 netuarray_t::~netuarray_t()
 {
 }
@@ -75,4 +86,15 @@ netuarray_t::~netuarray_t()
 vector<netrange_t> netuarray_t::slice_dimensions() const
 {
       return static_dimensions();
+}
+
+std::string netuarray_t::get_typename() const
+{
+      std::stringstream ss;
+
+      ss << element_type()->get_typename();
+      ss << "$";
+      ss << static_dimensions();
+
+      return ss.str();
 }

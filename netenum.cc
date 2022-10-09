@@ -20,6 +20,7 @@
 # include  "netenum.h"
 # include  "compiler.h"
 # include  <cassert>
+# include  <sstream>
 
 using namespace std;
 
@@ -59,6 +60,23 @@ long netenum_t::packed_width() const
 vector<netrange_t> netenum_t::slice_dimensions() const
 {
       return base_type_->slice_dimensions();
+}
+
+std::string netenum_t::get_typename() const
+{
+      std::stringstream ss;
+      ss << "enum{";
+      for (size_t i = 0; i < names_.size(); i++) {
+	    if (i != 0)
+		  ss << ",";
+	    ss << names_[i];
+	    ss << "=";
+	    ss << packed_width();
+	    ss << "'b";
+	    ss << bits_[i];
+      }
+      ss << "}";
+      return ss.str();
 }
 
 bool netenum_t::insert_name(size_t name_idx, perm_string name, const verinum&val)

@@ -134,3 +134,18 @@ ivl_variable_type_t netstruct_t::base_type() const
 
       return IVL_VT_BOOL;
 }
+
+std::string netstruct_t::get_typename() const
+{
+      std::string tname = union_ ? "union" : "struct";
+      if (packed_)
+	    tname += " packed";
+      if (signed_)
+	    tname += " signed";
+      tname += "{";
+      for (const auto &member : members_)
+	    tname += member.net_type->get_typename() + " " + member.name.str() + ";";
+      tname += "}";
+
+      return tname;
+}

@@ -74,6 +74,11 @@ bool ivl_type_s::test_compatibility(const ivl_type_s* /*that*/) const
       return false;
 }
 
+std::string ivl_type_s::get_typename() const
+{
+      return "<unknown_type>";
+}
+
 netarray_t::~netarray_t()
 {
 }

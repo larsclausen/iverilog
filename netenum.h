@@ -43,6 +43,8 @@ class netenum_t : public LineInfo, public ivl_type_s {
       bool get_signed() const;
       bool get_isint() const;
 
+      std::string get_typename() const;
+
 	// The size() is the number of enumeration literals.
       size_t size() const;
 

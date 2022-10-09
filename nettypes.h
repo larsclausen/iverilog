@@ -53,6 +53,8 @@ class ivl_type_s {
 
       virtual std::ostream& debug_dump(std::ostream&) const;
 
+      virtual std::string get_typename() const;
+
     private:
 	// The "type_compatible" method uses this virtual method to
 	// invoke type-specific tests of compatibility. This should

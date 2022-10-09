@@ -55,6 +55,8 @@ class netstruct_t : public LineInfo, public ivl_type_s {
       void set_signed(bool flag) { signed_ = flag; }
       bool get_signed(void) const { return signed_; }
 
+      std::string get_typename() const;
+
 	// Append a new member to the struct/union. This must be done
 	// after the union_flag and packed settings are set. This
 	// function does error checking, and the "des" argument is

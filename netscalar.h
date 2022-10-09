@@ -31,6 +31,8 @@ class netreal_t : public ivl_type_s {
       bool get_signed() const { return true; }
       bool get_scalar() const { return true; }
 
+      std::string get_typename() const { return "real"; }
+
       std::ostream& debug_dump(std::ostream&) const;
 
     public:
@@ -45,6 +47,8 @@ class netstring_t : public ivl_type_s {
       ~netstring_t();
 
       ivl_variable_type_t base_type() const;
+
+      std::string get_typename() const { return "string"; }
 
       std::ostream& debug_dump(std::ostream&) const;
 

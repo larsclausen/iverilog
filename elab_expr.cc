@@ -1275,6 +1275,34 @@ unsigned PECallFunction::test_width_sfunc_(Design*des, NetScope*scope,
 	    return expr_width_;
       }
 
+      if (name=="$typename") {
+	    PExpr*expr = parms_[0];
+	    if (expr == 0)
+		  return 0;
+
+	    if (! dynamic_cast<PETypename*>(expr)) {
+		    // The argument type/width is self-determined and doesn't
+		    // affect the result type/width. Note that if the
+		    // argument is a type name (a special case) then
+		    // don't bother with this step.
+		  width_mode_t arg_mode = SIZED;
+		  expr->test_width(des, scope, arg_mode);
+	    }
+
+	    expr_type_   = IVL_VT_STRING;
+	    expr_width_  = 1;
+	    min_width_   = 1;
+            signed_flag_ = false;
+
+	    if (debug_elaborate)
+		  cerr << get_fileline() << ": " << __func__ << ": "
+		       << "test_width of " << name << " returns test_width"
+		       << " of compiler integer." << endl;
+
+	    return 1;
+      }
+
+
       if (name=="$is_signed") {
 	    PExpr*expr = parms_[0];
 	    if (expr == 0)
@@ -1806,6 +1834,50 @@ NetExpr* PECallFunction::elaborate_sfunc_(Design*des, NetScope*scope,
 
 	    verinum val (use_width, integer_width);
 	    NetEConst*sub = new NetEConst(val);
+	    sub->set_line(*this);
+
+	    return cast_to_width_(sub, expr_wid);
+      }
+
+      if (name == "$typename") {
+	    PExpr*expr = parms_[0];
+	    ivl_type_t data_type = nullptr;
+	    NetExpr *net_expr = nullptr;
+	    if (PETypename*type_expr = dynamic_cast<PETypename*>(expr)) {
+		  data_type = type_expr->get_type()->elaborate_type(des, scope);
+	    } else {
+		  net_expr = elab_sys_task_arg(des, scope, name, 0, expr,
+					       false);
+		  if (net_expr)
+			data_type = net_expr->net_type();
+	    }
+	    std::string tname;
+	    if (data_type) {
+		  tname = data_type->get_typename();
+	    } else if (net_expr) {
+		  switch (net_expr->expr_type()) {
+		  case IVL_VT_REAL:
+			tname = "real";
+			break;
+		  case IVL_VT_STRING:
+			tname = "string";
+			break;
+		  case IVL_VT_LOGIC:
+		  case IVL_VT_BOOL:
+			if (net_expr->expr_width()) {
+			      tname = (net_expr->expr_type() == IVL_VT_LOGIC) ? "logic" : "bit";
+			      if (net_expr->has_sign())
+				    tname += " signed";
+			      tname += "[" + std::to_string(net_expr->expr_width() - 1) + ":0]";
+			}
+			break;
+		  default:
+			break;
+		  }
+	    }
+	    delete net_expr;
+	    verinum val (tname);
+	    NetEConst*sub = new NetEConst(&netstring_t::type_string, val);
 	    sub->set_line(*this);
 
 	    return cast_to_width_(sub, expr_wid);

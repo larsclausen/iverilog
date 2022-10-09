@@ -116,6 +116,8 @@ class netclass_t : public ivl_type_s {
       const NetExpr* get_parameter(Design *des, perm_string name,
 				   ivl_type_t &par_type) const;
 
+      std::string get_typename() const;
+
     private:
       perm_string name_;
 	// If this is derived from another base class, point to it

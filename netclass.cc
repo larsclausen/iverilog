@@ -20,6 +20,7 @@
 # include  "netclass.h"
 # include  "netlist.h"
 # include  <iostream>
+# include  <sstream>
 
 using namespace std;
 
@@ -194,4 +195,16 @@ const NetExpr* netclass_t::get_parameter(Design *des, perm_string name,
 					 ivl_type_t &par_type) const
 {
       return class_scope_->get_parameter(des, name, par_type);
+}
+
+std::string netclass_t::get_typename() const
+{
+      // These is nothing in the LRM that says how typename for class should
+      // behave. We can not print the whole class definition since a class could
+      // have a member of its own type or a longer cyclic chains with multiple
+      // classes referencing each other. In that case we'd end up in an infinite
+      // loop here.
+      std::stringstream ss;
+      ss << "class " << scope_path(class_scope_);
+      return ss.str();
 }

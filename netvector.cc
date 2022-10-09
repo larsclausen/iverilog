@@ -20,6 +20,7 @@
 # include  "netvector.h"
 # include  "compiler.h"
 # include  <iostream>
+# include  <sstream>
 
 using namespace std;
 
@@ -62,6 +63,48 @@ netvector_t::netvector_t(ivl_variable_type_t type)
 
 netvector_t::~netvector_t()
 {
+}
+
+std::string netvector_t::get_typename() const
+{
+      if (this == &atom2s64)
+	    return "longint";
+      else if (this == &atom2u64)
+	    return "longint unsigned";
+      else if (this == &atom2s32)
+	    return "int";
+      else if (this == &atom2u32)
+	    return "int unsigned";
+      if (this == &atom2s16)
+	    return "int";
+      else if (this == &atom2u16)
+	    return "int unsigned";
+      if (this == &atom2s8)
+	    return "shortint";
+      else if (this == &atom2u8)
+	    return "byte unsigned";
+      else if (this == &time_signed)
+	    return "time signed";
+      else if (this == &time_unsigned)
+	    return "time";
+      else if (isint_) {
+	    if (signed_)
+		  return "integer";
+	    else
+		  return "integer unsigned";
+      }
+
+      std::stringstream ss;
+
+      if (type_ == IVL_VT_BOOL)
+	    ss << "bit";
+      else
+	    ss << "logic";
+      if (signed_)
+	    ss << " signed";
+      ss << packed_dims_;
+
+      return ss.str();
 }
 
 ivl_variable_type_t netvector_t::base_type() const

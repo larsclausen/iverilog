@@ -56,6 +56,8 @@ class netvector_t : public ivl_type_s {
 
       inline bool get_scalar(void) const { return packed_dims_.empty(); }
 
+      std::string get_typename() const;
+
       void set_implicit(bool implicit) { implicit_ = implicit; }
       bool get_implicit() const { return implicit_; }
 
