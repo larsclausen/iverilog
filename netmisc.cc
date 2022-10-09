@@ -456,7 +456,7 @@ NetExpr *normalize_variable_slice_base(const list<long>&indices, NetExpr*base,
 
       long sb = min(pcur->get_lsb(), pcur->get_msb());
       long loff;
-      reg->sb_to_slice(indices, sb, loff, lwid);
+      prefix_to_slice(packed_dims, indices, sb, loff, lwid);
 
       unsigned min_wid = base->expr_width();
       if ((sb < 0) && !base->has_sign()) min_wid += 1;
