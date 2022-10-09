@@ -6424,10 +6424,6 @@ NetExpr* PEIdent::elaborate_expr_net(Design*des, NetScope*scope,
 	    return 0;
       }
 
-      list<long> prefix_indices;
-      bool rc = evaluate_index_prefix(des, scope, prefix_indices, path_.back().index);
-      if (!rc) return 0;
-
 	// If this is a part select of a signal, then make a new
 	// temporary signal that is connected to just the
 	// selected bits. The lsb_ and msb_ expressions are from
