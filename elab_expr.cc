@@ -3503,6 +3503,30 @@ NetExpr* PECastType::elaborate_expr(Design*des, NetScope*scope,
 	    return pad_to_width(tmp, expr_wid, signed_flag_, *this, target_type_);
       }
 
+      ivl_type_t target_type;
+      if (target_type_)
+	    target_type = target_type_;
+      else
+	    target_type = target_->elaborate_type(des, scope);
+
+
+      if (target_type->base_type() == IVL_VT_CLASS) {
+	    // null can be cast to any class
+	    if (dynamic_cast<const PENull*>(base_))
+		  return sub;
+
+	    auto net_type = sub->net_type();
+	    if (net_type && net_type->type_compatible(target_type))
+		  return sub;
+	    cerr << get_fileline() << ": error: Expression `" << *base_ << "`";
+	    if (net_type)
+		  cerr << " of type `" << *net_type << "`";
+	    cerr << " can not be cast to type `" << *target_type << "`."
+		 << endl;
+	    des->errors++;
+	    return nullptr;
+      }
+
       cerr << get_fileline() << ": sorry: This cast operation is not yet supported." << endl;
       des->errors += 1;
       return 0;
