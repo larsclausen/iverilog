@@ -921,6 +921,12 @@ void pform_set_typedef(const struct vlltype&loc, perm_string name,
       }
 }
 
+void pform_reference_identifier(const struct vlltype&loc, const char*name)
+{
+      perm_string lex_name = lex_strings.make(name);
+      check_potential_imports(loc, lex_name, false);
+}
+
 typedef_t* pform_test_type_identifier(const struct vlltype&loc, const char*txt)
 {
       perm_string name = lex_strings.make(txt);
@@ -1043,11 +1049,15 @@ void pform_make_foreach_declarations(const struct vlltype&loc,
 
 PForeach* pform_make_foreach(const struct vlltype&loc,
 			     char*name,
+			     unsigned int array_lexical_pos,
 			     list<perm_string>*loop_vars,
 			     Statement*stmt)
 {
       perm_string use_name = lex_strings.make(name);
       delete[]name;
+
+      pform_name_t path;
+      path.push_back(name_component_t(use_name));
 
       if (loop_vars==0 || loop_vars->empty()) {
 	    cerr << loc.get_fileline() << ": error: "
@@ -1056,7 +1066,7 @@ PForeach* pform_make_foreach(const struct vlltype&loc,
       }
 
       ivl_assert(loc, loop_vars);
-      PForeach*fe = new PForeach(use_name, *loop_vars, stmt);
+      auto fe = new PForeach(path, array_lexical_pos, *loop_vars, stmt);
       FILE_NAME(fe, loc);
 
       delete loop_vars;

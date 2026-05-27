@@ -2506,10 +2506,11 @@ foreach_statement
 	      pform_start_block(@1, for_block_name, PBlock::BL_SEQ);
 	}
 
+	pform_reference_identifier(@3, $3);
 	pform_make_foreach_declarations(@1, $5);
       }
     statement_or_null
-      { PForeach*tmp_for = pform_make_foreach(@1, $3, $5, $9);
+      { auto tmp_for = pform_make_foreach(@1, $3, @3.lexical_pos, $5, $9);
 
 	$$ = pform_finish_labeled_statement(tmp_for, $1.label, $1.attributes, true);
       }

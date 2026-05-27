@@ -536,7 +536,9 @@ class PForce  : public Statement {
 
 class PForeach : public Statement {
     public:
-      explicit PForeach(perm_string var, const std::list<perm_string>&ix, Statement*stmt);
+      explicit PForeach(const pform_name_t&var,
+			unsigned int array_lexical_pos,
+			const std::list<perm_string>&ix, Statement*stmt);
       ~PForeach() override;
 
       PForeach(const PForeach&) = delete;
@@ -552,7 +554,10 @@ class PForeach : public Statement {
 				       const netranges_t&dims) const;
 
     private:
-      perm_string array_var_;
+      pform_name_t array_var_;
+	// A reference to the array identifier can activate a wildcard import,
+	// so its position is more precise than the foreach statement location.
+      unsigned int array_lexical_pos_;
       std::vector<perm_string> index_vars_;
       Statement*statement_;
 };

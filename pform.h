@@ -330,6 +330,9 @@ extern void pform_set_typedef(const struct vlltype&loc, perm_string name,
 extern void pform_forward_typedef(const struct vlltype&loc, perm_string name,
 			      type_restrict_t basic_type);
 
+extern void pform_reference_identifier(const struct vlltype&loc,
+				       const char*name);
+
 /*
  * This function makes a PECallFunction of the named function.
  */
@@ -348,6 +351,7 @@ extern void pform_make_foreach_declarations(const struct vlltype&loc,
 					    std::list<perm_string>*loop_vars);
 extern PForeach* pform_make_foreach(const struct vlltype&loc,
 				    char*ident,
+				    unsigned int array_lexical_pos,
 				    std::list<perm_string>*loop_vars,
 				    Statement*stmt);
 
