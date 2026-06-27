@@ -1,0 +1,10 @@
+{
+    "type"          : "CE",
+    "source"        : "sv_type_identifier_let_formal.v",
+    "iverilog-args" : [ "-g2009" ],
+    "gold"          : "sv_type_identifier_let_formal",
+    "vlog95" : {
+        "__comment" : "Let declarations are SystemVerilog",
+        "gold"      : ""
+    }
+}
