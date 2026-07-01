@@ -1,0 +1,11 @@
+{
+    "type"          : "normal",
+    "source"        : "sv_symbol_shadow_class.v",
+    "iverilog-args" : [ "-g2005-sv", "-Wshadow" ],
+    "gold"          : "sv_symbol_shadow_class_warning",
+    "vlog95" : {
+        "__comment"     : "Classes are not supported",
+        "type"          : "CE",
+        "gold"          : ""
+    }
+}

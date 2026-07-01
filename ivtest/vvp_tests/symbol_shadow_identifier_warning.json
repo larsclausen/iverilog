@@ -1,0 +1,6 @@
+{
+    "type"          : "normal",
+    "source"        : "symbol_shadow_identifier.v",
+    "iverilog-args" : [ "-Wshadow" ],
+    "gold"          : "symbol_shadow_identifier_warning"
+}

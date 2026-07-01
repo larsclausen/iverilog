@@ -1,0 +1,5 @@
+{
+    "type"   : "normal",
+    "source" : "symbol_shadow_identifier.v",
+    "gold"   : "symbol_shadow_identifier_default"
+}

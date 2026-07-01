@@ -1,0 +1,16 @@
+ivltests/sv_symbol_shadow_class.v:17: warning: 'SHADOW_CLASS_CLASS' shadows a class in an outer scope.
+ivltests/sv_symbol_shadow_class.v:3:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:20: warning: 'SHADOW_TYPE_CLASS' shadows a type in an outer scope.
+ivltests/sv_symbol_shadow_class.v:11:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:23: warning: 'SHADOW_ID_CLASS' shadows a variable in an outer scope.
+ivltests/sv_symbol_shadow_class.v:9:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:29: warning: 'SHADOW_CLASS_TYPE' shadows a class in an outer scope.
+ivltests/sv_symbol_shadow_class.v:6:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:32: warning: 'SHADOW_PROPERTY_ID' shadows a variable in an outer scope.
+ivltests/sv_symbol_shadow_class.v:12:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:33: warning: 'SHADOW_PROPERTY_TYPE' shadows a type in an outer scope.
+ivltests/sv_symbol_shadow_class.v:13:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:37: warning: 'SHADOW_ID_PROPERTY' shadows a class property in an outer scope.
+ivltests/sv_symbol_shadow_class.v:34:      : It was declared here.
+ivltests/sv_symbol_shadow_class.v:43: warning: 'SHADOW_CLASS_ID' shadows a class in an outer scope.
+ivltests/sv_symbol_shadow_class.v:26:      : It was declared here.

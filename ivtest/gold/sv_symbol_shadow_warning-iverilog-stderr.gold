@@ -1,0 +1,8 @@
+ivltests/sv_symbol_shadow.v:16: warning: 'SHADOW_TYPE_TYPE' shadows a type in an outer scope.
+ivltests/sv_symbol_shadow.v:8:      : It was declared here.
+ivltests/sv_symbol_shadow.v:19: warning: 'SHADOW_ID_TYPE' shadows a type in an outer scope.
+ivltests/sv_symbol_shadow.v:9:      : It was declared here.
+ivltests/sv_symbol_shadow.v:23: warning: 'SHADOW_TYPE_ID' shadows a variable in an outer scope.
+ivltests/sv_symbol_shadow.v:18:      : It was declared here.
+ivltests/sv_symbol_shadow.v:24: warning: 'SHADOW_ID_IMPORT' shadows a variable in an outer scope.
+ivltests/sv_symbol_shadow.v:4:      : It was declared here.

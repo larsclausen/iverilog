@@ -1,0 +1,12 @@
+ivltests/symbol_shadow_identifier.v:20: warning: 'SHADOW_ID' shadows a variable in an outer scope.
+ivltests/symbol_shadow_identifier.v:5:      : It was declared here.
+ivltests/symbol_shadow_identifier.v:21: warning: 'SHADOW_PARAMETER' shadows a parameter in an outer scope.
+ivltests/symbol_shadow_identifier.v:6:      : It was declared here.
+ivltests/symbol_shadow_identifier.v:22: warning: 'SHADOW_NET' shadows a net in an outer scope.
+ivltests/symbol_shadow_identifier.v:7:      : It was declared here.
+ivltests/symbol_shadow_identifier.v:23: warning: 'SHADOW_EVENT' shadows an event in an outer scope.
+ivltests/symbol_shadow_identifier.v:8:      : It was declared here.
+ivltests/symbol_shadow_identifier.v:24: warning: 'SHADOW_FUNCTION' shadows a function in an outer scope.
+ivltests/symbol_shadow_identifier.v:10:      : It was declared here.
+ivltests/symbol_shadow_identifier.v:25: warning: 'SHADOW_BLOCK' shadows a named block in an outer scope.
+ivltests/symbol_shadow_identifier.v:15:      : It was declared here.
