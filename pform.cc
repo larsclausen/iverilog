@@ -453,6 +453,43 @@ static PGenerate* current_generate_scope()
       return lexical_scope == pform_cur_generate ? pform_cur_generate : nullptr;
 }
 
+static void warn_symbol_shadow(const LineInfo&loc, perm_string name,
+			       const PNamedItem*shadowed)
+{
+      cerr << loc.get_fileline() << ": warning: '" << name
+	   << "' shadows " << shadowed->symbol_type()
+	   << " in an outer scope." << endl;
+      cerr << shadowed->get_fileline() << ":      : "
+	   << "It was declared here." << endl;
+      warn_count += 1;
+}
+
+static void warn_if_symbol_shadows_outer_scope(LexicalScope*scope,
+					       perm_string name,
+					       const PNamedItem*item)
+{
+      if (! warn_shadow)
+	    return;
+
+      for (LexicalScope*cur_scope = scope->parent_scope(); cur_scope;
+	   cur_scope = cur_scope->parent_scope()) {
+	    auto cur_sym = cur_scope->local_symbols.find(name);
+	    if (cur_sym != cur_scope->local_symbols.end()) {
+		  warn_symbol_shadow(*item, name, cur_sym->second);
+		  return;
+	    }
+
+	    auto cur_pkg = cur_scope->explicit_imports.find(name);
+	    if (cur_pkg != cur_scope->explicit_imports.end()) {
+		  PPackage*pkg = cur_pkg->second.package;
+		  auto pkg_sym = pkg->local_symbols.find(name);
+		  ivl_assert(*item, pkg_sym != pkg->local_symbols.end());
+		  warn_symbol_shadow(*item, name, pkg_sym->second);
+		  return;
+	    }
+      }
+}
+
 bool pform_check_local_symbol(LexicalScope *scope, perm_string name,
 			      const PNamedItem *item)
 {
@@ -483,6 +520,7 @@ bool pform_check_local_symbol(LexicalScope *scope, perm_string name,
 	    return false;
       }
 
+      warn_if_symbol_shadows_outer_scope(scope, name, item);
       return true;
 }
 

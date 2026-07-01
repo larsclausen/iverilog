@@ -182,6 +182,7 @@ bool warn_sens_entire_vec = false;
 bool warn_sens_entire_arr = false;
 bool warn_anachronisms = false;
 bool warn_decl_after_use = false;
+bool warn_shadow = false;
 bool warn_floating_nets = false;
 
 /*
@@ -796,6 +797,9 @@ static void read_iconfig_file(const char*ipath)
 			break;
 		      case 'u':
 			warn_decl_after_use = true;
+			break;
+		      case 'h':
+			warn_shadow = true;
 			break;
 		      default:
 			break;

@@ -107,6 +107,9 @@ extern bool warn_anachronisms;
 /* Warn about declaration after use (unless flaged as errors). */
 extern bool warn_decl_after_use;
 
+/* Warn about local symbols that shadow symbols in outer scopes. */
+extern bool warn_shadow;
+
 /* Warn about nets that are references but not driven. */
 extern bool warn_floating_nets;
 

@@ -217,6 +217,8 @@ struct typedef_t : public PNamedItem {
       bool set_basic_type(type_restrict_t type);
       type_restrict_t get_basic_type() const { return basic_type; }
 
+      SymbolType symbol_type() const override;
+
 protected:
       type_restrict_t basic_type;
       std::unique_ptr<data_type_t> data_type;

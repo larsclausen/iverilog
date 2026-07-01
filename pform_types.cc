@@ -55,6 +55,14 @@ PNamedItem::SymbolType class_type_t::symbol_type() const
       return CLASS;
 }
 
+PNamedItem::SymbolType typedef_t::symbol_type() const
+{
+      if (data_type.get() && data_type->symbol_type() == CLASS)
+	    return CLASS;
+
+      return TYPE;
+}
+
 bool typedef_t::set_data_type(data_type_t *t)
 {
       if (data_type.get())

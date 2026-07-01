@@ -570,6 +570,9 @@ static void process_warning_switch(const char*name)
       } else if (strcmp(name,"select-range") == 0) {
 	    if (! strchr(warning_flags, 's'))
 		  strcat(warning_flags, "s");
+      } else if (strcmp(name,"shadow") == 0) {
+	    if (! strchr(warning_flags, 'h'))
+		  strcat(warning_flags, "h");
       } else if (strcmp(name,"timescale") == 0) {
 	    if (! strchr(warning_flags, 't'))
 		  strcat(warning_flags, "t");
@@ -633,6 +636,12 @@ static void process_warning_switch(const char*name)
 	    }
       } else if (strcmp(name,"no-select-range") == 0) {
 	    char*cp = strchr(warning_flags, 's');
+	    if (cp) while (*cp) {
+		  cp[0] = cp[1];
+		  cp += 1;
+	    }
+      } else if (strcmp(name,"no-shadow") == 0) {
+	    char*cp = strchr(warning_flags, 'h');
 	    if (cp) while (*cp) {
 		  cp[0] = cp[1];
 		  cp += 1;
