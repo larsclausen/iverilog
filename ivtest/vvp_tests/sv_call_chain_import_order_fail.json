@@ -1,0 +1,9 @@
+{
+    "type"          : "CE",
+    "source"        : "sv_call_chain_import_order_fail.v",
+    "iverilog-args" : [ "-g2005-sv" ],
+    "vlog95" : {
+        "__comment"     : "Classes are not supported",
+        "type"          : "CE"
+    }
+}
