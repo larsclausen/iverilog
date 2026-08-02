@@ -237,12 +237,24 @@ bool symbol_search(const LineInfo*li, Design*des, NetScope*scope,
 			}
 		  }
 
-		  if (const NetExpr*par = scope->get_parameter(des, path_tail.name, res->type)) {
-			bool decl_after_use = !scope_is_bound
-			      && !(scope->get_parameter_lexical_pos(path_tail.name) <= lexical_pos);
+		  NetScope *parameter_scope = scope;
+		  const NetExpr *par;
+		  if (scope->type() == NetScope::CLASS) {
+			par = scope->class_def()->get_parameter(des, path_tail.name,
+							 res->type,
+							 parameter_scope);
+		  } else {
+			par = scope->get_parameter(des, path_tail.name, res->type);
+		  }
+		  if (par) {
+			// A base class is resolved before it can be inherited. Only
+			// apply lexical ordering to the scope currently being searched.
+			bool decl_after_use = !scope_is_bound && parameter_scope == scope
+			      && !(parameter_scope->get_parameter_lexical_pos(path_tail.name)
+				   <= lexical_pos);
 			if (!gn_strict_parameter_declaration || !decl_after_use) {
 			      path.push_back(path_tail);
-			      res->scope = scope;
+			      res->scope = parameter_scope;
 			      res->par_val = par;
 			      res->path_head = path;
 			      if (warn_decl_after_use && decl_after_use) {
@@ -252,7 +264,8 @@ bool symbol_search(const LineInfo*li, Design*des, NetScope*scope,
 				    cerr << par->get_fileline()
 					 << ":        : the parameter is declared here." << endl;
 				    // suppress further warnings for this parameter
-				    scope->set_parameter_lexical_pos(path_tail.name, lexical_pos);
+				    parameter_scope->set_parameter_lexical_pos(path_tail.name,
+								      lexical_pos);
 			      }
 			      return true;
 			} else if (!res->decl_after_use) {

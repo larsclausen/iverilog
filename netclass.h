@@ -118,7 +118,8 @@ class netclass_t : public ivl_type_s {
       void dump_scope(std::ostream&fd) const;
 
       const NetExpr* get_parameter(Design *des, perm_string name,
-				   ivl_type_t &par_type) const;
+				   ivl_type_t &par_type,
+				   NetScope *&parameter_scope) const;
 
       void set_virtual(bool virtual_class) { virtual_class_ = virtual_class; }
       bool is_virtual() const { return virtual_class_; }

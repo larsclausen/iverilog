@@ -3107,10 +3107,12 @@ NetExpr* PEIdent::elaborate_expr_class_field_(Design*des, NetScope*scope,
       }
 
       ivl_type_t par_type;
-      const NetExpr *par_val = class_type->get_parameter(des, comp.name, par_type);
+      NetScope *parameter_scope;
+      auto par_val = class_type->get_parameter(des, comp.name, par_type,
+					       parameter_scope);
       if (par_val)
 	    return elaborate_expr_param_(des, scope, par_val,
-				         class_type->class_scope(), par_type,
+				         parameter_scope, par_type,
 				         expr_wid, flags);
 
       int pidx = class_type->property_idx_from_name(comp.name);
@@ -4912,7 +4914,9 @@ ivl_type_t PEIdent::resolve_type_(Design *des, const symbol_search_results &sr,
 		  // If the type is an object, the next path member may be a
 		  // class property.
 		  ivl_type_t par_type;
-		  if (class_type->get_parameter(des, name, par_type)) {
+		  NetScope *parameter_scope;
+		  if (class_type->get_parameter(des, name, par_type,
+						    parameter_scope)) {
 			type = par_type;
 		  } else {
 			int pidx = class_type->property_idx_from_name(name);

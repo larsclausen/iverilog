@@ -213,9 +213,29 @@ bool netclass_t::test_scope_is_method(const NetScope*scope) const
 }
 
 const NetExpr* netclass_t::get_parameter(Design *des, perm_string name,
-					 ivl_type_t &par_type) const
+					 ivl_type_t &par_type,
+					 NetScope *&parameter_scope) const
 {
-      return class_scope_->get_parameter(des, name, par_type);
+      auto parameter = class_scope_->get_parameter(des, name, par_type);
+      if (parameter) {
+	    parameter_scope = class_scope_;
+	    return parameter;
+      }
+
+      // A declaration in the derived class hides declarations with the same
+      // name in its base classes.
+      if (class_scope_->symbol_exists(name) ||
+	  class_scope_->child_byname(name) ||
+	  properties_.find(name) != properties_.end()) {
+	    parameter_scope = nullptr;
+	    return nullptr;
+      }
+
+      if (super_)
+	    return super_->get_parameter(des, name, par_type, parameter_scope);
+
+      parameter_scope = nullptr;
+      return nullptr;
 }
 
 bool netclass_t::test_compatibility(ivl_type_t that) const
