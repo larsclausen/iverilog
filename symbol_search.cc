@@ -238,7 +238,10 @@ bool symbol_search(const LineInfo*li, Design*des, NetScope*scope,
 		  }
 
 		  if (const NetExpr*par = scope->get_parameter(des, path_tail.name, res->type)) {
+			// Constant lookup in class scopes does not follow lexical
+			// declaration order.
 			bool decl_after_use = !prefix_scope
+			      && scope->type() != NetScope::CLASS
 			      && !(scope->get_parameter_lexical_pos(path_tail.name) <= lexical_pos);
 			if (!gn_strict_parameter_declaration || !decl_after_use) {
 			      path.push_back(path_tail);
