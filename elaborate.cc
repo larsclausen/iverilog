@@ -4307,7 +4307,7 @@ NetProc* PCallTask::elaborate_method_(Design*des, NetScope*scope,
 	// (internally represented as "@") is handled by there being a
 	// "this" object in the instance scope.
       symbol_search_results sr;
-      symbol_search(this, des, scope, use_path, UINT_MAX, &sr);
+      symbol_search(this, des, scope, use_path, lexical_pos(), &sr);
 
       NetNet*net = sr.net;
       if (net == 0)
