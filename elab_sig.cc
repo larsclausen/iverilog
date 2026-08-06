@@ -20,6 +20,7 @@
 
 # include "config.h"
 
+# include  <algorithm>
 # include  <typeinfo>
 # include  <cstdlib>
 # include  <iostream>
@@ -392,10 +393,27 @@ bool Module::elaborate_sig(Design*des, NetScope*scope) const
 
 void netclass_t::elaborate_sig(Design*des, PClass*pclass)
 {
-	// Collect the properties, elaborate them, and add them to the
-	// elaborated class definition.
-      for (map<perm_string,struct class_type_t::prop_info_t>::iterator cur = pclass->type->properties.begin()
-		 ; cur != pclass->type->properties.end() ; ++ cur) {
+	// Reserve the property table in its existing name order so the
+	// property indices remain unchanged.
+      using property_map_t = map<perm_string, class_type_t::prop_info_t>;
+      using property_iterator_t = property_map_t::iterator;
+      vector<property_iterator_t> properties;
+      properties.reserve(pclass->type->properties.size());
+      for (auto cur = pclass->type->properties.begin();
+	   cur != pclass->type->properties.end(); ++cur) {
+	    bool reserved = reserve_property(cur->first);
+	    ivl_assert(cur->second, reserved);
+	    properties.push_back(cur);
+      }
+
+	// Elaborate property types in declaration order. Defining each property
+	// after its type is elaborated makes it available to later declarations.
+      stable_sort(properties.begin(), properties.end(),
+	    [](const property_iterator_t &lhs, const property_iterator_t &rhs) {
+		  return lhs->second.lexical_pos() < rhs->second.lexical_pos();
+	    });
+
+      for (const auto &cur : properties) {
 
 	    ivl_type_t use_type = cur->second.type->elaborate_type(des, class_scope_);
 	    if (debug_scopes) {
@@ -404,7 +422,7 @@ void netclass_t::elaborate_sig(Design*des, PClass*pclass)
 		       << " type=" << *use_type << endl;
 	    }
 
-	    set_property(cur->first, cur->second.qual, use_type);
+	    define_property(cur->first, cur->second.qual, use_type);
 
 	    if (! cur->second.qual.test_static())
 		  continue;

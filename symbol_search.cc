@@ -279,11 +279,20 @@ bool symbol_search(const LineInfo*li, Design*des, NetScope*scope,
 			const netclass_t *clsnet = scope->class_def();
 			int pidx = clsnet->property_idx_from_name(path_tail.name);
 			if (pidx >= 0) {
+			      NetScope *scope_method =
+				    find_method_containing_scope(*li, start_scope);
+			      if (!scope_method) {
+				    path.push_back(path_tail);
+				    res->scope = scope;
+				    res->type = clsnet->get_prop_type(pidx);
+				    res->path_head = path;
+				    res->type_only = true;
+				    return true;
+			      }
+
 			      // This is a class property being accessed in a
 			      // class method. Return `this` for the net and the
 			      // property name for the path tail.
-			      NetScope *scope_method = find_method_containing_scope(*li, start_scope);
-			      ivl_assert(*li, scope_method);
 			      res->net = scope_method->find_signal(perm_string::literal(THIS_TOKEN));
 			      ivl_assert(*li, res->net);
 			      res->scope = scope;

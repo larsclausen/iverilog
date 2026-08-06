@@ -86,9 +86,11 @@ void pform_class_property(const struct vlltype&loc,
 		  FILE_NAME(use_type, loc);
 	    }
 
-	    pform_cur_class->type->properties[curp->name.first]
-		  = class_type_t::prop_info_t(property_qual,use_type);
-	    FILE_NAME(&pform_cur_class->type->properties[curp->name.first], loc);
+	    auto &property =
+		  pform_cur_class->type->properties[curp->name.first];
+	    property = class_type_t::prop_info_t(property_qual, use_type);
+	    property.lexical_pos(curp->name.second);
+	    FILE_NAME(&property, loc);
 
 	    if (PExpr*rval = curp->expr.release()) {
 		  PExpr*lval = new PEIdent(curp->name.first, curp->name.second);

@@ -38,10 +38,11 @@ class netclass_t : public ivl_type_s {
       netclass_t(perm_string class_name, const netclass_t*super);
       ~netclass_t() override;
 
-	// Set the property of the class during elaboration. Set the
-	// name and type, and return true. If the name is already
-	// present, then return false.
-      bool set_property(perm_string pname, property_qualifier_t qual, ivl_type_t ptype);
+	// Reserve properties in layout order, then define each property after
+	// its type has been elaborated in declaration order.
+      bool reserve_property(perm_string pname);
+      void define_property(perm_string pname, property_qualifier_t qual,
+			   ivl_type_t ptype);
 
 	// Set the scope for the class. The scope has no parents and
 	// is used for the elaboration of methods
@@ -138,6 +139,7 @@ class netclass_t : public ivl_type_s {
 	    perm_string name;
 	    property_qualifier_t qual;
 	    ivl_type_t type;
+	    bool visible = false;
 	    mutable bool initialized_flag;
       };
       std::vector<prop_t> property_table_;

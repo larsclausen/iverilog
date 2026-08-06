@@ -59,6 +59,7 @@ struct symbol_search_results {
 	    if (net) return false;
 	    if (eve) return false;
 	    if (par_val) return false;
+	    if (type_only) return false;
 	    if (scope) return true;
 	    return false;
       }
@@ -67,6 +68,7 @@ struct symbol_search_results {
 	    if (net) return true;
 	    if (eve) return true;
 	    if (par_val) return true;
+	    if (type_only) return true;
 	    if (scope) return true;
 	    return false;
       }
@@ -75,6 +77,7 @@ struct symbol_search_results {
 	    if (net)     return "net";
 	    if (eve)     return "named event";
 	    if (par_val) return "parameter";
+	    if (type_only) return "class property type";
 	    if (scope)   return "scope";
 	    return "nothing found";
       }
@@ -99,6 +102,9 @@ struct symbol_search_results {
 	// stored here. If more than one such symbol is found, the first
 	// one is retained.
       const LineInfo*decl_after_use;
+	// Property type elaboration needs the type of an earlier class
+	// property, but has no object from which to read its value.
+      bool type_only = false;
 
 	// If lookup traversed an interface-typed formal port alias, these
 	// fields describe the alias edge. The resolved object remains in the

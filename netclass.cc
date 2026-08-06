@@ -32,23 +32,32 @@ netclass_t::~netclass_t()
 {
 }
 
-bool netclass_t::set_property(perm_string pname, property_qualifier_t qual,
-			      ivl_type_t ptype)
+bool netclass_t::reserve_property(perm_string pname)
 {
-      map<perm_string,size_t>::const_iterator cur;
-      cur = properties_.find(pname);
-      if (cur != properties_.end())
+      auto inserted = properties_.emplace(pname, property_table_.size());
+      if (!inserted.second)
 	    return false;
 
       prop_t tmp;
       tmp.name = pname;
-      tmp.qual = qual;
-      tmp.type = ptype;
+      tmp.qual = property_qualifier_t::make_none();
+      tmp.type = nullptr;
       tmp.initialized_flag = false;
       property_table_.push_back(tmp);
-
-      properties_[pname] = property_table_.size()-1;
       return true;
+}
+
+void netclass_t::define_property(perm_string pname, property_qualifier_t qual,
+				 ivl_type_t ptype)
+{
+      auto cur = properties_.find(pname);
+      assert(cur != properties_.end());
+
+      auto &property = property_table_[cur->second];
+      assert(!property.visible);
+      property.qual = qual;
+      property.type = ptype;
+      property.visible = true;
 }
 
 void netclass_t::set_class_scope(NetScope*class_scope__)
@@ -77,18 +86,22 @@ size_t netclass_t::get_properties(void) const
 
 int netclass_t::property_idx_from_name(perm_string pname) const
 {
-      map<perm_string,size_t>::const_iterator cur;
-      cur = properties_.find(pname);
-      if (cur == properties_.end()) {
-	    if (super_)
-		  return super_->property_idx_from_name(pname);
-	    else
+      auto cur = properties_.find(pname);
+      if (cur != properties_.end()) {
+	    // A later local declaration hides inherited properties, but is
+	    // not itself visible until its type has been elaborated.
+	    if (!property_table_[cur->second].visible)
 		  return -1;
+
+	    int pidx = cur->second;
+	    if (super_) pidx += super_->get_properties();
+	    return pidx;
       }
 
-      int pidx = cur->second;
-      if (super_) pidx += super_->get_properties();
-      return pidx;
+      if (super_)
+	    return super_->property_idx_from_name(pname);
+
+      return -1;
 }
 
 const char*netclass_t::get_prop_name(size_t idx) const
