@@ -1,0 +1,5 @@
+{
+    "type"          : "CE",
+    "source"        : "sv_scope_class_member_missing_fail.v",
+    "iverilog-args" : [ "-g2005-sv" ]
+}
