@@ -219,6 +219,12 @@ PECallFunction::PECallFunction(PPackage *pkg, const pform_name_t &n, const vecto
 {
 }
 
+PECallFunction::PECallFunction(const pform_scoped_name_t &n,
+			       const vector<named_pexpr_t> &parms)
+: path_(n), parms_(parms), is_overridden_(false)
+{
+}
+
 static pform_name_t pn_from_ps(perm_string n)
 {
       name_component_t tmp_name (n);
@@ -229,6 +235,12 @@ static pform_name_t pn_from_ps(perm_string n)
 
 PECallFunction::PECallFunction(PPackage *pkg, const pform_name_t &n, const list<named_pexpr_t> &parms)
 : path_(pkg, n), parms_(parms.begin(), parms.end()), is_overridden_(false)
+{
+}
+
+PECallFunction::PECallFunction(const pform_scoped_name_t &n,
+			       const list<named_pexpr_t> &parms)
+: path_(n), parms_(parms.begin(), parms.end()), is_overridden_(false)
 {
 }
 
@@ -404,6 +416,11 @@ PEIdent::PEIdent(perm_string s, unsigned lexical_pos, bool no_implicit_sig)
 
 PEIdent::PEIdent(PPackage*pkg, const pform_name_t&that)
 : path_(pkg, that), no_implicit_sig_(true)
+{
+}
+
+PEIdent::PEIdent(const pform_scoped_name_t&that)
+: path_(that), no_implicit_sig_(true)
 {
 }
 
