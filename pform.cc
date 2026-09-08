@@ -757,6 +757,17 @@ PEIdent *pform_new_ident(const struct vlltype&loc, const pform_name_t&name,
       return tmp;
 }
 
+pform_scope_t*pform_new_scope(const struct vlltype&loc, const char*name)
+{
+      auto prefix = new pform_scope_t;
+      auto use_name = lex_strings.make(name);
+      check_potential_imports(loc, use_name, false);
+      prefix->path.push_back(use_name);
+      prefix->package = pform_lookup_package(name);
+      FILE_NAME(prefix, loc);
+      return prefix;
+}
+
 PTrigger* pform_new_trigger(const struct vlltype&loc, pform_scope_t*prefix,
 			    const pform_name_t&name)
 {

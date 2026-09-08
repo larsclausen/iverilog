@@ -5508,7 +5508,11 @@ atom_type
      assignments. It is more limited than the general expr_primary
      rule to reflect the rules for assignment l-values. */
 lpvalue
-  : hierarchy_identifier
+  : scope_prefix hierarchy_identifier
+      { $$ = pform_scoped_ident(@2, $1, $2);
+	delete $2;
+      }
+  | hierarchy_identifier
       { PEIdent*tmp = pform_new_ident(@1, *$1);
 	$$ = tmp;
 	delete $1;

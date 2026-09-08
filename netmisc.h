@@ -138,7 +138,11 @@ enum symbol_search_flag_t {
       SYMBOL_SEARCH_NO_SIGNAL_ELABORATION = 1U << 1,
         // Ignore relaxed declaration-order compatibility options and require
         // data objects to be declared before they are used.
-      SYMBOL_SEARCH_STRICT_DECLARATION_ORDER = 1U << 2
+      SYMBOL_SEARCH_STRICT_DECLARATION_ORDER = 1U << 2,
+        // Explicit class prefixes cannot select instance properties.
+      SYMBOL_SEARCH_CLASS_SCOPE_PREFIX = 1U << 3,
+        // A scope-resolution prefix does not use the instance hierarchy.
+      SYMBOL_SEARCH_LEXICAL_SCOPE = 1U << 4
 };
 
 /*

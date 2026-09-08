@@ -240,15 +240,6 @@ void pform_package_export(const struct vlltype &loc, PPackage *pkg, const char *
       pform_cur_package->exports.push_back(PPackage::export_t{pkg, use_ident});
 }
 
-pform_scope_t*pform_new_scope(const struct vlltype&loc, const char*name)
-{
-      auto prefix = new pform_scope_t;
-      prefix->path.push_back(lex_strings.make(name));
-      prefix->package = pform_lookup_package(name);
-      FILE_NAME(prefix, loc);
-      return prefix;
-}
-
 PExpr* pform_scoped_ident(const struct vlltype&loc, pform_scope_t*prefix,
 			   const pform_name_t*ident_name)
 {

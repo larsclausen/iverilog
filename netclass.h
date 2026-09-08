@@ -48,7 +48,7 @@ class netclass_t : public ivl_type_s {
 	// (tasks/functions). In other words, this is the class itself.
       void set_class_scope(NetScope*cscope);
 
-      inline const NetScope* class_scope(void) const { return class_scope_; }
+      inline NetScope*class_scope() const { return class_scope_; }
 
 	// Set the scope for the class definition. This is the scope
 	// where the class definition was encountered, and may be used

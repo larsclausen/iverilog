@@ -198,6 +198,10 @@ static scope_object_search_result_t symbol_search_scope_objects(
 	    const netclass_t *clsnet = scope->class_def();
 	    int pidx = clsnet->property_idx_from_name(path_tail.name);
 	    if (pidx >= 0) {
+		  if (flags & SYMBOL_SEARCH_CLASS_SCOPE_PREFIX) {
+			return scope_object_search_result_t::failed;
+		  }
+
 		  // This is a class property being accessed in a
 		  // class method. Return `this` for the net and the
 		  // property name for the path tail.
@@ -465,8 +469,10 @@ static bool symbol_search_(const LineInfo *li, Design *des, NetScope *scope,
 	    const unsigned int visibility_pos =
 		  (!scope_is_bound || scope->is_unit()) ? lexical_pos : UINT_MAX;
 
-            if (scope->genvar_tmp.str() && path_tail.name == scope->genvar_tmp)
+            if (scope->genvar_tmp.str() && path_tail.name == scope->genvar_tmp) {
+                  if (flags & SYMBOL_SEARCH_LEXICAL_SCOPE) res->invalid_scope = true;
                   return false;
+            }
 
 	    // These items cannot be seen outside the bounding module where
 	    // the search starts. But we continue searching up because scope
@@ -487,8 +493,10 @@ static bool symbol_search_(const LineInfo *li, Design *des, NetScope *scope,
 			      visibility_pos, res, flags);
 		  if (object_result == scope_object_search_result_t::found)
 			return true;
-		  if (object_result == scope_object_search_result_t::failed)
+		  if (object_result == scope_object_search_result_t::failed) {
+			if (flags & SYMBOL_SEARCH_LEXICAL_SCOPE) res->invalid_scope = true;
 			return false;
+		  }
 	    }
 
 	    if (symbol_search_child_scope(
@@ -499,6 +507,7 @@ static bool symbol_search_(const LineInfo *li, Design *des, NetScope *scope,
 	      // introduce scopes, but hide outer names after their declarations.
 	    if (search_objects &&
 		  scope->gate_name_is_visible(path_tail.name, visibility_pos)) {
+		  if (flags & SYMBOL_SEARCH_LEXICAL_SCOPE) res->invalid_scope = true;
 		  return false;
 	    }
 
@@ -517,6 +526,9 @@ static bool symbol_search_(const LineInfo *li, Design *des, NetScope *scope,
 		  continue;
 	    }
 
+	      // Normal lookup for a :: prefix ends at the compilation unit.
+	    if ((flags & SYMBOL_SEARCH_LEXICAL_SCOPE) && scope->is_unit()) break;
+
 	    // Special case: We can match the module name of a parent
 	    // module. That means if the current scope is a module of type
 	    // "mod", then "mod" matches the current scope. This is fairly
@@ -530,7 +542,8 @@ static bool symbol_search_(const LineInfo *li, Design *des, NetScope *scope,
 	    // This feature recurses, so code in subscopes of foo can refer to
 	    // foo by the name "foo" as well. In general, anything within
 	    // "foo" can use the name "foo" to reference it.
-	    if (scope->type()==NetScope::MODULE && scope->module_name()==path_tail.name) {
+	    if (!(flags & SYMBOL_SEARCH_LEXICAL_SCOPE) &&
+		 scope->type() == NetScope::MODULE && scope->module_name() == path_tail.name) {
 		  path.push_back(path_tail);
 		  res->scope = scope;
 		  res->path_head = path;
@@ -592,7 +605,7 @@ static bool symbol_search_(const LineInfo *li, Design *des, NetScope *scope,
       // Last chance: this is a single name, so it might be the name
       // of a root scope. Ask the design if this is a root
       // scope. This is only possible if the search is not already bound.
-      if (!scope_is_bound) {
+      if (!scope_is_bound && !(flags & SYMBOL_SEARCH_LEXICAL_SCOPE)) {
 	    hname_t path_item (path_tail.name);
 	    scope = des->find_scope(path_item);
 	    if (scope) {
@@ -619,15 +632,10 @@ bool symbol_search(const LineInfo *li, Design *des, NetScope *scope,
 			    res, scope, false, flags);
 }
 
-static NetScope*resolve_scope_prefix(Design*des, NetScope*scope,
+static NetScope*invalid_scope_prefix(Design*des, NetScope*scope,
 				    const pform_scope_t&prefix,
 				    symbol_search_results*res)
 {
-      if (prefix.unit && prefix.path.empty()) return scope->unit();
-      if (prefix.package && prefix.path.size() == 1) {
-	    return des->find_package(prefix.package->pscope_name());
-      }
-
       res->invalid_scope = true;
       if (prefix.diagnosed_scopes.insert(scope).second) {
 	    cerr << prefix.get_fileline() << ": error: Scope `"
@@ -635,6 +643,58 @@ static NetScope*resolve_scope_prefix(Design*des, NetScope*scope,
 	    des->errors += 1;
       }
       return nullptr;
+}
+
+static NetScope*resolve_scope_prefix(Design*des, NetScope*scope,
+				    const pform_scope_t&prefix,
+				    symbol_search_results*res, unsigned&flags)
+{
+      NetScope*current = prefix.unit ? scope->unit() : scope;
+      bool bound = prefix.unit;
+      const unsigned lookup_flags = SYMBOL_SEARCH_NO_SIGNAL_ELABORATION |
+	    SYMBOL_SEARCH_STRICT_DECLARATION_ORDER |
+	    SYMBOL_SEARCH_CLASS_SCOPE_PREFIX | SYMBOL_SEARCH_LEXICAL_SCOPE;
+
+      for (const auto&name : prefix.path) {
+	    pform_name_t path;
+	    path.emplace_back(name);
+	    symbol_search_results found;
+	    unsigned visibility = bound && !current->is_unit()
+		  ? UINT_MAX : prefix.lexical_pos();
+	    bool matched = symbol_search_(&prefix, des, current, path,
+		  visibility, prefix.lexical_pos(), &found, current, bound,
+		  lookup_flags);
+
+	      // Only an unresolved first component can select a package.
+	      // A visible declaration of the wrong kind must not fall back.
+	    if (!matched && !found.invalid_scope && !bound && prefix.package) {
+		  current = des->find_package(prefix.package->pscope_name());
+		  bound = true;
+		  continue;
+	    }
+	    if (!matched || !found.type_def) {
+		  return invalid_scope_prefix(des, scope, prefix, res);
+	    }
+
+	    unsigned errors = des->errors;
+	    auto type = found.type_def->elaborate_type(des, found.scope);
+	    if (des->errors != errors) {
+		  prefix.diagnosed_scopes.insert(scope);
+		  res->invalid_scope = true;
+		  return nullptr;
+	    }
+	    auto class_type = dynamic_cast<const netclass_t*>(type);
+	    if (!class_type) {
+		  return invalid_scope_prefix(des, scope, prefix, res);
+	    }
+	    current = class_type->class_scope();
+	    bound = true;
+      }
+
+      if (current->type() == NetScope::CLASS) {
+	    flags |= SYMBOL_SEARCH_CLASS_SCOPE_PREFIX;
+      }
+      return current;
 }
 
 bool symbol_search(const LineInfo *li, Design *des, NetScope *scope,
@@ -645,7 +705,7 @@ bool symbol_search(const LineInfo *li, Design *des, NetScope *scope,
       bool scope_is_bound = false;
 
       if (path.scope) {
-	    search_scope = resolve_scope_prefix(des, scope, *path.scope, res);
+	    search_scope = resolve_scope_prefix(des, scope, *path.scope, res, flags);
 	    if (!search_scope) return false;
 	    scope_is_bound = true;
       } else if (path.package) {
