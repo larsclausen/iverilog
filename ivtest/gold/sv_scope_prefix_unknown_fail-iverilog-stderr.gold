@@ -1,0 +1,2 @@
+ivltests/sv_scope_prefix_unknown_fail.v:4: error: Scope `missing` cannot be resolved.
+1 error(s) during elaboration.

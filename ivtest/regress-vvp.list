@@ -470,6 +470,7 @@ sv_named_type_var_fail	vvp_tests/sv_named_type_var_fail.json
 sv_net_array_decl_assign	vvp_tests/sv_net_array_decl_assign.json
 sv_net_decl_assign		vvp_tests/sv_net_decl_assign.json
 sv_package_function_void_cast	vvp_tests/sv_package_function_void_cast.json
+sv_package_class_new		vvp_tests/sv_package_class_new.json
 sv_package_import_copy_new	vvp_tests/sv_package_import_copy_new.json
 sv_package_import_cross_unit	vvp_tests/sv_package_import_cross_unit.json
 sv_package_import_order_delay	vvp_tests/sv_package_import_order_delay.json
@@ -482,6 +483,7 @@ sv_package_lifetime		vvp_tests/sv_package_lifetime.json
 sv_package_lifetime_fail	vvp_tests/sv_package_lifetime_fail.json
 sv_package_member_package_name	vvp_tests/sv_package_member_package_name.json
 sv_package_method_call		vvp_tests/sv_package_method_call.json
+sv_package_name_identifier		vvp_tests/sv_package_name_identifier.json
 sv_package_task_call		vvp_tests/sv_package_task_call.json
 sv_package_void_function_call	vvp_tests/sv_package_void_function_call.json
 parameter_omit1			vvp_tests/parameter_omit1.json
@@ -519,6 +521,7 @@ sv_queue_sum			vvp_tests/sv_queue_sum.json
 sv_queue_sum_with		vvp_tests/sv_queue_sum_with.json
 sv_queue_unique			vvp_tests/sv_queue_unique.json
 sv_queue_unique_with		vvp_tests/sv_queue_unique_with.json
+sv_scope_prefix_unknown_fail		vvp_tests/sv_scope_prefix_unknown_fail.json
 sv_soft_packed_union		vvp_tests/sv_soft_packed_union.json
 sv_soft_packed_union_fail1	vvp_tests/sv_soft_packed_union_fail1.json
 sv_string_method_substr_too_few_arg_fail	vvp_tests/sv_string_method_substr_too_few_arg_fail.json

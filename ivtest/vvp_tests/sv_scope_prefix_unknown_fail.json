@@ -1,0 +1,6 @@
+{
+    "type"          : "CE",
+    "source"        : "sv_scope_prefix_unknown_fail.v",
+    "gold"          : "sv_scope_prefix_unknown_fail",
+    "iverilog-args" : [ "-g2005-sv" ]
+}
