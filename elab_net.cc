@@ -1178,6 +1178,7 @@ NetNet*PEIdent::elaborate_unpacked_net(Design*des, NetScope*scope) const
 {
       symbol_search_results sr;
       symbol_search(this, des, scope, path_, lexical_pos(), &sr);
+      if (sr.invalid_scope) return nullptr;
       if (!sr.net) {
 	    cerr << get_fileline() << ": error: Net " << path_
 		 << " is not defined in this context." << endl;

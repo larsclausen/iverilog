@@ -619,6 +619,24 @@ bool symbol_search(const LineInfo *li, Design *des, NetScope *scope,
 			    res, scope, false, flags);
 }
 
+static NetScope*resolve_scope_prefix(Design*des, NetScope*scope,
+				    const pform_scope_t&prefix,
+				    symbol_search_results*res)
+{
+      if (prefix.unit && prefix.path.empty()) return scope->unit();
+      if (prefix.package && prefix.path.size() == 1) {
+	    return des->find_package(prefix.package->pscope_name());
+      }
+
+      res->invalid_scope = true;
+      if (prefix.diagnosed_scopes.insert(scope).second) {
+	    cerr << prefix.get_fileline() << ": error: Scope `"
+		 << prefix << "` cannot be resolved." << endl;
+	    des->errors += 1;
+      }
+      return nullptr;
+}
+
 bool symbol_search(const LineInfo *li, Design *des, NetScope *scope,
 		   const pform_scoped_name_t &path, unsigned int lexical_pos,
 		   struct symbol_search_results *res, unsigned int flags)
@@ -626,7 +644,11 @@ bool symbol_search(const LineInfo *li, Design *des, NetScope *scope,
       NetScope *search_scope = scope;
       bool scope_is_bound = false;
 
-      if (path.package) {
+      if (path.scope) {
+	    search_scope = resolve_scope_prefix(des, scope, *path.scope, res);
+	    if (!search_scope) return false;
+	    scope_is_bound = true;
+      } else if (path.package) {
 	    search_scope = des->find_package(path.package->pscope_name());
 	    if (!search_scope)
 		  return false;

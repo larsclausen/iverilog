@@ -79,15 +79,6 @@ enum UCDriveType { UCD_NONE, UCD_PULL0, UCD_PULL1 };
 extern UCDriveType uc_drive;
 
 /*
- * The parser signals back to the lexor that the next identifier
- * should be in the package scope. For example, if the source is
- *    <package> :: <foo>
- * Then the parser calls this function to set the package context so
- * that the lexor can interpret <foo> in the package context.
- */
-extern void lex_in_package_scope(PPackage*pkg);
-
-/*
  * Test if this identifier names a type. The parser uses this when syntax
  * alone cannot distinguish a variable declaration from a module instance
  * or an interface port.
@@ -95,11 +86,8 @@ extern void lex_in_package_scope(PPackage*pkg);
 extern typedef_t* pform_test_type_identifier(const YYLTYPE&loc, const char*txt);
 extern typedef_t* pform_test_type_identifier(PPackage*pkg, const char*txt);
 
-/*
- * Test if this identifier is a package name. The pform needs to help
- * the lexor here because the parser detects packages and saves them.
- */
-extern PPackage* pform_test_package_identifier(const char*txt);
+  /* Look up a package after the parser recognizes a scoped name. */
+extern PPackage*pform_lookup_package(const char*txt);
 
 /*
  * Export these functions because we have to generate PENumber class

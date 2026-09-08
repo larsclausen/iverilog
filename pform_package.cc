@@ -19,6 +19,7 @@
  */
 
 # include  <cstdarg>
+# include  <cstring>
 # include  "pform.h"
 # include  "PPackage.h"
 # include  "parse_misc.h"
@@ -239,11 +240,21 @@ void pform_package_export(const struct vlltype &loc, PPackage *pkg, const char *
       pform_cur_package->exports.push_back(PPackage::export_t{pkg, use_ident});
 }
 
-PExpr* pform_package_ident(const struct vlltype&loc,
-			   PPackage*pkg, const pform_name_t*ident_name)
+pform_scope_t*pform_new_scope(const struct vlltype&loc, const char*name)
+{
+      auto prefix = new pform_scope_t;
+      prefix->path.push_back(lex_strings.make(name));
+      prefix->package = pform_lookup_package(name);
+      FILE_NAME(prefix, loc);
+      return prefix;
+}
+
+PExpr* pform_scoped_ident(const struct vlltype&loc, pform_scope_t*prefix,
+			   const pform_name_t*ident_name)
 {
       ivl_assert(loc, ident_name);
-      PEIdent*tmp = new PEIdent(pkg, *ident_name);
+      pform_scoped_name_t name(*ident_name, prefix);
+      PEIdent*tmp = new PEIdent(name);
       FILE_NAME(tmp, loc);
       return tmp;
 }
@@ -260,17 +271,11 @@ typedef_t* pform_test_type_identifier(PPackage*pkg, const char*txt)
       return 0;
 }
 
-/*
- * The lexor uses this function to know if the identifier names the
- * package. It will call this a PACKAGE_IDENTIFIER token in that case,
- * instead of a generic IDENTIFIER.
- */
-PPackage* pform_test_package_identifier(const char*pkg_name)
+PPackage*pform_lookup_package(const char*pkg_name)
 {
       perm_string use_name = lex_strings.make(pkg_name);
-      map<perm_string,PPackage*>::const_iterator pcur = packages_by_name.find(use_name);
-      if (pcur == packages_by_name.end())
-	    return 0;
+      auto pcur = packages_by_name.find(use_name);
+      if (pcur == packages_by_name.end()) return nullptr;
 
       assert(pcur->second);
       return pcur->second;

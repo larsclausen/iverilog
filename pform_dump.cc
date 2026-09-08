@@ -123,10 +123,24 @@ ostream& operator<< (ostream&o, const pform_name_t&that)
       return o;
 }
 
+ostream& operator<< (ostream&out, const pform_scope_t&scope)
+{
+      bool separator = scope.unit;
+      if (scope.unit) out << "$unit";
+      for (const auto&name : scope.path) {
+	    if (separator) out << "::";
+	    out << name;
+	    separator = true;
+      }
+      return out;
+}
+
 ostream& operator<< (ostream &o, const pform_scoped_name_t &that)
 {
       if (that.package) {
 	    o << that.package->pscope_name() << "::";
+      } else if (that.scope) {
+	    o << *that.scope << "::";
       }
 
       o << that.name;

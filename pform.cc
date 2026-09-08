@@ -757,13 +757,13 @@ PEIdent *pform_new_ident(const struct vlltype&loc, const pform_name_t&name,
       return tmp;
 }
 
-PTrigger* pform_new_trigger(const struct vlltype&loc, PPackage*pkg,
+PTrigger* pform_new_trigger(const struct vlltype&loc, pform_scope_t*prefix,
 			    const pform_name_t&name)
 {
       if (gn_system_verilog())
 	    check_potential_imports(loc, name.front().name, false);
 
-      PTrigger*tmp = new PTrigger(pkg, name);
+      auto tmp = new PTrigger(pform_scoped_name_t(name, prefix));
       FILE_NAME(tmp, loc);
       return tmp;
 }

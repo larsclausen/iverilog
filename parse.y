@@ -163,15 +163,16 @@ static void delete_type_id_range(T&value)
 }
 
 static data_type_t *pform_new_type_identifier(const struct vlltype &loc,
-					     PPackage *package,
+					     pform_scope_t *prefix,
 					     const char *name)
 {
       pform_name_t path;
       path.emplace_back(lex_strings.make(name));
 
       PEIdent *identifier;
-      if (package) {
-	    identifier = new PEIdent(package, path);
+      if (prefix) {
+	    pform_scoped_name_t scoped_name(path, prefix);
+	    identifier = new PEIdent(scoped_name);
 	    FILE_NAME(identifier, loc);
       } else {
 	    identifier = pform_new_ident(loc, path, true);
@@ -183,12 +184,24 @@ static data_type_t *pform_new_type_identifier(const struct vlltype &loc,
 }
 
 static data_type_t *pform_new_type_identifier(const struct vlltype &loc,
-					     PPackage *package,
+					     pform_scope_t *prefix,
 					     char *text)
 {
       std::unique_ptr<char[]> owned_text(text);
       const char *name = owned_text.get();
-      return pform_new_type_identifier(loc, package, name);
+      return pform_new_type_identifier(loc, prefix, name);
+}
+
+static PPackage *pform_require_package(const struct vlltype &loc,
+				       const char *name)
+{
+	// Imports and exports alter parser-time symbol visibility and therefore
+	// still require a package to have been declared before the declaration.
+      auto package = pform_lookup_package(name);
+      if (!package) {
+	    yyerror(loc, "error: `%s` is not a package.", name);
+      }
+      return package;
 }
 
 static index_component_t *make_index_component(const struct vlltype &loc,
@@ -1082,7 +1095,7 @@ Module::port_t *module_declare_interface_port(const YYLTYPE&loc, char *type,
       data_type_t*data_type;
       real_type_t::type_t real_type;
       property_qualifier_t property_qualifier;
-      PPackage*package;
+      pform_scope_t*scope_prefix;
 
       struct {
 	    data_type_t *type;
@@ -1120,7 +1133,6 @@ Module::port_t *module_declare_interface_port(const YYLTYPE&loc, char *type,
 };
 
 %token <text>      IDENTIFIER SYSTEM_IDENTIFIER STRING TIME_LITERAL
-%token <package>   PACKAGE_IDENTIFIER
 %token <discipline> DISCIPLINE_IDENTIFIER
 %token <text>   PATHPULSE_IDENTIFIER
 %token <number> BASED_NUMBER DEC_NUMBER UNBASED_NUMBER
@@ -1190,6 +1202,7 @@ Module::port_t *module_declare_interface_port(const YYLTYPE&loc, char *type,
 %token K_randcase K_randsequence K_ref K_return K_sequence K_shortint
 %token K_shortreal K_solve K_static K_string K_struct K_super
 %token K_tagged K_this K_throughout K_timeprecision K_timeunit K_type
+%token K_unit
 %token K_typedef K_union K_unique K_var K_virtual K_void K_wait_order
 %token K_wildcard K_with K_within
 
@@ -1305,7 +1318,7 @@ Module::port_t *module_declare_interface_port(const YYLTYPE&loc, char *type,
 %type <decl_assignments_with_type> list_of_net_decl_assignments_with_type
 %type <decl_assignments_with_type> list_of_variable_decl_assignments_with_type
 %type <decl_assignments_with_type> identifier_variable_decl_assignments_with_type
-%type <decl_assignments_with_type> package_variable_decl_assignments_with_type
+%type <decl_assignments_with_type> scoped_variable_decl_assignments_with_type
 
 %type <data_type>  data_type data_type_opt data_type_or_implicit
 %type <data_type>  block_reg_data_type for_decl_data_type
@@ -1315,7 +1328,6 @@ Module::port_t *module_declare_interface_port(const YYLTYPE&loc, char *type,
 
 %type <data_type>  ps_type_identifier ps_type_identifier_dim
 %type <data_type>  simple_packed_type
-%type <data_type>  class_scope
 %type <struct_member>  struct_union_member
 %type <struct_members> struct_union_member_list
 %type <struct_type>    struct_data_type
@@ -1377,7 +1389,9 @@ Module::port_t *module_declare_interface_port(const YYLTYPE&loc, char *type,
 
 %type <genvar_iter> genvar_iteration
 
-%type <package> package_scope
+%type <text> package_scope
+%type <scope_prefix> scope_prefix
+%destructor { delete $$; } <scope_prefix>
 
 %type <letter> compressed_operator
 
@@ -1630,9 +1644,6 @@ class_item_qualifier_opt
   | { $$ = property_qualifier_t::make_none(); }
   ;
 
-class_scope
-  : ps_type_identifier K_SCOPE_RES { $$ = $1; }
-
 class_new /* IEEE1800-2005 A.2.4 */
   : K_new argument_list_parens_opt
       { PENewClass*tmp = new PENewClass(*$2);
@@ -1640,13 +1651,28 @@ class_new /* IEEE1800-2005 A.2.4 */
 	delete $2;
 	$$ = tmp;
       }
-    // This can't be a class_scope_opt because it will lead to shift/reduce
-    // conflicts with array_new
-  | class_scope K_new argument_list_parens_opt
-      { PENewClass *new_expr = new PENewClass(*$3, $1);
-	FILE_NAME(new_expr, @2);
-	delete $3;
-	$$ = new_expr;
+    // Keep the scoped constructor separate from unqualified new so the
+    // empty prefix does not conflict with array_new
+  | scope_prefix K_new argument_list_parens_opt
+      { auto prefix = $1;
+	if (prefix->path.empty()) {
+	      yyerror(@1, "error: A constructor requires a class type.");
+	      delete prefix;
+	      delete $3;
+	      $$ = nullptr;
+	} else {
+	      auto name = prefix->path.back();
+	      prefix->path.pop_back();
+	      if (prefix->path.empty() && !prefix->unit) {
+		    delete prefix;
+		    prefix = nullptr;
+	      }
+	      auto type = pform_new_type_identifier(@1, prefix, name.str());
+	      auto new_expr = new PENewClass(*$3, type);
+	      FILE_NAME(new_expr, @2);
+	      delete $3;
+	      $$ = new_expr;
+	}
       }
   | K_new hierarchy_identifier
       { auto tmpi = pform_new_ident(@2, *$2);
@@ -1834,9 +1860,24 @@ data_declaration /* IEEE1800-2005: A.2.1.3 */
   ;
 
 package_scope
-  : PACKAGE_IDENTIFIER K_SCOPE_RES
-      { lex_in_package_scope($1);
-        $$ = $1;
+  : IDENTIFIER K_SCOPE_RES
+      { $$ = $1; }
+  ;
+
+scope_prefix
+  : IDENTIFIER K_SCOPE_RES
+      { $$ = pform_new_scope(@1, $1);
+	delete[]$1;
+      }
+  | K_unit K_SCOPE_RES
+      { $$ = new pform_scope_t;
+	$$->unit = true;
+	FILE_NAME($$, @1);
+      }
+  | scope_prefix IDENTIFIER K_SCOPE_RES
+      { $$ = $1;
+	$$->path.push_back(lex_strings.make($2));
+	delete[]$2;
       }
   ;
 
@@ -1844,10 +1885,8 @@ package_scope
 ps_type_identifier /* IEEE1800-2017: A.9.3 */
   : IDENTIFIER
       { $$ = pform_new_type_identifier(@1, nullptr, $1); }
-  | package_scope IDENTIFIER
-      { lex_in_package_scope(0);
-	$$ = pform_new_type_identifier(@2, $1, $2);
-      }
+  | scope_prefix IDENTIFIER
+      { $$ = pform_new_type_identifier(@2, $1, $2); }
   ;
 
 ps_type_identifier_dim /* IEEE1800-2017: A.9.3 */
@@ -1855,9 +1894,8 @@ ps_type_identifier_dim /* IEEE1800-2017: A.9.3 */
       { auto tmp = pform_new_type_identifier(@1, nullptr, $1);
 	$$ = pform_make_parray_type(@2, tmp, $2);
       }
-  | package_scope IDENTIFIER dimensions_opt
-      { lex_in_package_scope(nullptr);
-	auto tmp = pform_new_type_identifier(@2, $1, $2);
+  | scope_prefix IDENTIFIER dimensions_opt
+      { auto tmp = pform_new_type_identifier(@2, $1, $2);
 	$$ = pform_make_parray_type(@3, tmp, $3);
       }
   ;
@@ -2533,13 +2571,12 @@ identifier_variable_decl_assignments_with_type
 	$$.decl_assignments = $3;
 	$$.type = pform_make_parray_type(@2, tmp, $2);
       }
-  | package_variable_decl_assignments_with_type
+  | scoped_variable_decl_assignments_with_type
   ;
 
-package_variable_decl_assignments_with_type
-  : package_scope IDENTIFIER dimensions_opt list_of_variable_decl_assignments
-      { lex_in_package_scope(nullptr);
-	auto tmp = pform_new_type_identifier(@2, $1, $2);
+scoped_variable_decl_assignments_with_type
+  : scope_prefix IDENTIFIER dimensions_opt list_of_variable_decl_assignments
+      { auto tmp = pform_new_type_identifier(@2, $1, $2);
 	$$.decl_assignments = $4;
 	$$.type = pform_make_parray_type(@3, tmp, $3);
       }
@@ -2752,13 +2789,17 @@ package_import_declaration /* IEEE1800-2005 A.2.1.3 */
 
 package_import_item
   : package_scope IDENTIFIER
-      { lex_in_package_scope(0);
-	pform_package_import(@1, $1, $2);
+      { auto package = pform_require_package(@1, $1);
+	if (package)
+	      pform_package_import(@1, package, $2);
+	delete[]$1;
 	delete[]$2;
       }
   | package_scope '*'
-      { lex_in_package_scope(0);
-        pform_package_import(@1, $1, 0);
+      { auto package = pform_require_package(@1, $1);
+	if (package)
+	      pform_package_import(@1, package, nullptr);
+	delete[]$1;
       }
   ;
 
@@ -2773,12 +2814,18 @@ package_export_declaration /* IEEE1800-2017 A.2.1.3 */
   ;
 
 package_export_item
-  : PACKAGE_IDENTIFIER K_SCOPE_RES IDENTIFIER
-      { pform_package_export(@2, $1, $3);
-	delete[] $3;
+  : package_scope IDENTIFIER
+      { auto package = pform_require_package(@1, $1);
+	if (package)
+	      pform_package_export(@1, package, $2);
+	delete[]$1;
+	delete[] $2;
       }
-  | PACKAGE_IDENTIFIER K_SCOPE_RES '*'
-      { pform_package_export(@2, $1, nullptr);
+  | package_scope '*'
+      { auto package = pform_require_package(@1, $1);
+	if (package)
+	      pform_package_export(@1, package, nullptr);
+	delete[]$1;
       }
   ;
 
@@ -3111,9 +3158,8 @@ data_type_or_implicit_plus_id
   | implicit_type IDENTIFIER
       { set_type_id_range($$, $1, $2, @2, nullptr);
       }
-  | package_scope IDENTIFIER dimensions_opt IDENTIFIER
-      { lex_in_package_scope(nullptr);
-	auto tmp = pform_new_type_identifier(@2, $1, $2);
+  | scope_prefix IDENTIFIER dimensions_opt IDENTIFIER
+      { auto tmp = pform_new_type_identifier(@2, $1, $2);
 	set_type_id_range($$, pform_make_parray_type(@3, tmp, $3),
 			  $4, @4, nullptr);
       }
@@ -3137,9 +3183,8 @@ data_type_or_implicit_plus_id_dim
 	tmp = pform_make_parray_type(@2, tmp, $2);
 	set_type_id_range($$, tmp, $3, @3, $4);
       }
-  | package_scope IDENTIFIER dimensions_opt IDENTIFIER dimensions_opt
-      { lex_in_package_scope(nullptr);
-	auto tmp = pform_new_type_identifier(@2, $1, $2);
+  | scope_prefix IDENTIFIER dimensions_opt IDENTIFIER dimensions_opt
+      { auto tmp = pform_new_type_identifier(@2, $1, $2);
 	tmp = pform_make_parray_type(@3, tmp, $3);
 	set_type_id_range($$, tmp, $4, @4, $5);
       }
@@ -3162,9 +3207,8 @@ data_type_or_parameter_id_dim
   | atomic_type IDENTIFIER dimensions_opt
       { set_type_id_range($$, $1, $2, @2, $3);
       }
-  | package_scope IDENTIFIER dimensions_opt IDENTIFIER dimensions_opt
-      { lex_in_package_scope(nullptr);
-	auto tmp = pform_new_type_identifier(@2, $1, $2);
+  | scope_prefix IDENTIFIER dimensions_opt IDENTIFIER dimensions_opt
+      { auto tmp = pform_new_type_identifier(@2, $1, $2);
 	tmp = pform_make_parray_type(@3, tmp, $3);
 	set_type_id_range($$, tmp, $4, @4, $5);
       }
@@ -3200,9 +3244,8 @@ partial_port_identifier_dim
   : IDENTIFIER dimensions_opt
       { set_type_id_range($$, nullptr, $1, @1, $2);
       }
-  | package_scope IDENTIFIER dimensions_opt IDENTIFIER dimensions_opt
-      { lex_in_package_scope(nullptr);
-	auto tmp = pform_new_type_identifier(@2, $1, $2);
+  | scope_prefix IDENTIFIER dimensions_opt IDENTIFIER dimensions_opt
+      { auto tmp = pform_new_type_identifier(@2, $1, $2);
 	tmp = pform_make_parray_type(@3, tmp, $3);
 	set_type_id_range($$, tmp, $4, @4, $5);
       }
@@ -4728,9 +4771,8 @@ expr_primary
 	$$ = tmp;
 	delete nm;
       }
-  | package_scope hierarchy_identifier
-      { lex_in_package_scope(0);
-	$$ = pform_package_ident(@2, $1, $2);
+  | scope_prefix hierarchy_identifier
+      { $$ = pform_scoped_ident(@2, $1, $2);
 	delete $2;
       }
 
@@ -4754,11 +4796,12 @@ expr_primary
 	delete $2;
 	$$ = tmp;
       }
-  | package_scope hierarchy_identifier { lex_in_package_scope(0); } argument_list_parens
-      { PECallFunction*tmp = new PECallFunction($1, *$2, *$4);
+  | scope_prefix hierarchy_identifier argument_list_parens
+      { auto call_path = pform_scoped_name_t(*$2, $1);
+	PECallFunction*tmp = new PECallFunction(call_path, *$3);
 	FILE_NAME(tmp, @2);
 	delete $2;
-	delete $4;
+	delete $3;
 	$$ = tmp;
       }
   | K_this
@@ -5861,7 +5904,7 @@ module_item
 	delete[]$2;
       }
 
-  | attribute_list_opt package_variable_decl_assignments_with_type ';'
+  | attribute_list_opt scoped_variable_decl_assignments_with_type ';'
       { pform_make_var(@2, $2.decl_assignments, $2.type, $1, false);
 	var_lifetime = LexicalScope::INHERITED;
 	delete $1;
@@ -7484,12 +7527,12 @@ subroutine_call
 	delete $2;
 	$$ = tmp;
       }
-  | package_scope hierarchy_identifier { lex_in_package_scope(nullptr); }
-    argument_list_parens_opt
-      { auto tmp = new PCallTask($1, *$2, *$4);
+  | scope_prefix hierarchy_identifier argument_list_parens_opt
+      { auto call_path = pform_scoped_name_t(*$2, $1);
+	auto tmp = new PCallTask(call_path, *$3);
 	FILE_NAME(tmp, @2);
 	delete $2;
-	delete $4;
+	delete $3;
 	$$ = tmp;
       }
   | class_hierarchy_identifier argument_list_parens_opt
@@ -7622,9 +7665,8 @@ statement_item /* This is roughly statement_item in the LRM */
 	delete $2;
 	$$ = tmp;
       }
-  | K_TRIGGER package_scope hierarchy_identifier
-      { lex_in_package_scope(0);
-	PTrigger*tmp = pform_new_trigger(@3, $2, *$3);
+  | K_TRIGGER scope_prefix hierarchy_identifier
+      { PTrigger*tmp = pform_new_trigger(@3, $2, *$3);
 	delete $3;
 	$$ = tmp;
       }

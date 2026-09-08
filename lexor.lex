@@ -127,17 +127,8 @@ static int ts_scale = 0;
 static int ts_unit = 0;
 static int ts_prec = 0;
 
-/*
- * The parser sometimes needs to indicate to the lexor that the next
- * identifier needs to be understood in the context of a package. The
- * parser feeds back that left context with calls to the
- * lex_in_package_scope.
- */
-static PPackage* in_package_scope = 0;
-void lex_in_package_scope(PPackage*pkg)
-{
-      in_package_scope = pkg;
-}
+  /* A discipline name is an ordinary identifier after scope resolution. */
+static bool after_scope_resolution = false;
 
 %}
 
@@ -262,7 +253,7 @@ TU [munpf]
 "++" { return K_INCR; }
 "--" {return K_DECR; }
 "'{" { return K_LP; }
-"::" { return K_SCOPE_RES; }
+"::" { after_scope_resolution = true; return K_SCOPE_RES; }
 
   /* This is horrible. The Verilog systax uses "->" in a lot of places.
      The trickiest is in constraints, where it is not an operator at all
@@ -337,6 +328,8 @@ TU [munpf]
 <EDGES>"z1" { return K_edge_descriptor; }
 
 {ID} {
+      bool scoped_identifier = after_scope_resolution;
+      after_scope_resolution = false;
       int rc = lexor_keyword_code(yytext, yyleng);
       switch (rc) {
 	  case IDENTIFIER:
@@ -377,17 +370,10 @@ TU [munpf]
 	    break;
       }
 
-	/* A package member remains an ordinary identifier even when its name
-	   also names a package or discipline. */
-      if (in_package_scope) {
-	    in_package_scope = 0;
-	    return rc;
-      }
-
 	/* If this identifier names a discipline, then return this as
 	   a DISCIPLINE_IDENTIFIER and return the discipline as the
 	   value instead. */
-      if (rc == IDENTIFIER && gn_verilog_ams_flag) {
+      if (rc == IDENTIFIER && gn_verilog_ams_flag && !scoped_identifier) {
 	    perm_string tmp = lex_strings.make(yylval.text);
 	    map<perm_string,ivl_discipline_t>::iterator cur = disciplines.find(tmp);
 	    if (cur != disciplines.end()) {
@@ -397,32 +383,15 @@ TU [munpf]
 	    }
       }
 
-	/* If this identifier names a previously declared package, then
-	   return this as a PACKAGE_IDENTIFIER instead. */
-      if (rc == IDENTIFIER && gn_system_verilog()) {
-	    if (PPackage*pkg = pform_test_package_identifier(yylval.text)) {
-		  delete[]yylval.text;
-		  yylval.package = pkg;
-		  rc = PACKAGE_IDENTIFIER;
-	    }
-      }
-
       return rc;
   }
 
 
 \\[^ \t\b\f\r\n]+         {
+      after_scope_resolution = false;
       assert(yylloc.lexical_pos != UINT_MAX);
       yylloc.lexical_pos += 1;
       yylval.text = strdupnew(yytext+1);
-      if (gn_system_verilog()) {
-	    if (PPackage*pkg = pform_test_package_identifier(yylval.text)) {
-		  delete[]yylval.text;
-		  yylval.package = pkg;
-		  return PACKAGE_IDENTIFIER;
-	    }
-      }
-
       return IDENTIFIER;
   }
 
@@ -458,8 +427,7 @@ TU [munpf]
 	    return KK_attribute;
 
       if (gn_system_verilog() && strcmp(yytext,"$unit") == 0) {
-	    yylval.package = pform_units.back();
-	    return PACKAGE_IDENTIFIER;
+	    return K_unit;
       }
 
       yylval.text = strdupnew(yytext);
@@ -871,7 +839,7 @@ TU [munpf]
 `{W} { VLerror(yylloc, "error: Stray tic (`) here. Perhaps you put white "
                        "space between the tic and preprocessor directive?"); }
 
-. { return yytext[0]; }
+. { after_scope_resolution = false; return yytext[0]; }
 
   /* Final catchall. something got lost or mishandled. */
   /* XXX Should we tell the user something about the lexical state? */
@@ -1602,6 +1570,7 @@ void reset_lexor()
 {
       yyrestart(vl_input);
       yylloc.first_line = 1;
+      after_scope_resolution = false;
 
 	/* Announce the first file name. */
       yylloc.text = set_file_name(strdupnew(vl_file.c_str()));

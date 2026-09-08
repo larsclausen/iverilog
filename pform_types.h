@@ -32,6 +32,7 @@
 # include  <vector>
 # include  <map>
 # include  <memory>
+# include  <set>
 
 /*
  * parse-form types.
@@ -471,17 +472,34 @@ ivl_type_t elaborate_array_type(Design *des, NetScope *scope,
  */
 typedef std::list<name_component_t> pform_name_t;
 
+struct pform_scope_t;
+
 struct pform_scoped_name_t {
       pform_scoped_name_t() = default;
       pform_scoped_name_t(PPackage *p, const pform_name_t &n) : package(p),
 							        name(n) {}
       explicit pform_scoped_name_t(const pform_name_t &n) : name(n) {}
 
+      pform_scoped_name_t(const pform_name_t&n, pform_scope_t*prefix)
+      : scope(prefix), name(n) {}
+      bool has_scope() const { return package || scope; }
+
       const name_component_t& back() const { return name.back(); }
       size_t size() const { return name.size(); }
 
       PPackage *package = nullptr;
+        // Keep written scope prefixes separate from bound package names.
+      std::shared_ptr<pform_scope_t> scope;
       pform_name_t name;
+};
+
+struct pform_scope_t : public LineInfo {
+      std::vector<perm_string> path;
+        // Only packages available when parsing the prefix are candidates.
+      PPackage*package = nullptr;
+      bool unit = false;
+        // A parsed prefix can be elaborated in more than one instance scope.
+      mutable std::set<NetScope*> diagnosed_scopes;
 };
 
 inline perm_string peek_head_name(const pform_name_t&that)
@@ -519,6 +537,7 @@ static inline std::ostream& operator<< (std::ostream&out, const data_type_t&that
 
 extern std::ostream& operator<< (std::ostream&out, const pform_name_t&);
 extern std::ostream& operator<< (std::ostream&out, const pform_scoped_name_t&);
+extern std::ostream& operator<< (std::ostream&out, const pform_scope_t&);
 extern std::ostream& operator<< (std::ostream&out, const name_component_t&that);
 extern std::ostream& operator<< (std::ostream&out, const index_component_t&that);
 extern std::ostream& operator<< (std::ostream&out, const type_restrict_t& type);

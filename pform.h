@@ -220,8 +220,10 @@ PPackage *pform_find_potential_import(const struct vlltype&loc, LexicalScope*sco
 				      perm_string name, bool tf_call, bool make_explicit);
 
 
-extern PExpr* pform_package_ident(const struct vlltype&loc,
-				  PPackage*pkg, const pform_name_t*ident);
+extern PExpr*pform_scoped_ident(const struct vlltype&loc,
+			       pform_scope_t*prefix, const pform_name_t*ident);
+extern pform_scope_t*pform_new_scope(const struct vlltype&loc,
+				   const char*name);
 
 /*
  * Interface related functions.
@@ -240,8 +242,8 @@ extern PEIdent *pform_new_ident(const struct vlltype&loc,
 			       const pform_name_t&name,
 			       bool no_implicit_sig = false);
 
-extern PTrigger* pform_new_trigger(const struct vlltype&loc, PPackage*pkg,
-				   const pform_name_t&name);
+extern PTrigger* pform_new_trigger(const struct vlltype&loc, pform_scope_t*prefix,
+			    const pform_name_t&name);
 extern PNBTrigger* pform_new_nb_trigger(const struct vlltype&loc,
 				        const std::list<PExpr*>*dly,
 				        const pform_name_t&name);

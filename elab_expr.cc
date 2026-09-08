@@ -344,7 +344,7 @@ static const netclass_t* resolve_call_chain_prefix_class(Design*des, NetScope*sc
 
 static ivl_nature_t find_access_function(const pform_scoped_name_t &path)
 {
-      if (path.package || path.name.size() != 1) return nullptr;
+      if (path.has_scope() || path.name.size() != 1) return nullptr;
       return access_function_nature[peek_tail_name(path)];
 }
 
@@ -3304,6 +3304,7 @@ NetExpr* PECallFunction::elaborate_expr_(Design*des, NetScope*scope,
 
       // If the symbol is not found at all...
       if (!search_flag) {
+	    if (search_results.invalid_scope) return nullptr;
 	    cerr << get_fileline() << ": error: No function named `" << path_
 		 << "' found in this context (" << scope_path(scope) << ")."
 		 << endl;
@@ -5240,6 +5241,7 @@ ivl_type_t PEIdent::elaborate_type(
       } else {
 	    if (!find_type_(des, scope, search_results,
 			    strict_declaration_order)) {
+		  if (search_results.invalid_scope) return nullptr;
 		  if (strict_declaration_order) {
 			cerr << get_fileline() << ": error: `" << *this
 			     << "` is not a type." << endl;
@@ -5460,6 +5462,8 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 
       symbol_search_results sr;
       symbol_search(this, des, scope, path_, lexical_pos(), &sr);
+
+      if (sr.invalid_scope) return nullptr;
 
       if (!sr.require_non_type(this, des, "in an expression"))
 	    return nullptr;
@@ -5783,6 +5787,8 @@ NetExpr* PEIdent::elaborate_expr_(Design*des, NetScope*scope,
 	// named "c". symbol_search() handles this for us.
       symbol_search_results sr;
       symbol_search(this, des, scope, path_, lexical_pos(), &sr);
+
+      if (sr.invalid_scope) return nullptr;
 
       if (!sr.require_non_type(this, des, "in an expression"))
 	    return 0;

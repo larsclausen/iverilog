@@ -54,6 +54,7 @@ struct symbol_search_results {
 	    interface_alias_scope = 0;
 	    interface_alias_target = 0;
 	    interface_alias_modport = 0;
+	    invalid_scope = false;
       }
 
       inline bool is_scope() const {
@@ -116,6 +117,9 @@ struct symbol_search_results {
       perm_string interface_alias_name;
       NetScope*interface_alias_target;
       const PModport*interface_alias_modport;
+
+        // Prefix resolution already diagnosed an invalid scope.
+      bool invalid_scope;
 
         // Store bread crumbs of the search here. The path_tail is the parts
         // of the original path that were not found, or are after an object

@@ -1414,7 +1414,7 @@ static bool resolve_interface_actual_scope(const PExpr*actual,
       res = interface_actual_scope_t();
 
       const PEIdent*actual_ident = dynamic_cast<const PEIdent*>(actual);
-      if (!actual_ident || actual_ident->path().package ||
+      if (!actual_ident || actual_ident->path().has_scope() ||
 	  actual_ident->path().name.size() != 1 ||
 	  actual_ident->path().name.front().index.size() > 1) {
 	    return false;
@@ -1488,7 +1488,7 @@ static bool resolve_interface_actual_array(const PExpr*actual,
       res = interface_actual_array_t();
 
       const PEIdent*actual_ident = dynamic_cast<const PEIdent*>(actual);
-      if (!actual_ident || actual_ident->path().package ||
+      if (!actual_ident || actual_ident->path().has_scope() ||
 	  actual_ident->path().name.size() != 1 ||
 	  !actual_ident->path().name.front().index.empty())
 	    return false;
@@ -3976,6 +3976,8 @@ NetProc* PCallTask::elaborate_usr(Design*des, NetScope*scope) const
 		  func_scope = search_results.scope;
 	    }
       }
+
+      if (search_results.invalid_scope) return nullptr;
 
       if (!task) {
 	      // For SystemVerilog this may be a few other things.
@@ -6686,6 +6688,7 @@ NetProc* PTrigger::elaborate(Design*des, NetScope*scope) const
 
       symbol_search_results sr;
       if (!symbol_search(this, des, scope, event_, lexical_pos(), &sr)) {
+	    if (sr.invalid_scope) return nullptr;
 	    cerr << get_fileline() << ": error: event <" << event_ << ">"
 		 << " not found." << endl;
 	    if (sr.decl_after_use) {
@@ -6717,6 +6720,7 @@ NetProc* PNBTrigger::elaborate(Design*des, NetScope*scope) const
 
       symbol_search_results sr;
       if (!symbol_search(this, des, scope, event_, lexical_pos(), &sr)) {
+	    if (sr.invalid_scope) return nullptr;
 	    cerr << get_fileline() << ": error: event <" << event_ << ">"
 		 << " not found." << endl;
 	    if (sr.decl_after_use) {
