@@ -1032,7 +1032,7 @@ void pform_make_foreach_declarations(const struct vlltype&loc,
 	    if (cur->nil())
 		  continue;
 	    decl_assignment_t*tmp_assign = new decl_assignment_t;
-	    tmp_assign->name = { lex_strings.make(*cur), 0 };
+	    tmp_assign->name = { lex_strings.make(*cur), loc.lexical_pos };
 	    assign_list.push_back(tmp_assign);
       }
 
