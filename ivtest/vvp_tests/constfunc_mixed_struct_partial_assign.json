@@ -1,0 +1,5 @@
+{
+    "type"          : "normal",
+    "source"        : "constfunc_mixed_struct_partial_assign.v",
+    "iverilog-args" : [ "-g2005-sv" ]
+}
