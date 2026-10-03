@@ -358,8 +358,10 @@ bool NetAssign::eval_func_lval_(const LineInfo&loc,
 
 	    long base = base_const->value().as_long();
 
-	    if (old_lval == 0)
-		  old_lval = make_const_x(lval->sig()->vector_width());
+	    if (old_lval == nullptr) {
+		  old_lval = make_const_default(lval->sig()->data_type(),
+					       lval->sig()->vector_width());
+	    }
 
 	    const NetEConst*lval_const = dynamic_cast<NetEConst*>(old_lval);
 	    ivl_assert(loc, lval_const);

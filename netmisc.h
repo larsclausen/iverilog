@@ -348,6 +348,12 @@ extern NetEConst*make_const_val(unsigned long val);
 extern NetEConst*make_const_val_s(long val);
 
 /*
+ * Make the default value for a 2-state or 4-state integral type.
+ */
+extern NetEConst*make_const_default(ivl_variable_type_t type,
+				    unsigned long wid);
+
+/*
  * Make a const net.
  */
 extern NetNet* make_const_0(Design*des, NetScope*scope, unsigned long wid);
