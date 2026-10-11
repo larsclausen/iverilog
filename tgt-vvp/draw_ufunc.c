@@ -121,11 +121,6 @@ static void draw_ufunc_preamble(ivl_expr_t expr)
       ivl_scope_t def = ivl_expr_def(expr);
       unsigned idx;
 
-        /* If this is an automatic function, allocate the local storage. */
-      if (ivl_scope_is_auto(def)) {
-            fprintf(vvp_out, "    %%alloc S_%p;\n", def);
-      }
-
 	/* Evaluate the expressions and send the results to the
 	   function ports. Do this in two passes - evaluate,
 	   then send - this avoids the function input variables
@@ -137,6 +132,12 @@ static void draw_ufunc_preamble(ivl_expr_t expr)
 	    ivl_signal_t port = ivl_scope_port(def, idx+1);
 	    draw_eval_function_argument(port, ivl_expr_parm(expr, idx));
       }
+
+        /* Argument side effects must use the caller's write context. */
+      if (ivl_scope_is_auto(def)) {
+	    fprintf(vvp_out, "    %%alloc S_%p;\n", def);
+      }
+
       for (idx = ivl_expr_parms(expr) ;  idx > 0 ;  idx -= 1) {
 	    ivl_signal_t port = ivl_scope_port(def, idx);
 	    draw_send_function_argument(port, ivl_expr_parm(expr, idx-1));
