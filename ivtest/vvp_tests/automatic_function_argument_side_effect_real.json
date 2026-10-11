@@ -1,0 +1,9 @@
+{
+    "type"          : "normal",
+    "source"        : "automatic_function_argument_side_effect_real.v",
+    "iverilog-args" : [ "-g2005-sv" ],
+    "vlog95" : {
+        "__comment" : "Automatic functions are not supported",
+        "type"      : "CE"
+    }
+}
