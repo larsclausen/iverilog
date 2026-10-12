@@ -1549,6 +1549,8 @@ void vvp_vector4_t::mov(unsigned dst, unsigned src, unsigned cnt)
       assert(dst+cnt <= size_);
       assert(src+cnt <= size_);
 
+      if (cnt == 0 || dst == src) return;
+
       if (size_ <= BITS_PER_WORD) {
 	    unsigned long vmask = (1UL << cnt) - 1;
 	    unsigned long tmp;
