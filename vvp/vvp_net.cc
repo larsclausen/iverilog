@@ -30,6 +30,7 @@
 # include  <cstdlib>
 # include  <iostream>
 # include  <typeinfo>
+# include  <type_traits>
 # include  <climits>
 # include  <cmath>
 # include  <cassert>
@@ -2137,7 +2138,7 @@ template <class INT>bool vector4_to_value(const vvp_vector4_t&vec, INT&val,
 					  bool is_signed, bool is_arithmetic)
 {
       INT res = 0;
-      INT msk = 1;
+      typename std::make_unsigned<INT>::type msk = 1;
       bool rc_flag = true;
 
       unsigned size = vec.size();
