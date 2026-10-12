@@ -2635,8 +2635,10 @@ vvp_vector2_t& vvp_vector2_t::operator <<= (unsigned int shift)
 	    }
 
 	      // Cleanup the tail bits.
-	    unsigned long mask = -1UL >> (BITS_PER_WORD - wid_%BITS_PER_WORD);
-	    vec_[words-1] &= mask;
+	    if (wid_ % BITS_PER_WORD != 0) {
+		  unsigned long mask = -1UL >> (BITS_PER_WORD - wid_%BITS_PER_WORD);
+		  vec_[words-1] &= mask;
+	    }
       }
 
       return *this;
@@ -2736,8 +2738,10 @@ vvp_vector2_t& vvp_vector2_t::operator += (const vvp_vector2_t&that)
 
 
 	// Cleanup the tail bits.
-      unsigned long mask = -1UL >> (BITS_PER_WORD - wid_%BITS_PER_WORD);
-      vec_[words-1] &= mask;
+      if (wid_ % BITS_PER_WORD != 0) {
+	    unsigned long mask = -1UL >> (BITS_PER_WORD - wid_%BITS_PER_WORD);
+	    vec_[words-1] &= mask;
+      }
 
       return *this;
 }
