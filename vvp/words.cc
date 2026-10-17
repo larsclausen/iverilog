@@ -97,7 +97,7 @@ void compile_var_string(char*label, char*name)
       delete[] name;
 }
 
-void compile_var_darray(char*label, char*name, unsigned size)
+void compile_var_darray(char*label, char*name, unsigned size, bool signed_flag)
 {
       vvp_net_t*net = new vvp_net_t;
 
@@ -112,7 +112,7 @@ void compile_var_darray(char*label, char*name, unsigned size)
 
       define_functor_symbol(label, net);
 
-      vpiHandle obj = vpip_make_darray_var(name, net);
+      vpiHandle obj = vpip_make_darray_var(name, net, signed_flag);
       compile_vpi_symbol(label, obj);
 
       vpip_attach_to_current_scope(obj);
@@ -120,7 +120,7 @@ void compile_var_darray(char*label, char*name, unsigned size)
       delete[] name;
 }
 
-void compile_var_queue(char*label, char*name, unsigned size)
+void compile_var_queue(char*label, char*name, unsigned size, bool signed_flag)
 {
       vvp_net_t*net = new vvp_net_t;
 
@@ -135,7 +135,7 @@ void compile_var_queue(char*label, char*name, unsigned size)
 
       define_functor_symbol(label, net);
 
-      vpiHandle obj = vpip_make_queue_var(name, net);
+      vpiHandle obj = vpip_make_queue_var(name, net, signed_flag);
       compile_vpi_symbol(label, obj);
 
       vpip_attach_to_current_scope(obj);

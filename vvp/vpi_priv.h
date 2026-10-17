@@ -840,7 +840,8 @@ friend void compile_array_alias(char*label, char*name, char*src);
 
 class __vpiDarrayVar : public __vpiBaseVar, public __vpiArrayBase {
     public:
-      __vpiDarrayVar(__vpiScope*scope, const char*name, vvp_net_t*net);
+      __vpiDarrayVar(__vpiScope*scope, const char*name, vvp_net_t*net,
+                    bool signed_flag);
 
       int get_type_code() const override { return vpiArrayVar; }
       unsigned get_size() const override;
@@ -866,19 +867,25 @@ class __vpiDarrayVar : public __vpiBaseVar, public __vpiArrayBase {
     protected:
       vvp_darray*get_vvp_darray() const;
       __vpiDecConst left_range_, right_range_;
+
+    private:
+      bool signed_flag_;
 };
 
-extern vpiHandle vpip_make_darray_var(const char*name, vvp_net_t*net);
+extern vpiHandle vpip_make_darray_var(const char*name, vvp_net_t*net,
+                                     bool signed_flag);
 
 class __vpiQueueVar : public __vpiDarrayVar {
 
     public:
-      __vpiQueueVar(__vpiScope*scope, const char*name, vvp_net_t*net);
+      __vpiQueueVar(__vpiScope*scope, const char*name, vvp_net_t*net,
+                   bool signed_flag);
 
       int vpi_get(int code) override;
 };
 
-extern vpiHandle vpip_make_queue_var(const char*name, vvp_net_t*net);
+extern vpiHandle vpip_make_queue_var(const char*name, vvp_net_t*net,
+                                    bool signed_flag);
 
 class __vpiPropQueueRef : public __vpiHandle {
 

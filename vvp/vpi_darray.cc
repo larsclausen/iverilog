@@ -36,8 +36,9 @@
 
 using namespace std;
 
-__vpiDarrayVar::__vpiDarrayVar(__vpiScope*sc, const char*na, vvp_net_t*ne)
-: __vpiBaseVar(sc, na, ne)
+__vpiDarrayVar::__vpiDarrayVar(__vpiScope*sc, const char*na, vvp_net_t*ne,
+                             bool signed_flag)
+: __vpiBaseVar(sc, na, ne), signed_flag_(signed_flag)
 {
 }
 
@@ -114,7 +115,7 @@ void __vpiDarrayVar::get_word_value(struct __vpiArrayWord*word, p_vpi_value vp)
       {
           vvp_vector4_t v;
           aobj->get_word(index, v);
-          vpip_vec4_get_value(v, v.size(), false, vp);  // TODO sign?
+          vpip_vec4_get_value(v, v.size(), signed_flag_, vp);
       }
       break;
 
@@ -249,18 +250,19 @@ vvp_darray*__vpiDarrayVar::get_vvp_darray() const
       return obj.peek<vvp_darray>();
 }
 
-vpiHandle vpip_make_darray_var(const char*name, vvp_net_t*net)
+vpiHandle vpip_make_darray_var(const char*name, vvp_net_t*net, bool signed_flag)
 {
       __vpiScope*scope = vpip_peek_current_scope();
       const char*use_name = name ? vpip_name_string(name) : NULL;
 
-      __vpiDarrayVar*obj = new __vpiDarrayVar(scope, use_name, net);
+      __vpiDarrayVar*obj = new __vpiDarrayVar(scope, use_name, net, signed_flag);
 
       return obj;
 }
 
-__vpiQueueVar::__vpiQueueVar(__vpiScope*sc, const char*na, vvp_net_t*ne)
-: __vpiDarrayVar(sc, na, ne)
+__vpiQueueVar::__vpiQueueVar(__vpiScope*sc, const char*na, vvp_net_t*ne,
+                           bool signed_flag)
+: __vpiDarrayVar(sc, na, ne, signed_flag)
 {
 }
 
@@ -274,12 +276,12 @@ int __vpiQueueVar::vpi_get(int code)
       }
 }
 
-vpiHandle vpip_make_queue_var(const char*name, vvp_net_t*net)
+vpiHandle vpip_make_queue_var(const char*name, vvp_net_t*net, bool signed_flag)
 {
       __vpiScope*scope = vpip_peek_current_scope();
       const char*use_name = name ? vpip_name_string(name) : NULL;
 
-      __vpiQueueVar*obj = new __vpiQueueVar(scope, use_name, net);
+      __vpiQueueVar*obj = new __vpiQueueVar(scope, use_name, net, signed_flag);
 
       return obj;
 }

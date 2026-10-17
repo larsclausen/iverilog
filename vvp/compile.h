@@ -510,9 +510,11 @@ extern void compile_variable(char*label, char*name,
 
 extern void compile_var_real(char*label, char*name, bool local_flag);
 extern void compile_var_string(char*label, char*name);
-extern void compile_var_darray(char*label, char*name, unsigned size);
+extern void compile_var_darray(char*label, char*name, unsigned size,
+                               bool signed_flag);
 extern void compile_var_cobject(char*label, char*name);
-extern void compile_var_queue(char*label, char*name, unsigned size);
+extern void compile_var_queue(char*label, char*name, unsigned size,
+                              bool signed_flag);
 
 /*
  * This function is used to create a scope port
