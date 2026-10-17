@@ -1,0 +1,7 @@
+{
+    "type"   : "normal",
+    "source" : "stochastic_queue_memory_signedness.v",
+    "vlog95" : {
+        "iverilog-args" : [ "-pallowsigned=1" ]
+    }
+}

@@ -204,6 +204,7 @@ line_directive			vvp_tests/line_directive.json
 localparam_type			vvp_tests/localparam_type.json
 loop_condition_real		vvp_tests/loop_condition_real.json
 macro_str_esc			vvp_tests/macro_str_esc.json
+memory_word_decimal_format	vvp_tests/memory_word_decimal_format.json
 memsynth1			vvp_tests/memsynth1.json
 memsynth2			vvp_tests/memsynth2.json
 memsynth2-synth			vvp_tests/memsynth2-synth.json
@@ -310,6 +311,7 @@ specparam_range_list_generate_fail	vvp_tests/specparam_range_list_generate_fail.
 specparam_reference_order_fail	vvp_tests/specparam_reference_order_fail.json
 specparam_specify_reference_order	vvp_tests/specparam_specify_reference_order.json
 statement_attributes_error_recovery_fail	vvp_tests/statement_attributes_error_recovery_fail.json
+stochastic_queue_memory_signedness	vvp_tests/stochastic_queue_memory_signedness.json
 strength_feedback		vvp_tests/strength_feedback.json
 strength_feedback_delay		vvp_tests/strength_feedback_delay.json
 strength_net_change		vvp_tests/strength_net_change.json
