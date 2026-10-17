@@ -174,6 +174,11 @@ int __vpiArray::get_word_size() const
       return width;
 }
 
+bool __vpiArray::get_word_signed() const
+{
+      return signed_flag;
+}
+
 char*__vpiArray::get_word_str(struct __vpiArrayWord*word, int code)
 {
       unsigned index = word->get_index();
@@ -344,6 +349,9 @@ int __vpiArrayWord::as_word_t::vpi_get(int code)
 	  case vpiSize:
 	    return my_parent->get_word_size();
 
+	  case vpiSigned:
+	    return my_parent->get_word_signed();
+
 	  case vpiLeftRange:
             val.format = vpiIntVal;
 	    my_parent->get_left_range()->vpi_get_value(&val);
@@ -393,6 +401,9 @@ int __vpiArrayVthrA::vpi_get(int code)
 
 	  case vpiSize:
 	    return array->get_word_size();
+
+	  case vpiSigned:
+	    return array->get_word_signed();
 
 	  case vpiLeftRange:
 	    return array->msb.get_value();

@@ -77,6 +77,11 @@ int __vpiDarrayVar::get_word_size() const
       return new_vec.size();
 }
 
+bool __vpiDarrayVar::get_word_signed() const
+{
+      return signed_flag_;
+}
+
 char*__vpiDarrayVar::get_word_str(struct __vpiArrayWord*word, int code)
 {
       unsigned index = word->get_index();

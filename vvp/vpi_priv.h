@@ -736,6 +736,7 @@ struct __vpiArrayBase {
       virtual __vpiScope*get_scope() const = 0;
 
       virtual int get_word_size() const = 0;
+      virtual bool get_word_signed() const = 0;
       virtual char*get_word_str(struct __vpiArrayWord*word, int code) = 0;
       virtual void get_word_value(struct __vpiArrayWord*word, p_vpi_value vp) = 0;
       virtual void put_word_value(struct __vpiArrayWord*word, p_vpi_value vp,
@@ -785,6 +786,7 @@ struct __vpiArray : public __vpiArrayBase, public __vpiHandle {
       __vpiScope*get_scope() const override { return scope; }
 
       int get_word_size() const override;
+      bool get_word_signed() const override;
       char*get_word_str(struct __vpiArrayWord*word, int code) override;
       void get_word_value(struct __vpiArrayWord*word, p_vpi_value vp) override;
       void put_word_value(struct __vpiArrayWord*word, p_vpi_value vp, int flags) override;
@@ -850,6 +852,7 @@ class __vpiDarrayVar : public __vpiBaseVar, public __vpiArrayBase {
       __vpiScope*get_scope() const override { return scope_; }
 
       int get_word_size() const override;
+      bool get_word_signed() const override;
       char*get_word_str(struct __vpiArrayWord*word, int code) override;
       void get_word_value(struct __vpiArrayWord*word, p_vpi_value vp) override;
       void put_word_value(struct __vpiArrayWord*word, p_vpi_value vp, int flags) override;
