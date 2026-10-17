@@ -1,0 +1,8 @@
+{
+    "type"        : "normal",
+    "source"      : "vpi_memory_word_signedness.v",
+    "vpi-sources" : [ "vpi/word_signed_property.c" ],
+    "vlog95" : {
+        "iverilog-args" : [ "-pallowsigned=1" ]
+    }
+}
