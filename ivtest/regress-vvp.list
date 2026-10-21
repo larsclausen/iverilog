@@ -86,6 +86,7 @@ br_gh1180a			vvp_tests/br_gh1180a.json
 br_gh1180b			vvp_tests/br_gh1180b.json
 br_gh1180c			vvp_tests/br_gh1180c.json
 constfunc_call_signedness	vvp_tests/constfunc_call_signedness.json
+nb_concat_delay			vvp_tests/nb_concat_delay.json
 param_array_packed		vvp_tests/param_array_packed.json
 param_array_unpacked		vvp_tests/param_array_unpacked.json
 func_return_uarray		vvp_tests/func_return_uarray.json
