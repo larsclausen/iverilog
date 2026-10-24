@@ -2236,8 +2236,13 @@ bool vector4_to_value(const vvp_vector4_t&vec, double&val, bool signed_flag)
       if (signed_flag) {
 	    vvp_bit4_t carry = BIT4_1;
 	    for (unsigned idx = 0 ;  idx < vec.size() ;  idx += 1) {
-		  vvp_bit4_t a = ~vec.value(idx);
-		  vvp_bit4_t x = add_with_carry(a, BIT4_0, carry);
+		  vvp_bit4_t bit = vec.value(idx);
+		    // Convert unknown bits to zero before taking the magnitude.
+		  if (bit4_is_xz(bit)) {
+			bit = BIT4_0;
+			flag = false;
+		  }
+		  vvp_bit4_t x = add_with_carry(~bit, BIT4_0, carry);
 		  switch (x) {
 		      case BIT4_0:
 			break;
