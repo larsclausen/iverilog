@@ -1,0 +1,8 @@
+{
+    "type": "normal",
+    "source": "signed_unknown_real_net.v",
+    "vlog95": {
+        "type": "CE",
+        "__comment": "Real nets are not supported by vlog95."
+    }
+}

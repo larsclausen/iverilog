@@ -1,0 +1,9 @@
+{
+    "type": "normal",
+    "source": "signed_unknown_real.v",
+    "vlog95": {
+        "iverilog-args": [
+            "-pallowsigned=1"
+        ]
+    }
+}

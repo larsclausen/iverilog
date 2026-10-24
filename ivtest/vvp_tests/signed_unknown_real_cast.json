@@ -1,0 +1,8 @@
+{
+    "type"          : "normal",
+    "source"        : "signed_unknown_real_cast.v",
+    "iverilog-args" : [ "-g2005-sv" ],
+    "vlog95" : {
+        "iverilog-args" : [ "-pallowsigned=1" ]
+    }
+}

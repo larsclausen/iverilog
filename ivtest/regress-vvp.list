@@ -344,6 +344,11 @@ sf_isunknown_fail		vvp_tests/sf_isunknown_fail.json
 sf_onehot_fail			vvp_tests/sf_onehot_fail.json
 sf_onehot0_fail			vvp_tests/sf_onehot0_fail.json
 shift6				vvp_tests/shift6.json
+signed_unknown_real		vvp_tests/signed_unknown_real.json
+signed_unknown_real_cast		vvp_tests/signed_unknown_real_cast.json
+signed_unknown_real_const	vvp_tests/signed_unknown_real_const.json
+signed_unknown_real_constfunc	vvp_tests/signed_unknown_real_constfunc.json
+signed_unknown_real_net		vvp_tests/signed_unknown_real_net.json
 single_element_array		vvp_tests/single_element_array.json
 specify6			vvp_tests/specify6.json
 specparam_range_list		vvp_tests/specparam_range_list.json

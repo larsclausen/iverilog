@@ -1,0 +1,7 @@
+{
+    "type"          : "normal",
+    "source"        : "signed_unknown_real_constfunc.v",
+    "vlog95" : {
+        "iverilog-args" : [ "-pallowsigned=1" ]
+    }
+}
