@@ -547,7 +547,9 @@ double verinum::as_double() const
       if (has_sign_ && bits_[nbits_-1] == V1) {
 	    V carry = V1;
 	    for (unsigned idx = 0; idx < nbits_; idx += 1) {
-		  V sum = add_with_carry(~bits_[idx], V0, carry);
+		    // Convert unknown bits to zero before taking the magnitude.
+		  V bit = bits_[idx] == V1 ? V1 : V0;
+		  V sum = add_with_carry(~bit, V0, carry);
 		  if (sum == V1)
 			val += pow(2.0, (double)idx);
 	    }
