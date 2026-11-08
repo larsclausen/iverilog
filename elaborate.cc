@@ -4787,10 +4787,13 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 	    }
       }
 
-      if (parms_.size() > parm_count) {
+      unsigned int off = use_this ? 1 : 0;
+      const auto arg_count = parm_count - off;
+
+      if (parms_.size() > arg_count) {
 	    cerr << get_fileline() << ": error: "
 		 << "Too many arguments (" << parms_.size()
-		 << ", expecting " << parm_count << ")"
+		 << ", expecting " << arg_count << ")"
 		 << " in call to task." << endl;
 	    des->errors += 1;
       }
@@ -4842,8 +4845,6 @@ NetProc* PCallTask::elaborate_build_call_(Design*des, NetScope*scope,
 	   assignments with the task port the l-value and the passed
 	   expression the r-value. We know by definition that the port
 	   is a reg type, so this elaboration is pretty obvious. */
-
-      unsigned int off = use_this ? 1 : 0;
 
       auto args = map_named_args(des, def, parms_, off);
       for (unsigned int idx = off; idx < parm_count; idx++) {
