@@ -1400,6 +1400,9 @@ class vvp_fun_force : public vvp_net_fun_t {
       void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
 		     vvp_context_t context) override;
       void recv_real(vvp_net_ptr_t port, double bit, vvp_context_t) override;
+      void recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t&bit,
+			unsigned base, unsigned width,
+			vvp_context_t context) override;
 };
 
 /* vvp_fun_drive

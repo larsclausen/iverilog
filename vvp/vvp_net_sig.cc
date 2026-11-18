@@ -1047,6 +1047,18 @@ void vvp_fun_force::recv_vec4(vvp_net_ptr_t ptr, const vvp_vector4_t&bit,
       dst->force_vec4(coerce_to_width(bit, dst->fil->filter_size()), vvp_vector2_t(vvp_vector2_t::FILL1, dst->fil->filter_size()));
 }
 
+void vvp_fun_force::recv_vec4_pv(vvp_net_ptr_t ptr, const vvp_vector4_t&,
+				 unsigned, unsigned, vvp_context_t context)
+{
+        // The source filter has already incorporated the partial update.
+      auto src = ptr.ptr()->port[2].ptr();
+      auto sig = dynamic_cast<vvp_signal_value*>(src->fil);
+      assert(sig);
+      vvp_vector4_t value;
+      sig->vec4_value(value);
+      recv_vec4(ptr, value, context);
+}
+
 void vvp_fun_force::recv_real(vvp_net_ptr_t ptr, double bit, vvp_context_t)
 {
       assert(ptr.port() == 0);
